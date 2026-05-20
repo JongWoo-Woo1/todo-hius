@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project To Do</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="view-switcher" aria-label="Workspace views">
+          <button id="calendar-view-button" class="view-button" type="button">Calendar</button>
+        </div>
+
+        <nav id="project-list" class="project-list" aria-label="Project list"></nav>
+        <button id="add-project-button" class="add-project-button" type="button" aria-label="Add project">+</button>
+      </aside>
+
+      <section id="project-workspace" class="workspace">
+        <header class="workspace-header">
+          <div>
+            <p class="eyebrow">Current project</p>
+            <h2 id="active-project-name">Add a project</h2>
+          </div>
+          <div class="project-actions">
+            <label class="color-field">
+              Color
+              <input id="project-color" type="color" value="#2563eb" />
+            </label>
+            <button id="delete-project-button" class="danger-button" type="button">Delete project</button>
+          </div>
+        </header>
+
+        <form id="todo-form" class="todo-form">
+          <label>
+            Task
+            <input id="todo-title" name="todoTitle" type="text" placeholder="Enter a task" required />
+          </label>
+
+          <label>
+            Due date
+            <input id="todo-due-date" name="todoDueDate" type="date" />
+          </label>
+
+          <button type="submit">Add task</button>
+        </form>
+
+        <div class="content-grid">
+          <section class="todo-panel">
+            <div class="todo-panel-header">
+              <h3>To Do List</h3>
+              <span id="todo-count">0 items</span>
+            </div>
+            <ul id="todo-list" class="todo-list"></ul>
+            <p id="empty-state" class="empty-state">No tasks yet.</p>
+          </section>
+
+          <aside id="todo-detail-panel" class="todo-detail-panel" hidden>
+            <div class="todo-detail-header">
+              <div>
+                <p class="eyebrow">Task details</p>
+                <h3 id="todo-detail-title"></h3>
+              </div>
+              <button id="close-todo-detail-button" class="quiet-button" type="button" aria-label="Close details">Close</button>
+            </div>
+
+            <form id="todo-detail-form" class="detail-form">
+              <label>
+                Due date
+                <input id="todo-detail-due-date" type="date" />
+              </label>
+
+              <label>
+                Memo
+                <textarea id="todo-detail-memo" rows="8" placeholder="Add notes for this task"></textarea>
+              </label>
+
+              <button type="submit">Save changes</button>
+            </form>
+          </aside>
+        </div>
+      </section>
+
+      <section id="calendar-workspace" class="workspace" hidden>
+        <header class="calendar-header">
+          <div>
+            <p class="eyebrow">All projects</p>
+            <h2>Calendar</h2>
+          </div>
+
+          <div class="calendar-controls">
+            <button id="previous-month-button" class="quiet-button" type="button" aria-label="Previous month">Prev</button>
+            <strong id="calendar-month-label"></strong>
+            <button id="next-month-button" class="quiet-button" type="button" aria-label="Next month">Next</button>
+          </div>
+        </header>
+
+        <section class="calendar-filters">
+          <div class="calendar-filter-header">
+            <h3>Projects</h3>
+            <button id="toggle-all-projects-button" class="quiet-button" type="button">Clear all</button>
+          </div>
+          <div id="calendar-filter-list" class="calendar-filter-list"></div>
+        </section>
+
+        <div class="calendar-weekdays" aria-hidden="true">
+          <span>Sun</span>
+          <span>Mon</span>
+          <span>Tue</span>
+          <span>Wed</span>
+          <span>Thu</span>
+          <span>Fri</span>
+          <span>Sat</span>
+        </div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,538 @@
+:root {
+  color-scheme: light;
+  --bg: #f3f5f7;
+  --panel: #ffffff;
+  --line: #d8dee6;
+  --text: #1f2933;
+  --muted: #667085;
+  --accent: #166534;
+  --accent-soft: #dcfce7;
+  --danger: #b42318;
+  --danger-soft: #fee4e2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    "Segoe UI",
+    "Malgun Gothic",
+    Arial,
+    sans-serif;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+  padding: 24px 18px;
+}
+
+.workspace-header h2,
+.todo-panel h3 {
+  margin: 0;
+}
+
+.view-switcher {
+  display: grid;
+  margin-bottom: 20px;
+}
+
+.view-button {
+  border-color: var(--line);
+  background: #fff;
+  color: var(--text);
+}
+
+.view-button.active {
+  border-color: #86efac;
+  background: var(--accent-soft);
+}
+
+.todo-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.inline-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+input,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  padding: 10px 12px;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 160px;
+}
+
+button {
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: var(--accent);
+  color: #fff;
+}
+
+.project-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.project-button {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-color: var(--line);
+  background: #fff;
+  color: var(--text);
+  text-align: left;
+}
+
+.project-button[draggable="true"] {
+  cursor: grab;
+}
+
+.project-button.dragging {
+  opacity: 0.45;
+}
+
+.project-button.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.project-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.project-swatch {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--project-color);
+}
+
+.project-button.active {
+  border-color: #86efac;
+  background: var(--accent-soft);
+}
+
+.project-button span:last-child {
+  color: var(--muted);
+}
+
+.add-project-button {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 8px;
+  border-color: transparent;
+  background: transparent;
+  color: transparent;
+  font-size: 22px;
+  line-height: 1;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.add-project-button:hover,
+.add-project-button:focus-visible {
+  border-color: var(--line);
+  background: #fff;
+  color: var(--text);
+}
+
+.workspace {
+  padding: 28px;
+}
+
+.workspace-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.project-actions {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+
+.color-field {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.color-field input {
+  width: 48px;
+  height: 40px;
+  padding: 4px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.danger-button {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.todo-form {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) 180px auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.todo-panel {
+  margin-top: 24px;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
+}
+
+.todo-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.todo-panel-header span {
+  color: var(--muted);
+}
+
+.todo-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.todo-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 14px;
+}
+
+.todo-item {
+  cursor: pointer;
+}
+
+.todo-item.selected {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.todo-item.completed .todo-title {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.todo-checkbox {
+  width: 18px;
+  height: 18px;
+}
+
+.todo-copy {
+  min-width: 0;
+}
+
+.todo-title {
+  margin: 0;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.todo-date {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.delete-todo-button {
+  background: transparent;
+  color: var(--danger);
+  padding: 8px 10px;
+}
+
+.empty-state {
+  color: var(--muted);
+}
+
+.todo-detail-panel {
+  margin-top: 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 18px;
+}
+
+.todo-detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.todo-detail-header h3 {
+  margin: 0;
+  word-break: break-word;
+}
+
+.quiet-button {
+  background: transparent;
+  color: var(--muted);
+  padding: 8px 10px;
+}
+
+.detail-form {
+  display: grid;
+  gap: 14px;
+}
+
+.detail-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.calendar-header h2 {
+  margin: 0;
+}
+
+.calendar-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.calendar-controls strong {
+  min-width: 150px;
+  text-align: center;
+}
+
+.calendar-filters {
+  margin-bottom: 18px;
+}
+
+.calendar-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.calendar-filter-header h3 {
+  margin: 0;
+}
+
+.calendar-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.calendar-filter-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 8px 10px;
+}
+
+.calendar-filter-item input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar-weekdays {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.calendar-weekdays span {
+  padding: 0 10px;
+}
+
+.calendar-grid {
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.calendar-cell {
+  min-height: 130px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 10px;
+}
+
+.calendar-cell.outside-month {
+  background: #f8fafc;
+  color: var(--muted);
+}
+
+.calendar-date {
+  margin: 0;
+  font-weight: 600;
+}
+
+.calendar-item {
+  display: grid;
+  gap: 2px;
+  border-left: 3px solid var(--project-color);
+  background: color-mix(in srgb, var(--project-color) 12%, white);
+  padding: 7px 8px;
+  font-size: 13px;
+}
+
+.calendar-item strong,
+.calendar-item span {
+  overflow-wrap: anywhere;
+}
+
+.calendar-item span {
+  color: var(--muted);
+}
+
+.calendar-item.completed {
+  border-left-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.calendar-item.completed strong {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .workspace {
+    padding: 20px 18px;
+  }
+
+  .workspace-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .project-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .todo-form {
+    grid-template-columns: 1fr;
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .calendar-weekdays span {
+    padding: 0 4px;
+  }
+
+  .calendar-cell {
+    min-height: 96px;
+    padding: 8px;
+  }
+}
