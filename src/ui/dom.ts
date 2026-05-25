@@ -51,6 +51,7 @@ export const workLogContentInput = document.querySelector<HTMLTextAreaElement>("
 export const ledgerStatusFilter = document.querySelector<HTMLSelectElement>("#ledger-status-filter")!;
 export const ledgerClientFilter = document.querySelector<HTMLSelectElement>("#ledger-client-filter")!;
 export const ledgerHideCompletedInput = document.querySelector<HTMLInputElement>("#ledger-hide-completed")!;
+export const ledgerExportButton = document.querySelector<HTMLButtonElement>("#ledger-export-button")!;
 export const ledgerTableBody = document.querySelector<HTMLTableSectionElement>("#ledger-table-body")!;
 export const ledgerEmptyState = document.querySelector<HTMLElement>("#ledger-empty-state")!;
 export const calendarMonthLabel = document.querySelector<HTMLElement>("#calendar-month-label")!;

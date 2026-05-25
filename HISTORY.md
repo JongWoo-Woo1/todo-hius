@@ -6,6 +6,11 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added ExcelJS dependency for browser-based `.xlsx` export.
+- Added Node type declarations for ExcelJS type-check support.
+- Added Project Ledger Excel Export.
+- Added Ledger View export button.
+- Added Excel workbook creation and download helpers under `src/excel/`.
 - Added Prompt Efficiency Rule guidance to `AGENTS.md`.
 - Added Weekly Report View.
 - Added weekly Monday-Friday layout.

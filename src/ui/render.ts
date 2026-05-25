@@ -7,6 +7,7 @@ import {
 import { deleteTodo, deleteWorkLog, getActiveProject, getState, reorderProjects, selectProject, toggleTodo } from "../state/store";
 import { getMonthGridDates, getMonthLabel, toDateKey } from "../utils/calendar";
 import { formatDueDate } from "../utils/date";
+import { formatProjectPeriod } from "../utils/project";
 import { getWeekRangeLabel, getWeekdays } from "../utils/week";
 import {
   activeProjectName,
@@ -127,18 +128,6 @@ function sortTodosByDueDate(): void {
 
     return left.dueDate.localeCompare(right.dueDate);
   });
-}
-
-function formatProjectPeriod(project: { periodText?: string; periodStart?: string | null; periodEnd?: string | null }): string {
-  if (project.periodText) {
-    return project.periodText;
-  }
-
-  if (project.periodStart || project.periodEnd) {
-    return `${project.periodStart ?? ""} ~ ${project.periodEnd ?? ""}`;
-  }
-
-  return "";
 }
 
 function renderLedgerClientOptions(): void {

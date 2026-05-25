@@ -36,6 +36,7 @@ Main files:
 - `src/state/storage.ts`: localStorage raw read/write wrapper
 - `src/state/calendarPreferences.ts`: cached calendar range preferences
 - `src/data/sampleProjects.ts`: initial sample data for empty browser state
+- `src/excel/`: Excel workbook creation and browser download helpers
 - `src/ui/dom.ts`: DOM element references
 - `src/ui/render.ts`: rendering, current view state, selected Todo state
 - `src/utils/`: shared helpers

@@ -44,6 +44,7 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
   - 모든 프로젝트와 모든 Todo를 하나의 표로 확인
   - 상태, 업체명, 완료 업무 숨기기 필터
   - 행 클릭 시 해당 Project와 Todo 상세 편집 화면으로 이동
+  - 프로젝트 원장 `.xlsx` 파일 다운로드
 
 ## Views
 
@@ -89,6 +90,8 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
 - `src/state/store.ts`: project, todo, and work log state changes
 - `src/state/storage.ts`: localStorage raw read/write wrapper
 - `src/state/calendarPreferences.ts`: Calendar range preference storage
+- `src/excel/projectLedgerReport.ts`: Project Ledger Excel workbook creation
+- `src/excel/downloadWorkbook.ts`: browser `.xlsx` download helper
 - `src/ui/render.ts`: Project, Ledger, Weekly, and Calendar rendering
 - `src/ui/dom.ts`: shared DOM element lookups
 - `src/utils/week.ts`: Monday-Friday weekly date helpers

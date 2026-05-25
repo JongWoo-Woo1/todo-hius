@@ -12,6 +12,7 @@ import {
   updateTodo,
 } from "./state/store";
 import type { Project, TaskPriority, TaskStatus, Todo, WorkLogType } from "./types";
+import { toDateKey } from "./utils/calendar";
 import { createId } from "./utils/id";
 import { getProjectColor } from "./utils/projectColor";
 import {
@@ -23,6 +24,7 @@ import {
   closeTodoDetailButton,
   deleteProjectButton,
   ledgerClientFilter,
+  ledgerExportButton,
   ledgerHideCompletedInput,
   ledgerStatusFilter,
   ledgerViewButton,
@@ -220,6 +222,15 @@ ledgerClientFilter.addEventListener("change", () => {
 
 ledgerHideCompletedInput.addEventListener("change", () => {
   render();
+});
+
+ledgerExportButton.addEventListener("click", async () => {
+  const [{ createProjectLedgerWorkbook }, { downloadWorkbook }] = await Promise.all([
+    import("./excel/projectLedgerReport"),
+    import("./excel/downloadWorkbook"),
+  ]);
+  const workbook = createProjectLedgerWorkbook(getState());
+  await downloadWorkbook(workbook, `project-ledger-${toDateKey(new Date())}.xlsx`);
 });
 
 calendarViewButton.addEventListener("click", () => {
