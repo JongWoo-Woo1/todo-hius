@@ -28,7 +28,7 @@ Do not read ignored environment or log files unless the user explicitly asks for
 Main files:
 
 - `index.html`: DOM layout for Project, Ledger, and Calendar workspaces
-- `styles.css`: app styling
+- `src/styles.css`: app styling loaded by Vite
 - `src/main.ts`: event wiring and form handling
 - `src/types.ts`: shared TypeScript types
 - `src/state/store.ts`: state mutation, migration, persistence, active project handling

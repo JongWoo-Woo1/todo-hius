@@ -62,6 +62,7 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
 ## Folder Structure
 
 - `src/`: TypeScript source code
+- `src/styles.css`: app styling loaded by Vite
 - `src/state/`: app state, migration, localStorage persistence
 - `src/ui/`: DOM references and rendering
 - `src/data/`: sample project data
@@ -70,6 +71,7 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
 ## Main Modules
 
 - `src/main.ts`: app entry point and form events
+- `src/styles.css`: app styling
 - `src/data/sampleProjects.ts`: initial demo projects for an empty browser state
 - `src/state/store.ts`: project and todo state changes
 - `src/state/storage.ts`: localStorage raw read/write wrapper
