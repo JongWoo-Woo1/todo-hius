@@ -1,37 +1,144 @@
-import { STORAGE_KEY } from "../constants";
 import { createSampleState } from "../data/sampleProjects";
-import type { AppState, Project, Todo } from "../types";
+import type { AppState, Project, TaskPriority, TaskStatus, Todo, WorkLog, WorkLogType } from "../types";
 import { getProjectColor } from "../utils/projectColor";
+import { loadRawState, saveRawState } from "./storage";
+
+type LegacyTodo = Partial<Todo> & {
+  completed?: boolean;
+};
+
+type LegacyProject = Partial<Project> & {
+  todos?: LegacyTodo[];
+};
+
+type LegacyWorkLog = Partial<WorkLog>;
+
+type LegacyAppState = Partial<AppState> & {
+  projects?: LegacyProject[];
+  workLogs?: LegacyWorkLog[];
+};
+
+const TASK_STATUSES: TaskStatus[] = ["대기", "진행중", "미완", "완료", "보류"];
+const TASK_PRIORITIES: TaskPriority[] = ["낮음", "보통", "높음", "최우선"];
+const WORK_LOG_TYPES: WorkLogType[] = ["계획", "수행", "특이사항"];
 
 let state = loadState();
 
+function isTaskStatus(value: unknown): value is TaskStatus {
+  return typeof value === "string" && TASK_STATUSES.includes(value as TaskStatus);
+}
+
+function isTaskPriority(value: unknown): value is TaskPriority {
+  return typeof value === "string" && TASK_PRIORITIES.includes(value as TaskPriority);
+}
+
+function isWorkLogType(value: unknown): value is WorkLogType {
+  return typeof value === "string" && WORK_LOG_TYPES.includes(value as WorkLogType);
+}
+
+function normalizeProgress(value: unknown, completed: boolean): number {
+  if (completed) {
+    return 1;
+  }
+
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return 0;
+  }
+
+  return Math.min(1, Math.max(0, value));
+}
+
+function synchronizeTodoStatus(todo: Todo): Todo {
+  if (todo.progress >= 1 || todo.status === "완료") {
+    return {
+      ...todo,
+      completed: true,
+      progress: 1,
+      status: "완료",
+    };
+  }
+
+  return {
+    ...todo,
+    completed: false,
+  };
+}
+
+function normalizeTodo(todo: LegacyTodo, index: number): Todo {
+  const completed = todo.completed === true;
+  const progress = normalizeProgress(todo.progress, completed);
+  const status = completed || progress >= 1 ? "완료" : isTaskStatus(todo.status) ? todo.status : "대기";
+
+  return synchronizeTodoStatus({
+    id: todo.id ?? `todo-${index}`,
+    title: todo.title ?? "Untitled task",
+    dueDate: todo.dueDate ?? null,
+    estimate: todo.estimate ?? "",
+    status,
+    progress,
+    workerComment: todo.workerComment ?? "",
+    managerComment: todo.managerComment ?? "",
+    issueRisk: todo.issueRisk ?? "",
+    priority: isTaskPriority(todo.priority) ? todo.priority : "보통",
+    memo: todo.memo ?? "",
+    completed,
+  });
+}
+
+function normalizeProject(project: LegacyProject, index: number): Project {
+  return {
+    id: project.id ?? `project-${index}`,
+    name: project.name ?? "new project",
+    clientName: project.clientName ?? "",
+    projectNumber: project.projectNumber ?? "",
+    periodStart: project.periodStart ?? null,
+    periodEnd: project.periodEnd ?? null,
+    periodText: project.periodText ?? "",
+    color: project.color ?? getProjectColor(index),
+    todos: (project.todos ?? []).map(normalizeTodo),
+  };
+}
+
+function normalizeWorkLog(workLog: LegacyWorkLog, index: number): WorkLog {
+  return {
+    id: workLog.id ?? `work-log-${index}`,
+    projectId: workLog.projectId ?? "",
+    todoId: workLog.todoId,
+    date: workLog.date ?? new Date().toISOString().slice(0, 10),
+    type: isWorkLogType(workLog.type) ? workLog.type : "계획",
+    content: workLog.content ?? "",
+  };
+}
+
+function migrateState(rawState: LegacyAppState): AppState {
+  const projects = (rawState.projects ?? []).map(normalizeProject);
+  const activeProjectId =
+    rawState.activeProjectId && projects.some((project) => project.id === rawState.activeProjectId)
+      ? rawState.activeProjectId
+      : projects[0]?.id ?? null;
+
+  return {
+    projects,
+    activeProjectId,
+    workLogs: (rawState.workLogs ?? []).map(normalizeWorkLog),
+  };
+}
+
 function loadState(): AppState {
-  const rawState = localStorage.getItem(STORAGE_KEY);
+  const rawState = loadRawState();
   if (!rawState) {
     return createSampleState();
   }
 
   try {
-    const parsedState = JSON.parse(rawState) as AppState;
-
-    return {
-      ...parsedState,
-      projects: parsedState.projects.map((project, index) => ({
-        ...project,
-        color: project.color ?? getProjectColor(index),
-        todos: project.todos.map((todo) => ({
-          ...todo,
-          memo: todo.memo ?? "",
-        })),
-      })),
-    };
+    return migrateState(JSON.parse(rawState) as LegacyAppState);
   } catch {
-    return { projects: [], activeProjectId: null };
+    return createSampleState();
   }
 }
 
 function saveState(): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  saveRawState(state);
 }
 
 export function getState(): AppState {
@@ -43,19 +150,23 @@ export function getActiveProject(): Project | undefined {
 }
 
 export function addProject(project: Project): void {
-  state.projects.push(project);
+  state.projects.push(normalizeProject(project, state.projects.length));
   state.activeProjectId = project.id;
   saveState();
 }
 
-export function updateActiveProjectColor(color: string): void {
+export function updateActiveProject(updates: Partial<Project>): void {
   const activeProject = getActiveProject();
   if (!activeProject) {
     return;
   }
 
-  activeProject.color = color;
+  Object.assign(activeProject, updates);
   saveState();
+}
+
+export function updateActiveProjectColor(color: string): void {
+  updateActiveProject({ color });
 }
 
 export function selectProject(projectId: string): void {
@@ -87,6 +198,7 @@ export function deleteActiveProject(): void {
 
   state.projects = state.projects.filter((project) => project.id !== activeProject.id);
   state.activeProjectId = state.projects[0]?.id ?? null;
+  state.workLogs = state.workLogs.filter((workLog) => workLog.projectId !== activeProject.id);
   saveState();
 }
 
@@ -96,29 +208,33 @@ export function addTodo(todo: Todo): void {
     return;
   }
 
-  activeProject.todos.push(todo);
+  activeProject.todos.push(normalizeTodo(todo, activeProject.todos.length));
   saveState();
 }
 
-export function updateTodo(todoId: string, updates: Pick<Todo, "dueDate" | "memo">): void {
-  const todo = getActiveProject()?.todos.find((item) => item.id === todoId);
-  if (!todo) {
+export function updateTodo(todoId: string, updates: Partial<Todo>): void {
+  const activeProject = getActiveProject();
+  const todoIndex = activeProject?.todos.findIndex((item) => item.id === todoId) ?? -1;
+  if (!activeProject || todoIndex < 0) {
     return;
   }
 
-  todo.dueDate = updates.dueDate;
-  todo.memo = updates.memo;
+  activeProject.todos[todoIndex] = normalizeTodo(
+    {
+      ...activeProject.todos[todoIndex],
+      ...updates,
+    },
+    todoIndex,
+  );
   saveState();
 }
 
 export function toggleTodo(todoId: string, completed: boolean): void {
-  const todo = getActiveProject()?.todos.find((item) => item.id === todoId);
-  if (!todo) {
-    return;
-  }
-
-  todo.completed = completed;
-  saveState();
+  updateTodo(todoId, {
+    completed,
+    status: completed ? "완료" : "대기",
+    progress: completed ? 1 : 0,
+  });
 }
 
 export function deleteTodo(todoId: string): void {
@@ -128,5 +244,32 @@ export function deleteTodo(todoId: string): void {
   }
 
   activeProject.todos = activeProject.todos.filter((todo) => todo.id !== todoId);
+  state.workLogs = state.workLogs.filter((workLog) => workLog.todoId !== todoId);
+  saveState();
+}
+
+export function addWorkLog(workLog: WorkLog): void {
+  state.workLogs.push(normalizeWorkLog(workLog, state.workLogs.length));
+  saveState();
+}
+
+export function updateWorkLog(workLogId: string, updates: Partial<WorkLog>): void {
+  const workLogIndex = state.workLogs.findIndex((workLog) => workLog.id === workLogId);
+  if (workLogIndex < 0) {
+    return;
+  }
+
+  state.workLogs[workLogIndex] = normalizeWorkLog(
+    {
+      ...state.workLogs[workLogIndex],
+      ...updates,
+    },
+    workLogIndex,
+  );
+  saveState();
+}
+
+export function deleteWorkLog(workLogId: string): void {
+  state.workLogs = state.workLogs.filter((workLog) => workLog.id !== workLogId);
   saveState();
 }

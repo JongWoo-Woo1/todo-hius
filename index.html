@@ -32,6 +32,34 @@
           </div>
         </header>
 
+        <section class="project-info-card">
+          <div class="section-header">
+            <h3>Project Info</h3>
+          </div>
+          <form id="project-info-form" class="project-info-form">
+            <label>
+              Client
+              <input id="project-client-name" type="text" placeholder="Client name" />
+            </label>
+            <label>
+              Project No.
+              <input id="project-number" type="text" placeholder="Project number" />
+            </label>
+            <label>
+              Period
+              <input id="project-period-text" type="text" placeholder="Example: 2026 Q2 - Q3" />
+            </label>
+            <label>
+              Start
+              <input id="project-period-start" type="date" />
+            </label>
+            <label>
+              End
+              <input id="project-period-end" type="date" />
+            </label>
+          </form>
+        </section>
+
         <form id="todo-form" class="todo-form">
           <label>
             Task
@@ -67,11 +95,62 @@
 
             <form id="todo-detail-form" class="detail-form">
               <label>
-                Due date
+                Task
+                <input id="todo-detail-task-title" type="text" required />
+              </label>
+
+              <label>
+                Target date
                 <input id="todo-detail-due-date" type="date" />
               </label>
 
               <label>
+                Estimate
+                <input id="todo-detail-estimate" type="text" placeholder="Example: 2d" />
+              </label>
+
+              <label>
+                Status
+                <select id="todo-detail-status">
+                  <option value="대기">대기</option>
+                  <option value="진행중">진행중</option>
+                  <option value="미완">미완</option>
+                  <option value="완료">완료</option>
+                  <option value="보류">보류</option>
+                </select>
+              </label>
+
+              <label>
+                Progress (%)
+                <input id="todo-detail-progress" type="number" min="0" max="100" step="1" />
+              </label>
+
+              <label>
+                Priority
+                <select id="todo-detail-priority">
+                  <option value="낮음">낮음</option>
+                  <option value="보통">보통</option>
+                  <option value="높음">높음</option>
+                  <option value="최우선">최우선</option>
+                </select>
+              </label>
+
+              <label class="full-field">
+                Worker Comment
+                <textarea id="todo-detail-worker-comment" rows="4" placeholder="Comment from owner"></textarea>
+              </label>
+
+              <label class="full-field">
+                Manager Comment
+                <textarea id="todo-detail-manager-comment" rows="4" placeholder="Comment from manager"></textarea>
+              </label>
+
+              <label class="full-field">
+                Issue / Risk
+                <textarea id="todo-detail-issue-risk" rows="4" placeholder="Known issue or risk"></textarea>
+              </label>
+
+              <label class="full-field">
                 Memo
                 <textarea id="todo-detail-memo" rows="8" placeholder="Add notes for this task"></textarea>
               </label>
@@ -96,6 +175,21 @@
           </div>
         </header>
 
+        <section id="calendar-range-controls" class="calendar-range-controls" hidden>
+          <label>
+            Start
+            <select id="calendar-start-month"></select>
+          </label>
+          <label>
+            End
+            <select id="calendar-end-month"></select>
+          </label>
+          <label>
+            Columns
+            <select id="calendar-columns"></select>
+          </label>
+        </section>
+
         <section class="calendar-filters">
           <div class="calendar-filter-header">
             <h3>Projects</h3>
@@ -104,7 +198,7 @@
           <div id="calendar-filter-list" class="calendar-filter-list"></div>
         </section>
 
-        <div class="calendar-weekdays" aria-hidden="true">
+        <div id="calendar-weekdays" class="calendar-weekdays" aria-hidden="true">
           <span>Sun</span>
           <span>Mon</span>
           <span>Tue</span>

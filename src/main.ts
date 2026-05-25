@@ -4,38 +4,57 @@ import {
   deleteActiveProject,
   getActiveProject,
   getState,
+  updateActiveProject,
   updateActiveProjectColor,
   updateTodo,
 } from "./state/store";
-import type { Project, Todo } from "./types";
+import type { Project, TaskPriority, TaskStatus, Todo } from "./types";
 import { createId } from "./utils/id";
+import { getProjectColor } from "./utils/projectColor";
 import {
   addProjectButton,
-  closeTodoDetailButton,
+  calendarColumnSelect,
+  calendarEndMonthSelect,
+  calendarStartMonthSelect,
   calendarViewButton,
+  closeTodoDetailButton,
   deleteProjectButton,
   nextMonthButton,
   previousMonthButton,
+  projectClientNameInput,
   projectColorInput,
+  projectInfoForm,
+  projectNumberInput,
+  projectPeriodEndInput,
+  projectPeriodStartInput,
+  projectPeriodTextInput,
   todoDetailDueDateInput,
+  todoDetailEstimateInput,
   todoDetailForm,
+  todoDetailIssueRiskInput,
+  todoDetailManagerCommentInput,
   todoDetailMemoInput,
+  todoDetailPrioritySelect,
+  todoDetailProgressInput,
+  todoDetailStatusSelect,
+  todoDetailTaskTitleInput,
+  todoDetailWorkerCommentInput,
   todoDueDateInput,
   todoForm,
   todoTitleInput,
   toggleAllProjectsButton,
 } from "./ui/dom";
 import {
+  activateCalendarButton,
   clearSelectedTodo,
   getSelectedTodoId,
   goToNextMonth,
   goToPreviousMonth,
   render,
-  showCalendarView,
   showProjectView,
   toggleAllCalendarProjects,
+  updateCalendarRangePreferences,
 } from "./ui/render";
-import { getProjectColor } from "./utils/projectColor";
 
 function createUniqueProjectName(): string {
   const baseName = "new project";
@@ -52,16 +71,41 @@ function createUniqueProjectName(): string {
   return `${baseName} ${count}`;
 }
 
+function getProgressFromPercentInput(): number {
+  const progressPercent = Number(todoDetailProgressInput.value);
+  if (Number.isNaN(progressPercent)) {
+    return 0;
+  }
+
+  return Math.min(1, Math.max(0, progressPercent / 100));
+}
+
 addProjectButton.addEventListener("click", () => {
   const project: Project = {
     id: createId(),
     name: createUniqueProjectName(),
+    clientName: "",
+    projectNumber: "",
+    periodStart: null,
+    periodEnd: null,
+    periodText: "",
     color: getProjectColor(getState().projects.length),
     todos: [],
   };
 
   addProject(project);
   showProjectView();
+  render();
+});
+
+projectInfoForm.addEventListener("change", () => {
+  updateActiveProject({
+    clientName: projectClientNameInput.value.trim(),
+    projectNumber: projectNumberInput.value.trim(),
+    periodText: projectPeriodTextInput.value.trim(),
+    periodStart: projectPeriodStartInput.value || null,
+    periodEnd: projectPeriodEndInput.value || null,
+  });
   render();
 });
 
@@ -77,6 +121,13 @@ todoForm.addEventListener("submit", (event) => {
     id: createId(),
     title,
     dueDate: todoDueDateInput.value || null,
+    estimate: "",
+    status: "대기",
+    progress: 0,
+    workerComment: "",
+    managerComment: "",
+    issueRisk: "",
+    priority: "보통",
     memo: "",
     completed: false,
   };
@@ -104,8 +155,21 @@ todoDetailForm.addEventListener("submit", (event) => {
     return;
   }
 
+  const progress = getProgressFromPercentInput();
+  const selectedStatus = todoDetailStatusSelect.value as TaskStatus;
+  const status: TaskStatus = progress >= 1 ? "완료" : selectedStatus;
+
   updateTodo(selectedTodoId, {
+    title: todoDetailTaskTitleInput.value.trim(),
     dueDate: todoDetailDueDateInput.value || null,
+    estimate: todoDetailEstimateInput.value.trim(),
+    status,
+    progress,
+    completed: status === "완료",
+    priority: todoDetailPrioritySelect.value as TaskPriority,
+    workerComment: todoDetailWorkerCommentInput.value.trim(),
+    managerComment: todoDetailManagerCommentInput.value.trim(),
+    issueRisk: todoDetailIssueRiskInput.value.trim(),
     memo: todoDetailMemoInput.value.trim(),
   });
   render();
@@ -117,7 +181,28 @@ closeTodoDetailButton.addEventListener("click", () => {
 });
 
 calendarViewButton.addEventListener("click", () => {
-  showCalendarView();
+  activateCalendarButton();
+  render();
+});
+
+calendarStartMonthSelect.addEventListener("change", () => {
+  updateCalendarRangePreferences({
+    startMonth: Number(calendarStartMonthSelect.value),
+  });
+  render();
+});
+
+calendarEndMonthSelect.addEventListener("change", () => {
+  updateCalendarRangePreferences({
+    endMonth: Number(calendarEndMonthSelect.value),
+  });
+  render();
+});
+
+calendarColumnSelect.addEventListener("change", () => {
+  updateCalendarRangePreferences({
+    columns: Number(calendarColumnSelect.value),
+  });
   render();
 });
 

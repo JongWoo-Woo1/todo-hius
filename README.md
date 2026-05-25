@@ -27,3 +27,8 @@
 - `npm run typecheck`: Check TypeScript without emitting files
 
 `src/` is the source of truth. Vite loads `src/main.ts` directly during development and emits optimized production files into `dist/` during build.
+
+## Project History
+
+- See `CHANGELOG.md` for the chronological development history.
+- See `VERSIONING.md` for commit, versioning, and release guidelines.

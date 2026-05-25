@@ -29,6 +29,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -88,6 +89,7 @@ button {
 }
 
 input,
+select,
 textarea {
   width: 100%;
   border: 1px solid var(--line);
@@ -228,6 +230,42 @@ button {
   color: var(--danger);
 }
 
+.project-info-card {
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 16px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-header h3 {
+  margin: 0;
+}
+
+.project-info-form {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.project-info-form[hidden] {
+  display: none;
+}
+
+.project-info-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .todo-form {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) 180px auto;
@@ -305,10 +343,60 @@ button {
   word-break: break-word;
 }
 
-.todo-date {
+.todo-date,
+.todo-meta {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 14px;
+}
+
+.todo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.status-badge,
+.progress-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge {
+  margin-right: 6px;
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.status-badge[data-status="진행중"] {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge[data-status="미완"] {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge[data-status="완료"] {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.status-badge[data-status="보류"] {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.progress-pill {
+  background: #f3f4f6;
+  color: var(--text);
 }
 
 .delete-todo-button {
@@ -350,6 +438,7 @@ button {
 
 .detail-form {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -358,6 +447,15 @@ button {
   gap: 8px;
   color: var(--muted);
   font-size: 14px;
+}
+
+.detail-form .full-field,
+.detail-form button {
+  grid-column: 1 / -1;
+}
+
+.detail-form textarea {
+  min-height: 96px;
 }
 
 .calendar-header {
@@ -385,6 +483,33 @@ button {
 
 .calendar-filters {
   margin-bottom: 18px;
+}
+
+.calendar-range-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.calendar-range-controls[hidden] {
+  display: none;
+}
+
+.calendar-range-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.calendar-range-controls select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  padding: 10px 12px;
 }
 
 .calendar-filter-header {
@@ -440,6 +565,35 @@ button {
   border-top: 1px solid var(--line);
   border-left: 1px solid var(--line);
   background: var(--panel);
+}
+
+.calendar-range-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--calendar-range-columns), minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.calendar-month-panel {
+  min-width: 0;
+}
+
+.calendar-month-panel h3 {
+  margin: 0 0 10px;
+}
+
+.month-weekdays {
+  margin-bottom: 6px;
+}
+
+.compact-calendar-grid .calendar-cell {
+  min-height: 92px;
+  padding: 8px;
+}
+
+.compact-calendar-grid .calendar-item {
+  padding: 5px 6px;
+  font-size: 12px;
 }
 
 .calendar-cell {
@@ -514,6 +668,10 @@ button {
     justify-content: space-between;
   }
 
+  .project-info-form {
+    grid-template-columns: 1fr;
+  }
+
   .todo-form {
     grid-template-columns: 1fr;
   }
@@ -522,9 +680,21 @@ button {
     grid-template-columns: 1fr;
   }
 
+  .detail-form {
+    grid-template-columns: 1fr;
+  }
+
   .calendar-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .calendar-range-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-range-grid {
+    grid-template-columns: 1fr;
   }
 
   .calendar-weekdays span {

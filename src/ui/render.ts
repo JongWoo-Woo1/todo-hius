@@ -1,33 +1,70 @@
+import {
+  loadCalendarRangePreferences,
+  normalizeCalendarRangePreferences,
+  saveCalendarRangePreferences,
+  type CalendarRangePreferences,
+} from "../state/calendarPreferences";
 import { deleteTodo, getActiveProject, getState, reorderProjects, selectProject, toggleTodo } from "../state/store";
 import { getMonthGridDates, getMonthLabel, toDateKey } from "../utils/calendar";
 import { formatDueDate } from "../utils/date";
 import {
   activeProjectName,
-  calendarGrid,
+  calendarColumnSelect,
+  calendarEndMonthSelect,
   calendarFilterList,
+  calendarGrid,
   calendarMonthLabel,
+  calendarRangeControls,
+  calendarStartMonthSelect,
   calendarViewButton,
+  calendarWeekdays,
+  calendarWorkspace,
   deleteProjectButton,
   emptyState,
-  projectList,
   projectColorInput,
+  projectClientNameInput,
+  projectInfoForm,
+  projectList,
+  projectNumberInput,
+  projectPeriodEndInput,
+  projectPeriodStartInput,
+  projectPeriodTextInput,
   projectWorkspace,
   todoCount,
   todoDetailDueDateInput,
+  todoDetailEstimateInput,
+  todoDetailIssueRiskInput,
+  todoDetailManagerCommentInput,
   todoDetailMemoInput,
   todoDetailPanel,
+  todoDetailPrioritySelect,
+  todoDetailProgressInput,
+  todoDetailStatusSelect,
+  todoDetailTaskTitleInput,
   todoDetailTitle,
+  todoDetailWorkerCommentInput,
   todoForm,
   todoList,
-  calendarWorkspace,
   toggleAllProjectsButton,
 } from "./dom";
 
+type CalendarTodo = {
+  projectName: string;
+  title: string;
+  completed: boolean;
+  color: string;
+};
+
 let selectedTodoId: string | null = null;
-let currentView: "projects" | "calendar" = "projects";
+let currentView: "projects" | "calendar" = "calendar";
 let visibleMonth = new Date();
 let selectedCalendarProjectIds: Set<string> | null = null;
 let draggedProjectId: string | null = null;
+let calendarMode: "month" | "range" = "month";
+let calendarRangePreferences = loadCalendarRangePreferences();
+
+const RANGE_CALENDAR_YEAR = 2026;
+const MONTH_LABELS = Array.from({ length: 12 }, (_, index) => `${index + 1}`);
 
 function ensureCalendarSelection(): void {
   const projectIds = getState().projects.map((project) => project.id);
@@ -122,13 +159,9 @@ function renderProjects(): void {
   });
 }
 
-function renderCalendar(): void {
-  ensureCalendarSelection();
+function getDueTodosByDate(): Map<string, CalendarTodo[]> {
   const selectedProjectIds = selectedCalendarProjectIds ?? new Set<string>();
-  const dueTodosByDate = new Map<
-    string,
-    Array<{ projectName: string; title: string; completed: boolean; color: string }>
-  >();
+  const dueTodosByDate = new Map<string, CalendarTodo[]>();
 
   getState().projects.forEach((project) => {
     if (!selectedProjectIds.has(project.id)) {
@@ -151,14 +184,15 @@ function renderCalendar(): void {
     });
   });
 
-  calendarMonthLabel.textContent = getMonthLabel(visibleMonth);
-  calendarGrid.innerHTML = "";
+  return dueTodosByDate;
+}
 
-  getMonthGridDates(visibleMonth).forEach((date) => {
+function appendMonthGrid(monthDate: Date, dueTodosByDate: Map<string, CalendarTodo[]>, container: HTMLElement): void {
+  getMonthGridDates(monthDate).forEach((date) => {
     const dateKey = toDateKey(date);
     const cell = document.createElement("section");
     cell.className = "calendar-cell";
-    cell.classList.toggle("outside-month", date.getMonth() !== visibleMonth.getMonth());
+    cell.classList.toggle("outside-month", date.getMonth() !== monthDate.getMonth());
 
     const dateLabel = document.createElement("p");
     dateLabel.className = "calendar-date";
@@ -178,8 +212,71 @@ function renderCalendar(): void {
       cell.append(item);
     });
 
-    calendarGrid.append(cell);
+    container.append(cell);
   });
+}
+
+function appendWeekdays(container: HTMLElement): void {
+  const weekdays = document.createElement("div");
+  weekdays.className = "calendar-weekdays month-weekdays";
+  weekdays.setAttribute("aria-hidden", "true");
+  weekdays.innerHTML = `
+    <span>Sun</span>
+    <span>Mon</span>
+    <span>Tue</span>
+    <span>Wed</span>
+    <span>Thu</span>
+    <span>Fri</span>
+    <span>Sat</span>
+  `;
+  container.append(weekdays);
+}
+
+function renderMonthCalendar(dueTodosByDate: Map<string, CalendarTodo[]>): void {
+  calendarMonthLabel.textContent = getMonthLabel(visibleMonth);
+  calendarGrid.className = "calendar-grid";
+  calendarGrid.removeAttribute("style");
+  appendMonthGrid(visibleMonth, dueTodosByDate, calendarGrid);
+}
+
+function renderRangeCalendar(dueTodosByDate: Map<string, CalendarTodo[]>): void {
+  const preferences = normalizeCalendarRangePreferences(calendarRangePreferences);
+  calendarRangePreferences = preferences;
+  calendarMonthLabel.textContent = `${RANGE_CALENDAR_YEAR}`;
+  calendarGrid.className = "calendar-range-grid";
+  calendarGrid.style.setProperty("--calendar-range-columns", String(preferences.columns));
+
+  for (let month = preferences.startMonth; month <= preferences.endMonth; month += 1) {
+    const monthSection = document.createElement("section");
+    monthSection.className = "calendar-month-panel";
+
+    const monthTitle = document.createElement("h3");
+    monthTitle.textContent = `${RANGE_CALENDAR_YEAR}.${String(month).padStart(2, "0")}`;
+    monthSection.append(monthTitle);
+    appendWeekdays(monthSection);
+
+    const monthGrid = document.createElement("div");
+    monthGrid.className = "calendar-grid compact-calendar-grid";
+    appendMonthGrid(new Date(RANGE_CALENDAR_YEAR, month - 1, 1), dueTodosByDate, monthGrid);
+    monthSection.append(monthGrid);
+
+    calendarGrid.append(monthSection);
+  }
+}
+
+function renderCalendar(): void {
+  ensureCalendarSelection();
+  const dueTodosByDate = getDueTodosByDate();
+  calendarGrid.innerHTML = "";
+  calendarRangeControls.hidden = calendarMode !== "range";
+  calendarWeekdays.hidden = calendarMode === "range";
+
+  if (calendarMode === "range") {
+    renderRangeCalendar(dueTodosByDate);
+    return;
+  }
+
+  renderMonthCalendar(dueTodosByDate);
 }
 
 function renderCalendarFilters(): void {
@@ -215,9 +312,40 @@ function renderCalendarFilters(): void {
     calendarFilterList.append(label);
   });
 
-  const allSelected =
-    getState().projects.length > 0 && selectedProjectIds.size === getState().projects.length;
+  const allSelected = getState().projects.length > 0 && selectedProjectIds.size === getState().projects.length;
   toggleAllProjectsButton.textContent = allSelected ? "Clear all" : "Select all";
+}
+
+function renderMonthOptions(): void {
+  calendarStartMonthSelect.innerHTML = "";
+  calendarEndMonthSelect.innerHTML = "";
+
+  MONTH_LABELS.forEach((label, index) => {
+    const month = index + 1;
+    calendarStartMonthSelect.append(new Option(label, String(month)));
+    calendarEndMonthSelect.append(new Option(label, String(month)));
+  });
+
+  calendarStartMonthSelect.value = String(calendarRangePreferences.startMonth);
+  calendarEndMonthSelect.value = String(calendarRangePreferences.endMonth);
+}
+
+function renderColumnOptions(): void {
+  const monthCount = calendarRangePreferences.endMonth - calendarRangePreferences.startMonth + 1;
+  const maxColumns = Math.min(4, monthCount);
+  calendarColumnSelect.innerHTML = "";
+
+  for (let columns = 1; columns <= maxColumns; columns += 1) {
+    calendarColumnSelect.append(new Option(String(columns), String(columns)));
+  }
+
+  calendarRangePreferences = normalizeCalendarRangePreferences(calendarRangePreferences);
+  calendarColumnSelect.value = String(calendarRangePreferences.columns);
+}
+
+function renderRangeControls(): void {
+  renderMonthOptions();
+  renderColumnOptions();
 }
 
 function renderTodos(): void {
@@ -230,6 +358,7 @@ function renderTodos(): void {
     emptyState.textContent = "Create a project first.";
     emptyState.hidden = false;
     todoForm.hidden = true;
+    projectInfoForm.hidden = true;
     deleteProjectButton.hidden = true;
     selectedTodoId = null;
     renderTodoDetail();
@@ -239,10 +368,16 @@ function renderTodos(): void {
   sortTodosByDueDate();
   activeProjectName.textContent = activeProject.name;
   projectColorInput.value = activeProject.color;
+  projectClientNameInput.value = activeProject.clientName;
+  projectNumberInput.value = activeProject.projectNumber ?? "";
+  projectPeriodTextInput.value = activeProject.periodText ?? "";
+  projectPeriodStartInput.value = activeProject.periodStart ?? "";
+  projectPeriodEndInput.value = activeProject.periodEnd ?? "";
   todoCount.textContent = `${activeProject.todos.length} items`;
   emptyState.textContent = "No tasks yet.";
   emptyState.hidden = activeProject.todos.length > 0;
   todoForm.hidden = false;
+  projectInfoForm.hidden = false;
   deleteProjectButton.hidden = false;
 
   activeProject.todos.forEach((todo) => {
@@ -265,9 +400,16 @@ function renderTodos(): void {
 
     const copy = document.createElement("div");
     copy.className = "todo-copy";
+    const progressPercent = Math.round(todo.progress * 100);
     copy.innerHTML = `
-      <p class="todo-title">${todo.title}</p>
-      <p class="todo-date">${formatDueDate(todo.dueDate)}</p>
+      <p class="todo-title">
+        <span class="status-badge" data-status="${todo.status}">${todo.status}</span>
+        ${todo.title}
+      </p>
+      <p class="todo-meta">
+        <span class="progress-pill">${progressPercent}%</span>
+        <span>${formatDueDate(todo.dueDate)}</span>
+      </p>
     `;
 
     const deleteButton = document.createElement("button");
@@ -305,7 +447,15 @@ function renderTodoDetail(): void {
   }
 
   todoDetailTitle.textContent = selectedTodo.title;
+  todoDetailTaskTitleInput.value = selectedTodo.title;
   todoDetailDueDateInput.value = selectedTodo.dueDate ?? "";
+  todoDetailEstimateInput.value = selectedTodo.estimate ?? "";
+  todoDetailStatusSelect.value = selectedTodo.status;
+  todoDetailProgressInput.value = String(Math.round(selectedTodo.progress * 100));
+  todoDetailPrioritySelect.value = selectedTodo.priority ?? "보통";
+  todoDetailWorkerCommentInput.value = selectedTodo.workerComment ?? "";
+  todoDetailManagerCommentInput.value = selectedTodo.managerComment ?? "";
+  todoDetailIssueRiskInput.value = selectedTodo.issueRisk ?? "";
   todoDetailMemoInput.value = selectedTodo.memo;
   todoDetailPanel.hidden = false;
 }
@@ -322,7 +472,12 @@ export function showProjectView(): void {
   currentView = "projects";
 }
 
-export function showCalendarView(): void {
+export function activateCalendarButton(): void {
+  if (currentView === "calendar") {
+    calendarMode = calendarMode === "month" ? "range" : "month";
+    return;
+  }
+
   currentView = "calendar";
 }
 
@@ -341,9 +496,18 @@ export function toggleAllCalendarProjects(): void {
   selectedCalendarProjectIds = allSelected ? new Set() : new Set(projectIds);
 }
 
+export function updateCalendarRangePreferences(updates: Partial<CalendarRangePreferences>): void {
+  calendarRangePreferences = normalizeCalendarRangePreferences({
+    ...calendarRangePreferences,
+    ...updates,
+  });
+  saveCalendarRangePreferences(calendarRangePreferences);
+}
+
 export function render(): void {
   renderProjects();
   renderTodos();
+  renderRangeControls();
   renderCalendarFilters();
   renderCalendar();
   projectWorkspace.hidden = currentView !== "projects";
