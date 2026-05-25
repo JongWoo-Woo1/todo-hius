@@ -746,6 +746,109 @@ button {
   text-decoration: line-through;
 }
 
+.work-log-card {
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 16px;
+}
+
+.work-log-form {
+  display: grid;
+  grid-template-columns: 150px 150px minmax(180px, 1fr) minmax(180px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.work-log-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.work-log-form .full-field {
+  grid-column: 1 / -2;
+}
+
+.weekly-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.weekly-day-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 14px;
+}
+
+.weekly-day-title {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.weekly-day-title span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.weekly-day-title strong {
+  font-size: 15px;
+}
+
+.weekly-section {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.weekly-section h4 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.weekly-item {
+  display: grid;
+  gap: 8px;
+  border-left: 3px solid var(--project-color);
+  background: color-mix(in srgb, var(--project-color) 10%, white);
+  padding: 9px 10px;
+  font-size: 13px;
+}
+
+.weekly-item.todo-source {
+  background: #f8fafc;
+}
+
+.weekly-item p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.delete-work-log-button {
+  justify-self: start;
+  background: transparent;
+  color: var(--danger);
+  padding: 4px 0;
+}
+
+.weekly-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 @media (max-width: 760px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -796,6 +899,18 @@ button {
   }
 
   .calendar-range-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .work-log-form {
+    grid-template-columns: 1fr;
+  }
+
+  .work-log-form .full-field {
+    grid-column: auto;
+  }
+
+  .weekly-grid {
     grid-template-columns: 1fr;
   }
 

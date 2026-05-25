@@ -4,9 +4,10 @@ import {
   saveCalendarRangePreferences,
   type CalendarRangePreferences,
 } from "../state/calendarPreferences";
-import { deleteTodo, getActiveProject, getState, reorderProjects, selectProject, toggleTodo } from "../state/store";
+import { deleteTodo, deleteWorkLog, getActiveProject, getState, reorderProjects, selectProject, toggleTodo } from "../state/store";
 import { getMonthGridDates, getMonthLabel, toDateKey } from "../utils/calendar";
 import { formatDueDate } from "../utils/date";
+import { getWeekRangeLabel, getWeekdays } from "../utils/week";
 import {
   activeProjectName,
   calendarColumnSelect,
@@ -53,6 +54,13 @@ import {
   todoForm,
   todoList,
   toggleAllProjectsButton,
+  weeklyGrid,
+  weeklyRangeLabel,
+  weeklyViewButton,
+  weeklyWorkspace,
+  workLogDateInput,
+  workLogProjectSelect,
+  workLogTodoSelect,
 } from "./dom";
 
 type CalendarTodo = {
@@ -62,9 +70,18 @@ type CalendarTodo = {
   color: string;
 };
 
+type WeeklyItem = {
+  id?: string;
+  projectName: string;
+  content: string;
+  color: string;
+  source: "todo" | "workLog";
+};
+
 let selectedTodoId: string | null = null;
-let currentView: "projects" | "ledger" | "calendar" = "calendar";
+let currentView: "projects" | "ledger" | "weekly" | "calendar" = "calendar";
 let visibleMonth = new Date();
+let visibleWeekDate = new Date();
 let selectedCalendarProjectIds: Set<string> | null = null;
 let draggedProjectId: string | null = null;
 let calendarMode: "month" | "range" = "month";
@@ -72,6 +89,11 @@ let calendarRangePreferences = loadCalendarRangePreferences();
 
 const RANGE_CALENDAR_YEAR = 2026;
 const MONTH_LABELS = Array.from({ length: 12 }, (_, index) => `${index + 1}`);
+const WEEKLY_SECTIONS = [
+  { key: "plan", title: "업무 계획" },
+  { key: "done", title: "업무 내용" },
+  { key: "note", title: "특이사항" },
+] as const;
 
 function ensureCalendarSelection(): void {
   const projectIds = getState().projects.map((project) => project.id);
@@ -195,6 +217,174 @@ function renderLedger(): void {
   });
 
   ledgerEmptyState.hidden = rowCount > 0;
+}
+
+function renderWorkLogProjectOptions(): void {
+  const currentProjectId = workLogProjectSelect.value || getState().activeProjectId || "";
+  workLogProjectSelect.innerHTML = "";
+
+  getState().projects.forEach((project) => {
+    workLogProjectSelect.append(new Option(project.name, project.id));
+  });
+
+  const selectedProject = getState().projects.find((project) => project.id === currentProjectId) ?? getState().projects[0];
+  workLogProjectSelect.value = selectedProject?.id ?? "";
+}
+
+function renderWorkLogTodoOptions(): void {
+  const currentTodoId = workLogTodoSelect.value;
+  const selectedProject = getState().projects.find((project) => project.id === workLogProjectSelect.value);
+  workLogTodoSelect.innerHTML = "";
+  workLogTodoSelect.append(new Option("업무 연결 없음", ""));
+
+  selectedProject?.todos.forEach((todo) => {
+    workLogTodoSelect.append(new Option(todo.title, todo.id));
+  });
+
+  workLogTodoSelect.value = selectedProject?.todos.some((todo) => todo.id === currentTodoId) ? currentTodoId : "";
+}
+
+function renderWorkLogFormOptions(): void {
+  renderWorkLogProjectOptions();
+  renderWorkLogTodoOptions();
+  if (!workLogDateInput.value) {
+    workLogDateInput.value = toDateKey(getWeekdays(visibleWeekDate)[0]);
+  }
+}
+
+function createWeeklyBuckets(): Map<string, Record<(typeof WEEKLY_SECTIONS)[number]["key"], WeeklyItem[]>> {
+  const buckets = new Map<string, Record<(typeof WEEKLY_SECTIONS)[number]["key"], WeeklyItem[]>>();
+
+  getWeekdays(visibleWeekDate).forEach((date) => {
+    buckets.set(toDateKey(date), {
+      plan: [],
+      done: [],
+      note: [],
+    });
+  });
+
+  return buckets;
+}
+
+function renderWeeklyItem(item: WeeklyItem): HTMLElement {
+  const wrapper = document.createElement("div");
+  wrapper.className = "weekly-item";
+  wrapper.classList.toggle("todo-source", item.source === "todo");
+  wrapper.style.setProperty("--project-color", item.color);
+
+  const copy = document.createElement("p");
+  const projectName = document.createElement("strong");
+  projectName.textContent = `[${item.projectName}]`;
+  copy.append(projectName, ` ${item.content}`);
+  wrapper.append(copy);
+
+  if (item.source === "workLog" && item.id) {
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "delete-work-log-button";
+    deleteButton.textContent = "Delete";
+    deleteButton.addEventListener("click", () => {
+      deleteWorkLog(item.id!);
+      render();
+    });
+    wrapper.append(deleteButton);
+  }
+
+  return wrapper;
+}
+
+function renderWeeklySection(title: string, items: WeeklyItem[]): HTMLElement {
+  const section = document.createElement("section");
+  section.className = "weekly-section";
+
+  const heading = document.createElement("h4");
+  heading.textContent = title;
+  section.append(heading);
+
+  if (items.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "weekly-empty";
+    empty.textContent = "No items.";
+    section.append(empty);
+    return section;
+  }
+
+  items.forEach((item) => {
+    section.append(renderWeeklyItem(item));
+  });
+
+  return section;
+}
+
+function renderWeekly(): void {
+  renderWorkLogFormOptions();
+  weeklyRangeLabel.textContent = getWeekRangeLabel(visibleWeekDate);
+  weeklyGrid.innerHTML = "";
+
+  const buckets = createWeeklyBuckets();
+
+  getState().projects.forEach((project) => {
+    project.todos.forEach((todo) => {
+      if (!todo.dueDate || !buckets.has(todo.dueDate)) {
+        return;
+      }
+
+      buckets.get(todo.dueDate)!.plan.push({
+        projectName: project.name,
+        content: todo.title,
+        color: project.color,
+        source: "todo",
+      });
+    });
+  });
+
+  getState().workLogs.forEach((workLog) => {
+    const bucket = buckets.get(workLog.date);
+    if (!bucket) {
+      return;
+    }
+
+    const project = getState().projects.find((item) => item.id === workLog.projectId);
+    const projectName = project?.name ?? "Unknown";
+    const color = project?.color ?? "#94a3b8";
+    const item: WeeklyItem = {
+      id: workLog.id,
+      projectName,
+      content: workLog.content,
+      color,
+      source: "workLog",
+    };
+
+    if (workLog.type === "계획") {
+      bucket.plan.push(item);
+    } else if (workLog.type === "수행") {
+      bucket.done.push(item);
+    } else {
+      bucket.note.push(item);
+    }
+  });
+
+  getWeekdays(visibleWeekDate).forEach((date) => {
+    const dateKey = toDateKey(date);
+    const dayBuckets = buckets.get(dateKey)!;
+    const dayCard = document.createElement("article");
+    dayCard.className = "weekly-day-card";
+
+    const dayTitle = document.createElement("div");
+    dayTitle.className = "weekly-day-title";
+    const dayName = document.createElement("span");
+    dayName.textContent = date.toLocaleDateString("en-US", { weekday: "short" });
+    const dayDate = document.createElement("strong");
+    dayDate.textContent = dateKey;
+    dayTitle.append(dayName, dayDate);
+    dayCard.append(dayTitle);
+
+    WEEKLY_SECTIONS.forEach((section) => {
+      dayCard.append(renderWeeklySection(section.title, dayBuckets[section.key]));
+    });
+
+    weeklyGrid.append(dayCard);
+  });
 }
 
 function renderProjects(): void {
@@ -577,6 +767,10 @@ export function showLedgerView(): void {
   currentView = "ledger";
 }
 
+export function showWeeklyView(): void {
+  currentView = "weekly";
+}
+
 export function activateCalendarButton(): void {
   if (currentView === "calendar") {
     calendarMode = calendarMode === "month" ? "range" : "month";
@@ -592,6 +786,20 @@ export function goToPreviousMonth(): void {
 
 export function goToNextMonth(): void {
   visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+}
+
+export function goToPreviousWeek(): void {
+  visibleWeekDate = new Date(visibleWeekDate.getFullYear(), visibleWeekDate.getMonth(), visibleWeekDate.getDate() - 7);
+  workLogDateInput.value = toDateKey(getWeekdays(visibleWeekDate)[0]);
+}
+
+export function goToNextWeek(): void {
+  visibleWeekDate = new Date(visibleWeekDate.getFullYear(), visibleWeekDate.getMonth(), visibleWeekDate.getDate() + 7);
+  workLogDateInput.value = toDateKey(getWeekdays(visibleWeekDate)[0]);
+}
+
+export function getVisibleWeekDate(): Date {
+  return new Date(visibleWeekDate);
 }
 
 export function toggleAllCalendarProjects(): void {
@@ -614,11 +822,14 @@ export function render(): void {
   renderTodos();
   renderRangeControls();
   renderLedger();
+  renderWeekly();
   renderCalendarFilters();
   renderCalendar();
   projectWorkspace.hidden = currentView !== "projects";
   ledgerWorkspace.hidden = currentView !== "ledger";
+  weeklyWorkspace.hidden = currentView !== "weekly";
   calendarWorkspace.hidden = currentView !== "calendar";
   ledgerViewButton.classList.toggle("active", currentView === "ledger");
+  weeklyViewButton.classList.toggle("active", currentView === "weekly");
   calendarViewButton.classList.toggle("active", currentView === "calendar");
 }

@@ -2,7 +2,7 @@
 
 Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니다.
 
-프로젝트별 업무를 관리하고, 모든 프로젝트의 일정을 Calendar와 Ledger에서 한 번에 확인할 수 있습니다. 데이터는 브라우저 `localStorage`에 저장됩니다.
+프로젝트별 업무를 관리하고, 모든 프로젝트의 일정과 업무 현황을 Calendar, Weekly, Ledger View에서 확인할 수 있습니다. 데이터는 브라우저 `localStorage`에 저장됩니다.
 
 ## Main Features
 
@@ -34,6 +34,12 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
   - 프로젝트 체크박스로 원하는 프로젝트만 표시
   - 2026년 월 범위 Calendar 보기
   - 월 범위와 column 설정 캐싱
+- Weekly View:
+  - 월요일~금요일 기준 주간업무 리포트 확인
+  - Todo due date 기준 업무 계획 자동 표시
+  - 업무 계획, 업무 내용, 특이사항 WorkLog 추가
+  - WorkLog 삭제
+  - 이전 주 / 다음 주 이동
 - Ledger View:
   - 모든 프로젝트와 모든 Todo를 하나의 표로 확인
   - 상태, 업체명, 완료 업무 숨기기 필터
@@ -45,19 +51,25 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
 
 프로젝트 상세 화면입니다.
 
-프로젝트 기본 정보, 색상, Todo 목록, 선택한 Todo의 상세 정보를 수정할 수 있습니다.
-
-### Ledger
-
-전체 업무 원장 화면입니다.
-
-모든 프로젝트의 Todo를 회사 프로젝트 관리표처럼 하나의 table에서 확인합니다.
+왼쪽 프로젝트 목록에서 프로젝트를 클릭하면 진입합니다. 프로젝트 기본 정보, 색상, Todo 목록, 선택한 Todo의 상세 정보를 수정할 수 있습니다.
 
 ### Calendar
 
 전체 프로젝트 일정 화면입니다.
 
 앱을 처음 열면 Calendar가 기본으로 표시됩니다. Calendar 버튼을 다시 누르면 2026년 월 범위 Calendar 모드로 전환됩니다.
+
+### Weekly
+
+주간업무 리포트 화면입니다.
+
+월요일~금요일 기준으로 업무 계획, 업무 내용, 특이사항을 확인합니다. Todo의 due date는 업무 계획에 자동으로 표시되고, WorkLog form으로 계획/수행/특이사항을 직접 추가할 수 있습니다.
+
+### Ledger
+
+전체 업무 원장 화면입니다.
+
+모든 프로젝트의 Todo를 회사 프로젝트 관리표처럼 하나의 table에서 확인합니다.
 
 ## Folder Structure
 
@@ -74,11 +86,12 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
 - `src/styles.css`: app styling
 - `src/vite-env.d.ts`: Vite client type declarations for CSS and asset imports
 - `src/data/sampleProjects.ts`: initial demo projects for an empty browser state
-- `src/state/store.ts`: project and todo state changes
+- `src/state/store.ts`: project, todo, and work log state changes
 - `src/state/storage.ts`: localStorage raw read/write wrapper
 - `src/state/calendarPreferences.ts`: Calendar range preference storage
-- `src/ui/render.ts`: Project, Ledger, and Calendar rendering
+- `src/ui/render.ts`: Project, Ledger, Weekly, and Calendar rendering
 - `src/ui/dom.ts`: shared DOM element lookups
+- `src/utils/week.ts`: Monday-Friday weekly date helpers
 - `src/types.ts`: shared TypeScript types
 
 ## Scripts

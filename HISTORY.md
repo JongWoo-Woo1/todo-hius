@@ -6,6 +6,13 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added Weekly Report View.
+- Added weekly Monday-Friday layout.
+- Added weekly navigation controls.
+- Added dueDate-based planned task display.
+- Added WorkLog creation form.
+- Added WorkLog delete action.
+- Added `src/utils/week.ts` for weekday range helpers.
 - Added Vite client type declarations so TypeScript recognizes CSS side-effect imports.
 - Added next-context guidance, Codex workflow, validation, and version control rules to `AGENTS.md`.
 - Renamed the project change record from `CHANGELOG.md` to `HISTORY.md`.

@@ -3,6 +3,7 @@ import "./styles.css";
 import {
   addProject,
   addTodo,
+  addWorkLog,
   deleteActiveProject,
   getActiveProject,
   getState,
@@ -10,7 +11,7 @@ import {
   updateActiveProjectColor,
   updateTodo,
 } from "./state/store";
-import type { Project, TaskPriority, TaskStatus, Todo } from "./types";
+import type { Project, TaskPriority, TaskStatus, Todo, WorkLogType } from "./types";
 import { createId } from "./utils/id";
 import { getProjectColor } from "./utils/projectColor";
 import {
@@ -49,16 +50,28 @@ import {
   todoForm,
   todoTitleInput,
   toggleAllProjectsButton,
+  nextWeekButton,
+  previousWeekButton,
+  weeklyViewButton,
+  workLogContentInput,
+  workLogDateInput,
+  workLogForm,
+  workLogProjectSelect,
+  workLogTodoSelect,
+  workLogTypeSelect,
 } from "./ui/dom";
 import {
   activateCalendarButton,
   clearSelectedTodo,
   getSelectedTodoId,
   goToNextMonth,
+  goToNextWeek,
   goToPreviousMonth,
+  goToPreviousWeek,
   render,
   showLedgerView,
   showProjectView,
+  showWeeklyView,
   toggleAllCalendarProjects,
   updateCalendarRangePreferences,
 } from "./ui/render";
@@ -192,6 +205,11 @@ ledgerViewButton.addEventListener("click", () => {
   render();
 });
 
+weeklyViewButton.addEventListener("click", () => {
+  showWeeklyView();
+  render();
+});
+
 ledgerStatusFilter.addEventListener("change", () => {
   render();
 });
@@ -237,6 +255,43 @@ previousMonthButton.addEventListener("click", () => {
 
 nextMonthButton.addEventListener("click", () => {
   goToNextMonth();
+  render();
+});
+
+previousWeekButton.addEventListener("click", () => {
+  goToPreviousWeek();
+  render();
+});
+
+nextWeekButton.addEventListener("click", () => {
+  goToNextWeek();
+  render();
+});
+
+workLogProjectSelect.addEventListener("change", () => {
+  render();
+});
+
+workLogForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const content = workLogContentInput.value.trim();
+  const projectId = workLogProjectSelect.value;
+
+  if (!content || !projectId) {
+    return;
+  }
+
+  addWorkLog({
+    id: createId(),
+    projectId,
+    todoId: workLogTodoSelect.value || undefined,
+    date: workLogDateInput.value,
+    type: workLogTypeSelect.value as WorkLogType,
+    content,
+  });
+
+  workLogContentInput.value = "";
+  workLogTodoSelect.value = "";
   render();
 });
 

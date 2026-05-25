@@ -10,6 +10,7 @@
       <aside class="sidebar">
         <div class="view-switcher" aria-label="Workspace views">
           <button id="calendar-view-button" class="view-button" type="button">Calendar</button>
+          <button id="weekly-view-button" class="view-button" type="button">Weekly</button>
           <button id="ledger-view-button" class="view-button" type="button">Ledger</button>
         </div>
 
@@ -159,6 +160,58 @@
             </form>
           </aside>
         </div>
+      </section>
+
+      <section id="weekly-workspace" class="workspace" hidden>
+        <header class="workspace-header">
+          <div>
+            <p class="eyebrow">Weekly report</p>
+            <h2>주간업무 리포트</h2>
+          </div>
+
+          <div class="calendar-controls">
+            <button id="previous-week-button" class="quiet-button" type="button" aria-label="Previous week">
+              Previous
+            </button>
+            <strong id="weekly-range-label"></strong>
+            <button id="next-week-button" class="quiet-button" type="button" aria-label="Next week">Next</button>
+          </div>
+        </header>
+
+        <section class="work-log-card">
+          <div class="section-header">
+            <h3>Work Log</h3>
+          </div>
+          <form id="work-log-form" class="work-log-form">
+            <label>
+              Date
+              <input id="work-log-date" type="date" required />
+            </label>
+            <label>
+              Type
+              <select id="work-log-type">
+                <option value="계획">계획</option>
+                <option value="수행">수행</option>
+                <option value="특이사항">특이사항</option>
+              </select>
+            </label>
+            <label>
+              Project
+              <select id="work-log-project" required></select>
+            </label>
+            <label>
+              Linked task
+              <select id="work-log-todo"></select>
+            </label>
+            <label class="full-field">
+              Content
+              <textarea id="work-log-content" rows="3" placeholder="Add weekly report content" required></textarea>
+            </label>
+            <button type="submit">Add work log</button>
+          </form>
+        </section>
+
+        <section id="weekly-grid" class="weekly-grid"></section>
       </section>
 
       <section id="ledger-workspace" class="workspace" hidden>
