@@ -97,6 +97,9 @@ Recommended workflow:
 2. Run typecheck and build.
 3. Update `HISTORY.md`.
 4. Commit with a clear message.
+5. Push committed work to `origin/main` unless the user explicitly asks to keep it local.
+
+When code changes require documentation updates, update the relevant Markdown file in the same commit. Keep `README.md` user-facing, `HISTORY.md` chronological, and `AGENTS.md` focused on Codex working rules.
 
 ## Documentation Layout
 
