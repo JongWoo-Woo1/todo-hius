@@ -6,6 +6,7 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added Vite client type declarations so TypeScript recognizes CSS side-effect imports.
 - Added next-context guidance, Codex workflow, validation, and version control rules to `AGENTS.md`.
 - Renamed the project change record from `CHANGELOG.md` to `HISTORY.md`.
 - Added Project Ledger View for all projects and todos.

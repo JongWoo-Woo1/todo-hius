@@ -31,6 +31,7 @@ Main files:
 - `src/styles.css`: app styling loaded by Vite
 - `src/main.ts`: event wiring and form handling
 - `src/types.ts`: shared TypeScript types
+- `src/vite-env.d.ts`: Vite client type declarations for CSS and asset imports
 - `src/state/store.ts`: state mutation, migration, persistence, active project handling
 - `src/state/storage.ts`: localStorage raw read/write wrapper
 - `src/state/calendarPreferences.ts`: cached calendar range preferences

@@ -72,6 +72,7 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
 
 - `src/main.ts`: app entry point and form events
 - `src/styles.css`: app styling
+- `src/vite-env.d.ts`: Vite client type declarations for CSS and asset imports
 - `src/data/sampleProjects.ts`: initial demo projects for an empty browser state
 - `src/state/store.ts`: project and todo state changes
 - `src/state/storage.ts`: localStorage raw read/write wrapper
