@@ -76,6 +76,44 @@ npm.cmd run typecheck
 npm.cmd run build
 ```
 
+## Prompt Efficiency Rule
+
+The user should not need to repeat the full project instructions in every request.
+
+At the start of each task, Codex should read `AGENTS.md`, `README.md`, and `HISTORY.md` to confirm the current project state and standing rules.
+
+Standing rules in `AGENTS.md` apply automatically even when the user gives only a short instruction. Treat short user instructions as task-specific instructions layered on top of these standing rules.
+
+Standing rules that do not need to be repeated include:
+
+- Do not migrate the app to React.
+- Do not migrate the app to Electron.
+- Keep the current Vite + TypeScript + pure DOM direction.
+- Keep the browser/localStorage-based workflow.
+- Respect `.gitignore`.
+- Do not inspect or edit `node_modules/`, `dist/`, or `build/`.
+- Run typecheck and build after meaningful code changes.
+- Keep the document roles clear:
+  - `README.md` is for implemented user-facing program features.
+  - `HISTORY.md` is for actual chronological changes.
+  - `AGENTS.md` is for Codex working rules, architecture rules, validation, and version control rules.
+- Update `HISTORY.md` when a meaningful change is made.
+- Follow the commit and push workflow.
+
+Ideas, review comments, or long-term possibilities mentioned in conversation are not implementation requirements until the user explicitly asks to implement them.
+
+Only document actually implemented user features in `README.md`.
+
+Only record actual changes in `HISTORY.md`.
+
+Keep `AGENTS.md` limited to Codex working rules, architecture rules, validation rules, and version control rules.
+
+Even when the user gives a short instruction, Codex should inspect the current code and documents before making changes.
+
+When the user says something like "continue the next phase", Codex should use `HISTORY.md` and `README.md` to identify the current implementation state before continuing.
+
+When uncertain, do not invent new feature requirements. Work within the safe scope supported by the current code and documents.
+
 ## Version Control
 
 Use Git history actively.

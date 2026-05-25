@@ -6,6 +6,7 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added Prompt Efficiency Rule guidance to `AGENTS.md`.
 - Added Weekly Report View.
 - Added weekly Monday-Friday layout.
 - Added weekly navigation controls.
