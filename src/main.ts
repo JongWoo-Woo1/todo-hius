@@ -34,7 +34,6 @@ import {
   projectPeriodEndInput,
   projectPeriodStartInput,
   projectPeriodTextInput,
-  projectViewButton,
   todoDetailDueDateInput,
   todoDetailEstimateInput,
   todoDetailForm,
@@ -185,11 +184,6 @@ todoDetailForm.addEventListener("submit", (event) => {
 
 closeTodoDetailButton.addEventListener("click", () => {
   clearSelectedTodo();
-  render();
-});
-
-projectViewButton.addEventListener("click", () => {
-  showProjectView();
   render();
 });
 

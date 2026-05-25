@@ -61,7 +61,9 @@ button {
 .view-switcher {
   display: grid;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
 }
 
 .view-button {

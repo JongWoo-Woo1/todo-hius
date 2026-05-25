@@ -37,7 +37,6 @@ import {
   projectPeriodStartInput,
   projectPeriodTextInput,
   projectWorkspace,
-  projectViewButton,
   todoCount,
   todoDetailDueDateInput,
   todoDetailEstimateInput,
@@ -620,7 +619,6 @@ export function render(): void {
   projectWorkspace.hidden = currentView !== "projects";
   ledgerWorkspace.hidden = currentView !== "ledger";
   calendarWorkspace.hidden = currentView !== "calendar";
-  projectViewButton.classList.toggle("active", currentView === "projects");
   ledgerViewButton.classList.toggle("active", currentView === "ledger");
   calendarViewButton.classList.toggle("active", currentView === "calendar");
 }

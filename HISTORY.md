@@ -42,6 +42,8 @@ All notable changes to this project are documented here.
 ### Changed
 
 - Moved global CSS from root `styles.css` to `src/styles.css` and load it through `src/main.ts`.
+- Removed the sidebar Project view button and ordered top-level navigation as Calendar, then Ledger.
+- Added a sidebar divider between top-level view navigation and the project list.
 - Reworked `README.md` into the user-facing program feature guide.
 - Reduced Markdown documentation to `AGENTS.md`, `HISTORY.md`, and `README.md`.
 - Moved versioning and commit guidance from `VERSIONING.md` into `AGENTS.md`.

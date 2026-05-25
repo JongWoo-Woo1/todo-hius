@@ -31,7 +31,6 @@ export const todoDetailManagerCommentInput =
 export const todoDetailIssueRiskInput = document.querySelector<HTMLTextAreaElement>("#todo-detail-issue-risk")!;
 export const todoDetailMemoInput = document.querySelector<HTMLTextAreaElement>("#todo-detail-memo")!;
 export const closeTodoDetailButton = document.querySelector<HTMLButtonElement>("#close-todo-detail-button")!;
-export const projectViewButton = document.querySelector<HTMLButtonElement>("#project-view-button")!;
 export const ledgerViewButton = document.querySelector<HTMLButtonElement>("#ledger-view-button")!;
 export const calendarViewButton = document.querySelector<HTMLButtonElement>("#calendar-view-button")!;
 export const projectWorkspace = document.querySelector<HTMLElement>("#project-workspace")!;
