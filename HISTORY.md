@@ -6,7 +6,7 @@ All notable changes to this project are documented here.
 
 ### Added
 
-- Added `HANDOFF.md` so the next Codex context can continue the project with the current app structure, rules, and next-step notes.
+- Added next-context guidance, Codex workflow, validation, and version control rules to `AGENTS.md`.
 - Renamed the project change record from `CHANGELOG.md` to `HISTORY.md`.
 - Added Project Ledger View for all projects and todos.
 - Added Ledger status, client, and hide-completed filters.
@@ -40,7 +40,9 @@ All notable changes to this project are documented here.
 
 ### Changed
 
-- Updated README and versioning docs to reference `HISTORY.md`.
+- Reworked `README.md` into the user-facing program feature guide.
+- Reduced Markdown documentation to `AGENTS.md`, `HISTORY.md`, and `README.md`.
+- Moved versioning and commit guidance from `VERSIONING.md` into `AGENTS.md`.
 - The app now opens to the Calendar view by default.
 - The Calendar button toggles between monthly calendar and 2026 range calendar when already in Calendar view.
 - Project navigation was simplified:
@@ -64,6 +66,11 @@ All notable changes to this project are documented here.
 - Project active highlight is disabled while Calendar view is active.
 - The `+` project button only becomes visible when hovered or focused.
 - The `+` button now matches the sizing of project navigation buttons.
+
+### Removed
+
+- Removed `VERSIONING.md`; its rules now live in `AGENTS.md`.
+- Removed `HANDOFF.md`; next-context guidance now lives in `AGENTS.md`.
 
 ## Historical Development Notes
 
