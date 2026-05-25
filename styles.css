@@ -60,6 +60,7 @@ button {
 
 .view-switcher {
   display: grid;
+  gap: 8px;
   margin-bottom: 20px;
 }
 
@@ -394,6 +395,26 @@ button {
   color: #475569;
 }
 
+.status-badge[data-status="진행중"] {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge[data-status="미완"] {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge[data-status="완료"] {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.status-badge[data-status="보류"] {
+  background: #f1f5f9;
+  color: #475569;
+}
+
 .progress-pill {
   background: #f3f4f6;
   color: var(--text);
@@ -468,6 +489,85 @@ button {
 
 .calendar-header h2 {
   margin: 0;
+}
+
+.ledger-filter-card {
+  display: grid;
+  grid-template-columns: 180px 220px auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 14px;
+}
+
+.ledger-filter-card label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.checkbox-field {
+  display: inline-flex !important;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: start;
+  gap: 8px;
+  min-height: 42px;
+}
+
+.checkbox-field input {
+  width: 16px;
+  height: 16px;
+}
+
+.ledger-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.ledger-table {
+  width: 100%;
+  min-width: 1320px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ledger-table th,
+.ledger-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.ledger-table th {
+  background: #f8fafc;
+  color: var(--muted);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ledger-table tbody tr {
+  cursor: pointer;
+}
+
+.ledger-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.ledger-table tr.completed {
+  color: var(--muted);
+  opacity: 0.72;
+}
+
+.ledger-table td {
+  overflow-wrap: anywhere;
 }
 
 .calendar-controls {
@@ -687,6 +787,10 @@ button {
   .calendar-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .ledger-filter-card {
+    grid-template-columns: 1fr;
   }
 
   .calendar-range-controls {

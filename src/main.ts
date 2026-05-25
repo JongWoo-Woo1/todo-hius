@@ -19,6 +19,10 @@ import {
   calendarViewButton,
   closeTodoDetailButton,
   deleteProjectButton,
+  ledgerClientFilter,
+  ledgerHideCompletedInput,
+  ledgerStatusFilter,
+  ledgerViewButton,
   nextMonthButton,
   previousMonthButton,
   projectClientNameInput,
@@ -28,6 +32,7 @@ import {
   projectPeriodEndInput,
   projectPeriodStartInput,
   projectPeriodTextInput,
+  projectViewButton,
   todoDetailDueDateInput,
   todoDetailEstimateInput,
   todoDetailForm,
@@ -51,6 +56,7 @@ import {
   goToNextMonth,
   goToPreviousMonth,
   render,
+  showLedgerView,
   showProjectView,
   toggleAllCalendarProjects,
   updateCalendarRangePreferences,
@@ -177,6 +183,28 @@ todoDetailForm.addEventListener("submit", (event) => {
 
 closeTodoDetailButton.addEventListener("click", () => {
   clearSelectedTodo();
+  render();
+});
+
+projectViewButton.addEventListener("click", () => {
+  showProjectView();
+  render();
+});
+
+ledgerViewButton.addEventListener("click", () => {
+  showLedgerView();
+  render();
+});
+
+ledgerStatusFilter.addEventListener("change", () => {
+  render();
+});
+
+ledgerClientFilter.addEventListener("change", () => {
+  render();
+});
+
+ledgerHideCompletedInput.addEventListener("change", () => {
   render();
 });
 

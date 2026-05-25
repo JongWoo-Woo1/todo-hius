@@ -21,6 +21,13 @@ import {
   calendarWorkspace,
   deleteProjectButton,
   emptyState,
+  ledgerClientFilter,
+  ledgerEmptyState,
+  ledgerHideCompletedInput,
+  ledgerStatusFilter,
+  ledgerTableBody,
+  ledgerViewButton,
+  ledgerWorkspace,
   projectColorInput,
   projectClientNameInput,
   projectInfoForm,
@@ -30,6 +37,7 @@ import {
   projectPeriodStartInput,
   projectPeriodTextInput,
   projectWorkspace,
+  projectViewButton,
   todoCount,
   todoDetailDueDateInput,
   todoDetailEstimateInput,
@@ -56,7 +64,7 @@ type CalendarTodo = {
 };
 
 let selectedTodoId: string | null = null;
-let currentView: "projects" | "calendar" = "calendar";
+let currentView: "projects" | "ledger" | "calendar" = "calendar";
 let visibleMonth = new Date();
 let selectedCalendarProjectIds: Set<string> | null = null;
 let draggedProjectId: string | null = null;
@@ -98,6 +106,96 @@ function sortTodosByDueDate(): void {
 
     return left.dueDate.localeCompare(right.dueDate);
   });
+}
+
+function formatProjectPeriod(project: { periodText?: string; periodStart?: string | null; periodEnd?: string | null }): string {
+  if (project.periodText) {
+    return project.periodText;
+  }
+
+  if (project.periodStart || project.periodEnd) {
+    return `${project.periodStart ?? ""} ~ ${project.periodEnd ?? ""}`;
+  }
+
+  return "";
+}
+
+function renderLedgerClientOptions(): void {
+  const currentValue = ledgerClientFilter.value || "전체";
+  const clients = Array.from(new Set(getState().projects.map((project) => project.clientName).filter(Boolean))).sort();
+  ledgerClientFilter.innerHTML = "";
+  ledgerClientFilter.append(new Option("전체", "전체"));
+
+  clients.forEach((clientName) => {
+    ledgerClientFilter.append(new Option(clientName, clientName));
+  });
+
+  ledgerClientFilter.value = clients.includes(currentValue) ? currentValue : "전체";
+}
+
+function renderLedger(): void {
+  renderLedgerClientOptions();
+  ledgerTableBody.innerHTML = "";
+
+  const statusFilter = ledgerStatusFilter.value || "전체";
+  const clientFilter = ledgerClientFilter.value || "전체";
+  let rowCount = 0;
+
+  getState().projects.forEach((project) => {
+    if (clientFilter !== "전체" && project.clientName !== clientFilter) {
+      return;
+    }
+
+    project.todos.forEach((todo) => {
+      if (statusFilter !== "전체" && todo.status !== statusFilter) {
+        return;
+      }
+
+      if (ledgerHideCompletedInput.checked && todo.completed) {
+        return;
+      }
+
+      const row = document.createElement("tr");
+      row.classList.toggle("completed", todo.completed);
+      row.tabIndex = 0;
+      row.innerHTML = `
+        <td>${project.clientName}</td>
+        <td>${project.projectNumber ?? ""}</td>
+        <td>${project.name}</td>
+        <td>${formatProjectPeriod(project)}</td>
+        <td>${todo.dueDate ?? ""}</td>
+        <td>${todo.estimate ?? ""}</td>
+        <td>${todo.title}</td>
+        <td><span class="status-badge" data-status="${todo.status}">${todo.status}</span></td>
+        <td>${Math.round(todo.progress * 100)}%</td>
+        <td>${todo.priority ?? ""}</td>
+        <td>${todo.issueRisk ?? ""}</td>
+        <td>${todo.workerComment ?? ""}</td>
+        <td>${todo.managerComment ?? ""}</td>
+      `;
+      row.addEventListener("click", () => {
+        selectProject(project.id);
+        selectedTodoId = todo.id;
+        currentView = "projects";
+        render();
+      });
+      row.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") {
+          return;
+        }
+
+        event.preventDefault();
+        selectProject(project.id);
+        selectedTodoId = todo.id;
+        currentView = "projects";
+        render();
+      });
+      ledgerTableBody.append(row);
+      rowCount += 1;
+    });
+  });
+
+  ledgerEmptyState.hidden = rowCount > 0;
 }
 
 function renderProjects(): void {
@@ -464,12 +562,20 @@ export function clearSelectedTodo(): void {
   selectedTodoId = null;
 }
 
+export function selectTodo(todoId: string): void {
+  selectedTodoId = todoId;
+}
+
 export function getSelectedTodoId(): string | null {
   return selectedTodoId;
 }
 
 export function showProjectView(): void {
   currentView = "projects";
+}
+
+export function showLedgerView(): void {
+  currentView = "ledger";
 }
 
 export function activateCalendarButton(): void {
@@ -508,9 +614,13 @@ export function render(): void {
   renderProjects();
   renderTodos();
   renderRangeControls();
+  renderLedger();
   renderCalendarFilters();
   renderCalendar();
   projectWorkspace.hidden = currentView !== "projects";
+  ledgerWorkspace.hidden = currentView !== "ledger";
   calendarWorkspace.hidden = currentView !== "calendar";
+  projectViewButton.classList.toggle("active", currentView === "projects");
+  ledgerViewButton.classList.toggle("active", currentView === "ledger");
   calendarViewButton.classList.toggle("active", currentView === "calendar");
 }

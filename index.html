@@ -10,6 +10,8 @@
     <main class="app-shell">
       <aside class="sidebar">
         <div class="view-switcher" aria-label="Workspace views">
+          <button id="project-view-button" class="view-button" type="button">Project</button>
+          <button id="ledger-view-button" class="view-button" type="button">Ledger</button>
           <button id="calendar-view-button" class="view-button" type="button">Calendar</button>
         </div>
 
@@ -159,6 +161,65 @@
             </form>
           </aside>
         </div>
+      </section>
+
+      <section id="ledger-workspace" class="workspace" hidden>
+        <header class="workspace-header">
+          <div>
+            <p class="eyebrow">All work items</p>
+            <h2>프로젝트 원장</h2>
+          </div>
+        </header>
+
+        <section class="ledger-filter-card">
+          <label>
+            Status
+            <select id="ledger-status-filter">
+              <option value="전체">전체</option>
+              <option value="대기">대기</option>
+              <option value="진행중">진행중</option>
+              <option value="미완">미완</option>
+              <option value="완료">완료</option>
+              <option value="보류">보류</option>
+            </select>
+          </label>
+
+          <label>
+            Client
+            <select id="ledger-client-filter">
+              <option value="전체">전체</option>
+            </select>
+          </label>
+
+          <label class="checkbox-field">
+            <input id="ledger-hide-completed" type="checkbox" />
+            Hide completed
+          </label>
+        </section>
+
+        <section class="ledger-table-wrap">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>업체명</th>
+                <th>프로젝트 번호</th>
+                <th>프로젝트명</th>
+                <th>프로젝트 기간</th>
+                <th>내부 목표 완료일</th>
+                <th>공수</th>
+                <th>주요 추진내용</th>
+                <th>진행상태</th>
+                <th>진척률</th>
+                <th>우선순위</th>
+                <th>이슈/리스크</th>
+                <th>Comment 담당자</th>
+                <th>Comment 관리자</th>
+              </tr>
+            </thead>
+            <tbody id="ledger-table-body"></tbody>
+          </table>
+          <p id="ledger-empty-state" class="empty-state">No ledger items.</p>
+        </section>
       </section>
 
       <section id="calendar-workspace" class="workspace" hidden>

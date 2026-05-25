@@ -6,6 +6,9 @@ All notable changes to this project will be documented here.
 
 ### Added
 
+- Added Project Ledger View for all projects and todos.
+- Added Ledger status, client, and hide-completed filters.
+- Added Ledger row navigation into the related Project View and Todo detail panel.
 - Added Project Info editing fields for company project management:
   - client name
   - project number
@@ -82,4 +85,3 @@ These items were implemented before formal changelog tracking began and are reco
 12. Added project drag and drop ordering.
 13. Expanded the data model for company project management.
 14. Added Project Info and expanded Todo detail forms.
-
