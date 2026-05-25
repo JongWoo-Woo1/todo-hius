@@ -54,6 +54,7 @@ import {
   toggleAllProjectsButton,
   nextWeekButton,
   previousWeekButton,
+  weeklyExportButton,
   weeklyViewButton,
   workLogContentInput,
   workLogDateInput,
@@ -70,6 +71,7 @@ import {
   goToNextWeek,
   goToPreviousMonth,
   goToPreviousWeek,
+  getVisibleWeekDate,
   render,
   showLedgerView,
   showProjectView,
@@ -277,6 +279,16 @@ previousWeekButton.addEventListener("click", () => {
 nextWeekButton.addEventListener("click", () => {
   goToNextWeek();
   render();
+});
+
+weeklyExportButton.addEventListener("click", async () => {
+  const [{ createWeeklyReportWorkbook, getWeeklyReportFileDate }, { downloadWorkbook }] = await Promise.all([
+    import("./excel/weeklyReport"),
+    import("./excel/downloadWorkbook"),
+  ]);
+  const visibleWeekDate = getVisibleWeekDate();
+  const workbook = createWeeklyReportWorkbook(getState(), visibleWeekDate);
+  await downloadWorkbook(workbook, `weekly-report-${getWeeklyReportFileDate(visibleWeekDate)}.xlsx`);
 });
 
 workLogProjectSelect.addEventListener("change", () => {

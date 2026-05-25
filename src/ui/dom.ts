@@ -40,6 +40,7 @@ export const ledgerWorkspace = document.querySelector<HTMLElement>("#ledger-work
 export const calendarWorkspace = document.querySelector<HTMLElement>("#calendar-workspace")!;
 export const previousWeekButton = document.querySelector<HTMLButtonElement>("#previous-week-button")!;
 export const nextWeekButton = document.querySelector<HTMLButtonElement>("#next-week-button")!;
+export const weeklyExportButton = document.querySelector<HTMLButtonElement>("#weekly-export-button")!;
 export const weeklyRangeLabel = document.querySelector<HTMLElement>("#weekly-range-label")!;
 export const weeklyGrid = document.querySelector<HTMLElement>("#weekly-grid")!;
 export const workLogForm = document.querySelector<HTMLFormElement>("#work-log-form")!;

@@ -754,6 +754,14 @@ button {
   padding: 16px;
 }
 
+.weekly-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
 .work-log-form {
   display: grid;
   grid-template-columns: 150px 150px minmax(180px, 1fr) minmax(180px, 1fr) auto;
@@ -904,6 +912,11 @@ button {
 
   .work-log-form {
     grid-template-columns: 1fr;
+  }
+
+  .weekly-header-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .work-log-form .full-field {

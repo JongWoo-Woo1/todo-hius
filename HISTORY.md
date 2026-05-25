@@ -6,6 +6,9 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added Weekly Report Excel Export.
+- Added Weekly View export button.
+- Added Weekly Report workbook creation under `src/excel/weeklyReport.ts`.
 - Added ExcelJS dependency for browser-based `.xlsx` export.
 - Added Node type declarations for ExcelJS type-check support.
 - Added Project Ledger Excel Export.
