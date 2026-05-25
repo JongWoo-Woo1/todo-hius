@@ -1,11 +1,13 @@
-# Changelog
+# History
 
-All notable changes to this project will be documented here.
+All notable changes to this project are documented here.
 
 ## [Unreleased]
 
 ### Added
 
+- Added `HANDOFF.md` so the next Codex context can continue the project with the current app structure, rules, and next-step notes.
+- Renamed the project change record from `CHANGELOG.md` to `HISTORY.md`.
 - Added Project Ledger View for all projects and todos.
 - Added Ledger status, client, and hide-completed filters.
 - Added Ledger row navigation into the related Project View and Todo detail panel.
@@ -38,6 +40,7 @@ All notable changes to this project will be documented here.
 
 ### Changed
 
+- Updated README and versioning docs to reference `HISTORY.md`.
 - The app now opens to the Calendar view by default.
 - The Calendar button toggles between monthly calendar and 2026 range calendar when already in Calendar view.
 - Project navigation was simplified:
@@ -64,7 +67,7 @@ All notable changes to this project will be documented here.
 
 ## Historical Development Notes
 
-These items were implemented before formal changelog tracking began and are recorded here in chronological order based on the conversation history.
+These items were implemented before formal history tracking began and are recorded here in chronological order based on the conversation history.
 
 1. Initialized a Vite + TypeScript + pure DOM Todo app.
 2. Added project-based Todo management.

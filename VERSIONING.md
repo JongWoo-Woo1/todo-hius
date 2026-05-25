@@ -41,7 +41,7 @@ npm run typecheck
 npm run build
 ```
 
-3. Update `CHANGELOG.md`.
+3. Update `HISTORY.md`.
 4. Commit with a clear message.
 5. Push to `origin/main` when the local state is ready to share.
 
@@ -52,11 +52,10 @@ Before tagging a release:
 - Confirm `npm run typecheck` passes.
 - Confirm `npm run build` passes.
 - Confirm localStorage migration still handles older saved data.
-- Update `CHANGELOG.md`.
+- Update `HISTORY.md`.
 - Update `package.json` version if needed.
 - Create a Git tag, for example:
 
 ```bash
 git tag v1.1.0
 ```
-

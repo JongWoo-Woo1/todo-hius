@@ -30,5 +30,5 @@
 
 ## Project History
 
-- See `CHANGELOG.md` for the chronological development history.
+- See `HISTORY.md` for the chronological development history.
 - See `VERSIONING.md` for commit, versioning, and release guidelines.
