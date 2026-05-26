@@ -53,9 +53,10 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
   - Template 기반 주간업무 리포트 `.xlsx` 파일 다운로드
 - Ledger View:
   - 모든 프로젝트와 모든 Todo를 하나의 표로 확인
+  - 업체 기준 내림차순 정렬
   - 상태, 업체명, 완료 업무 숨기기, 지연 업무만 보기 필터
   - 행 클릭 시 해당 Project와 Todo 상세 편집 화면으로 이동
-  - 프로젝트 원장 `.xlsx` 파일 다운로드
+  - 병합 셀이 적용된 프로젝트 원장 `.xlsx` 파일 다운로드
 
 ## Views
 

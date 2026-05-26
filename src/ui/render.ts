@@ -17,7 +17,7 @@ import {
 import type { TaskPriority, TaskStatus, Todo } from "../types";
 import { getMonthGridDates, getMonthLabel, toDateKey } from "../utils/calendar";
 import { formatDueDate } from "../utils/date";
-import { formatProjectPeriod } from "../utils/project";
+import { getLedgerRows } from "../utils/ledger";
 import { formatProgressPercent, isTodoOverdue } from "../utils/task";
 import { getWeekRangeLabel, getWeekdays } from "../utils/week";
 import {
@@ -168,34 +168,33 @@ function renderLedger(): void {
   const overdueOnly = ledgerOverdueOnlyInput.checked;
   let rowCount = 0;
 
-  getState().projects.forEach((project) => {
+  getLedgerRows(getState()).forEach(({ project, todo, clientName, projectNumber, projectName, projectPeriod }) => {
     if (clientFilter !== "전체" && project.clientName !== clientFilter) {
       return;
     }
 
-    project.todos.forEach((todo) => {
-      if (statusFilter !== "전체" && todo.status !== statusFilter) {
-        return;
-      }
+    if (statusFilter !== "전체" && todo.status !== statusFilter) {
+      return;
+    }
 
-      if (ledgerHideCompletedInput.checked && todo.completed) {
-        return;
-      }
+    if (ledgerHideCompletedInput.checked && todo.completed) {
+      return;
+    }
 
-      const overdue = isTodoOverdue(todo);
-      if (overdueOnly && !overdue) {
-        return;
-      }
+    const overdue = isTodoOverdue(todo);
+    if (overdueOnly && !overdue) {
+      return;
+    }
 
-      const row = document.createElement("tr");
-      row.classList.toggle("completed", todo.completed);
-      row.classList.toggle("overdue", overdue);
-      row.tabIndex = 0;
-      row.innerHTML = `
-        <td>${project.clientName}</td>
-        <td>${project.projectNumber ?? ""}</td>
-        <td>${project.name}</td>
-        <td>${formatProjectPeriod(project)}</td>
+    const row = document.createElement("tr");
+    row.classList.toggle("completed", todo.completed);
+    row.classList.toggle("overdue", overdue);
+    row.tabIndex = 0;
+    row.innerHTML = `
+        <td>${clientName}</td>
+        <td>${projectNumber}</td>
+        <td>${projectName}</td>
+        <td>${projectPeriod}</td>
         <td>${todo.dueDate ?? ""}</td>
         <td>${todo.estimate ?? ""}</td>
         <td>${todo.title}</td>
@@ -206,26 +205,25 @@ function renderLedger(): void {
         <td>${todo.workerComment ?? ""}</td>
         <td>${todo.managerComment ?? ""}</td>
       `;
-      row.addEventListener("click", () => {
-        selectProject(project.id);
-        selectedTodoId = todo.id;
-        currentView = "projects";
-        render();
-      });
-      row.addEventListener("keydown", (event) => {
-        if (event.key !== "Enter" && event.key !== " ") {
-          return;
-        }
-
-        event.preventDefault();
-        selectProject(project.id);
-        selectedTodoId = todo.id;
-        currentView = "projects";
-        render();
-      });
-      ledgerTableBody.append(row);
-      rowCount += 1;
+    row.addEventListener("click", () => {
+      selectProject(project.id);
+      selectedTodoId = todo.id;
+      currentView = "projects";
+      render();
     });
+    row.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+
+      event.preventDefault();
+      selectProject(project.id);
+      selectedTodoId = todo.id;
+      currentView = "projects";
+      render();
+    });
+    ledgerTableBody.append(row);
+    rowCount += 1;
   });
 
   ledgerEmptyState.hidden = rowCount > 0;

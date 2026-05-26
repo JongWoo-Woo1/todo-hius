@@ -1,12 +1,12 @@
 import ExcelJS from "exceljs";
 import type { AppState } from "../types";
-import { formatProjectPeriod } from "../utils/project";
+import { getLedgerRows } from "../utils/ledger";
 import { formatProgressPercent } from "../utils/task";
 
 const LEDGER_HEADERS = [
-  "업체명",
+  "업체",
   "프로젝트 번호",
-  "프로젝트명",
+  "프로젝트",
   "프로젝트 기간",
   "내부 목표 완료일",
   "공수",
@@ -18,6 +18,36 @@ const LEDGER_HEADERS = [
   "Comment 담당자",
   "Comment 관리자",
 ];
+
+function mergeRowsByKey(
+  worksheet: ExcelJS.Worksheet,
+  rows: ReturnType<typeof getLedgerRows>,
+  columnNumber: number,
+  getKey: (row: ReturnType<typeof getLedgerRows>[number]) => string,
+): void {
+  let groupStartIndex = 0;
+
+  for (let index = 1; index <= rows.length; index += 1) {
+    const previousKey = getKey(rows[groupStartIndex]);
+    const currentKey = rows[index] ? getKey(rows[index]) : null;
+    if (currentKey === previousKey) {
+      continue;
+    }
+
+    const startRow = groupStartIndex + 3;
+    const endRow = index + 2;
+    if (startRow < endRow) {
+      worksheet.mergeCells(startRow, columnNumber, endRow, columnNumber);
+      worksheet.getCell(startRow, columnNumber).alignment = {
+        vertical: "middle",
+        horizontal: "center",
+        wrapText: true,
+      };
+    }
+
+    groupStartIndex = index;
+  }
+}
 
 export function createProjectLedgerWorkbook(state: AppState): ExcelJS.Workbook {
   const workbook = new ExcelJS.Workbook();
@@ -42,24 +72,24 @@ export function createProjectLedgerWorkbook(state: AppState): ExcelJS.Workbook {
     };
   });
 
-  state.projects.forEach((project) => {
-    project.todos.forEach((todo) => {
-      worksheet.addRow([
-        project.clientName,
-        project.projectNumber ?? "",
-        project.name,
-        formatProjectPeriod(project),
-        todo.dueDate ?? "",
-        todo.estimate ?? "",
-        todo.title,
-        todo.status,
-        formatProgressPercent(todo.progress),
-        todo.priority ?? "",
-        todo.issueRisk ?? "",
-        todo.workerComment ?? "",
-        todo.managerComment ?? "",
-      ]);
-    });
+  const rows = getLedgerRows(state);
+
+  rows.forEach(({ todo, clientName, projectNumber, projectName, projectPeriod }) => {
+    worksheet.addRow([
+      clientName,
+      projectNumber,
+      projectName,
+      projectPeriod,
+      todo.dueDate ?? "",
+      todo.estimate ?? "",
+      todo.title,
+      todo.status,
+      formatProgressPercent(todo.progress),
+      todo.priority ?? "",
+      todo.issueRisk ?? "",
+      todo.workerComment ?? "",
+      todo.managerComment ?? "",
+    ]);
   });
 
   worksheet.columns = [
@@ -96,6 +126,13 @@ export function createProjectLedgerWorkbook(state: AppState): ExcelJS.Workbook {
 
   worksheet.getRow(1).height = 24;
   worksheet.getRow(2).height = 22;
+
+  if (rows.length > 1) {
+    mergeRowsByKey(worksheet, rows, 1, (row) => row.clientName);
+    [2, 3, 4].forEach((columnNumber) => {
+      mergeRowsByKey(worksheet, rows, columnNumber, (row) => row.project.id);
+    });
+  }
 
   return workbook;
 }
