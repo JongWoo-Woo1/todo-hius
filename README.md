@@ -43,7 +43,7 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
   - 업무 계획, 업무 일지 WorkLog 추가
   - WorkLog 삭제
   - 이전 주 / 다음 주 이동
-  - 주간업무 리포트 `.xlsx` 파일 다운로드
+  - Template 기반 주간업무 리포트 `.xlsx` 파일 다운로드
 - Ledger View:
   - 모든 프로젝트와 모든 Todo를 하나의 표로 확인
   - 상태, 업체명, 완료 업무 숨기기, 지연 업무만 보기 필터
@@ -70,7 +70,7 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
 
 월요일~금요일 기준으로 업무 계획과 업무 일지를 확인합니다. Todo의 due date는 업무 계획에 자동으로 표시되고, WorkLog form으로 계획/수행 기록을 직접 추가할 수 있습니다.
 
-현재 보고 있는 주차 기준으로 주간업무 리포트 Excel 파일을 다운로드할 수 있습니다.
+현재 보고 있는 주차 기준으로 주간업무 리포트 Excel 파일을 다운로드할 수 있습니다. Weekly Report Export는 `public/templates/weekly-report-template.xlsx` 서식을 불러와 값만 채웁니다.
 
 ### Ledger
 

@@ -345,7 +345,7 @@ weeklyExportButton.addEventListener("click", async () => {
     import("./excel/downloadWorkbook"),
   ]);
   const visibleWeekDate = getVisibleWeekDate();
-  const workbook = createWeeklyReportWorkbook(getState(), visibleWeekDate);
+  const workbook = await createWeeklyReportWorkbook(getState(), visibleWeekDate);
   await downloadWorkbook(workbook, `weekly-report-${getWeeklyReportFileDate(visibleWeekDate)}.xlsx`);
 });
 

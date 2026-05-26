@@ -6,6 +6,7 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added `public/templates/weekly-report-template.xlsx` for template-based Weekly Report Export.
 - Added JSON backup export.
 - Added JSON restore/import with minimal validation and migration reuse.
 - Added overdue task indicators in Todo, Ledger, and Calendar views.
@@ -64,6 +65,8 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Weekly Report Excel Export to load the provided template and fill only target cells.
+- Preserved the Weekly Report template merge ranges, borders, fills, row heights, column widths, and worksheet formatting during export.
 - Changed Weekly Report Excel Export to match the 업무일지 example layout.
 - Changed Weekly reports to use only 업무 계획 and 업무 일지 sections.
 - Removed the 특이사항 section from Weekly View and Weekly Excel Export.

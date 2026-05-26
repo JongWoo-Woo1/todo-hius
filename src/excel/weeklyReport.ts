@@ -10,16 +10,10 @@ type WeeklyItem = {
   content: string;
 };
 
-const DAY_BLOCKS = [
-  { start: 3, end: 7 },
-  { start: 8, end: 12 },
-  { start: 13, end: 17 },
-  { start: 18, end: 22 },
-  { start: 23, end: 27 },
-] as const;
-
-const REPORT_START_COLUMN = 2;
-const REPORT_END_COLUMN = 27;
+const TEMPLATE_URL = "/templates/weekly-report-template.xlsx";
+const TEMPLATE_SHEET_NAME = "3주차";
+const PLAN_CELLS = ["C7", "I7", "O7", "U7", "AA7"] as const;
+const DONE_CELLS = ["C19", "I19", "O19", "U19", "AA19"] as const;
 
 function createWeeklyBuckets(date: Date): Map<string, Record<WeeklySectionKey, WeeklyItem[]>> {
   const buckets = new Map<string, Record<WeeklySectionKey, WeeklyItem[]>>();
@@ -55,95 +49,28 @@ function formatGroupedItems(items: WeeklyItem[]): string {
     .join("\n\n");
 }
 
-function applyThinBorder(cell: ExcelJS.Cell): void {
-  cell.border = {
-    top: { style: "thin" },
-    left: { style: "thin" },
-    bottom: { style: "thin" },
-    right: { style: "thin" },
-  };
-}
-
-function styleReportRange(worksheet: ExcelJS.Worksheet): void {
-  for (let rowNumber = 2; rowNumber <= 48; rowNumber += 1) {
-    for (let columnNumber = REPORT_START_COLUMN; columnNumber <= REPORT_END_COLUMN; columnNumber += 1) {
-      const cell = worksheet.getCell(rowNumber, columnNumber);
-      const existingFont = cell.font ?? {};
-      applyThinBorder(cell);
-      cell.font = {
-        name: "Malgun Gothic",
-        size: existingFont.size ?? 11,
-        bold: existingFont.bold,
-      };
-      cell.alignment = {
-        ...cell.alignment,
-        vertical: cell.alignment?.vertical ?? "top",
-        wrapText: true,
-      };
-    }
+async function loadWeeklyReportTemplate(): Promise<ExcelJS.Workbook> {
+  const response = await fetch(TEMPLATE_URL);
+  if (!response.ok) {
+    throw new Error(`Failed to load weekly report template: ${response.status}`);
   }
-}
 
-function styleMergedHeader(cell: ExcelJS.Cell, fontSize: number): void {
-  cell.font = { name: "Malgun Gothic", bold: true, size: fontSize };
-  cell.alignment = { horizontal: "center", vertical: "middle" };
-  cell.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "FFD9D9D9" },
-  };
-}
-
-function styleSectionHeader(cell: ExcelJS.Cell): void {
-  cell.font = { name: "Malgun Gothic", bold: true, size: 16 };
-  cell.alignment = { horizontal: "center", vertical: "middle" };
-  cell.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "FFF2F2F2" },
-  };
-}
-
-function setSection(
-  worksheet: ExcelJS.Worksheet,
-  label: string,
-  headerRows: [number, number],
-  contentRows: [number, number],
-  weekdays: Date[],
-  buckets: Map<string, Record<WeeklySectionKey, WeeklyItem[]>>,
-  sectionKey: WeeklySectionKey,
-): void {
-  worksheet.mergeCells(headerRows[0], REPORT_START_COLUMN, headerRows[1], REPORT_END_COLUMN);
-  const sectionCell = worksheet.getCell(headerRows[0], REPORT_START_COLUMN);
-  sectionCell.value = label;
-  styleSectionHeader(sectionCell);
-
-  worksheet.mergeCells(contentRows[0], REPORT_START_COLUMN, contentRows[1], REPORT_START_COLUMN);
-  const labelCell = worksheet.getCell(contentRows[0], REPORT_START_COLUMN);
-  labelCell.value = "업무 내용";
-  labelCell.font = { name: "Malgun Gothic", bold: true, size: 11 };
-  labelCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
-
-  weekdays.forEach((weekday, index) => {
-    const block = DAY_BLOCKS[index];
-    worksheet.mergeCells(contentRows[0], block.start, contentRows[1], block.end);
-
-    const contentCell = worksheet.getCell(contentRows[0], block.start);
-    const items = buckets.get(toDateKey(weekday))![sectionKey];
-    contentCell.value = formatGroupedItems(items);
-    contentCell.font = { name: "Malgun Gothic", size: 11 };
-    contentCell.alignment = { vertical: "top", wrapText: true };
-  });
-}
-
-export function getWeeklyReportFileDate(date: Date): string {
-  return toDateKey(getWeekdays(date)[0]);
-}
-
-export function createWeeklyReportWorkbook(state: AppState, date: Date): ExcelJS.Workbook {
   const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("주간업무 리포트");
-  const weekdays = getWeekdays(date);
+  await workbook.xlsx.load(await response.arrayBuffer());
+
+  return workbook;
+}
+
+function getTemplateWorksheet(workbook: ExcelJS.Workbook): ExcelJS.Worksheet {
+  const worksheet = workbook.getWorksheet(TEMPLATE_SHEET_NAME) ?? workbook.worksheets[0];
+  if (!worksheet) {
+    throw new Error("Weekly report template does not contain a worksheet.");
+  }
+
+  return worksheet;
+}
+
+function fillWeeklyBuckets(state: AppState, date: Date): Map<string, Record<WeeklySectionKey, WeeklyItem[]>> {
   const buckets = createWeeklyBuckets(date);
 
   state.projects.forEach((project) => {
@@ -180,35 +107,36 @@ export function createWeeklyReportWorkbook(state: AppState, date: Date): ExcelJS
     }
   });
 
-  worksheet.mergeCells(2, REPORT_START_COLUMN, 4, REPORT_END_COLUMN);
-  const titleCell = worksheet.getCell(2, REPORT_START_COLUMN);
-  titleCell.value = `${getWeekOfMonthLabel(date)} 주간업무 리포트`;
-  styleMergedHeader(titleCell, 16);
+  return buckets;
+}
 
-  setSection(worksheet, "업무 계획", [5, 6], [7, 16], weekdays, buckets, "plan");
-  setSection(worksheet, "업무 일지", [17, 18], [19, 48], weekdays, buckets, "done");
+function setCellValue(worksheet: ExcelJS.Worksheet, address: string, value: string): void {
+  worksheet.getCell(address).value = value;
+}
 
-  worksheet.getColumn(1).width = 3;
-  worksheet.getColumn(REPORT_START_COLUMN).width = 12;
-  for (let columnNumber = 3; columnNumber <= REPORT_END_COLUMN; columnNumber += 1) {
-    worksheet.getColumn(columnNumber).width = 7.5;
-  }
+export function getWeeklyReportFileDate(date: Date): string {
+  return toDateKey(getWeekdays(date)[0]);
+}
 
-  [2, 3, 4].forEach((rowNumber) => {
-    worksheet.getRow(rowNumber).height = rowNumber === 3 ? 26 : 20;
+export async function createWeeklyReportWorkbook(state: AppState, date: Date): Promise<ExcelJS.Workbook> {
+  const workbook = await loadWeeklyReportTemplate();
+  const worksheet = getTemplateWorksheet(workbook);
+  const weekdays = getWeekdays(date);
+  const buckets = fillWeeklyBuckets(state, date);
+
+  setCellValue(worksheet, "B2", `${getWeekOfMonthLabel(date)} 주간업무 리포트`);
+  setCellValue(worksheet, "B5", "업무 계획");
+  setCellValue(worksheet, "B7", "업무 내용");
+  setCellValue(worksheet, "B17", "업무 일지");
+  setCellValue(worksheet, "B19", "업무 내용");
+
+  weekdays.forEach((weekday, index) => {
+    const dateKey = toDateKey(weekday);
+    const dayBuckets = buckets.get(dateKey)!;
+
+    setCellValue(worksheet, PLAN_CELLS[index], formatGroupedItems(dayBuckets.plan));
+    setCellValue(worksheet, DONE_CELLS[index], formatGroupedItems(dayBuckets.done));
   });
-  [5, 6, 17, 18].forEach((rowNumber) => {
-    worksheet.getRow(rowNumber).height = 22;
-  });
-  for (let rowNumber = 7; rowNumber <= 16; rowNumber += 1) {
-    worksheet.getRow(rowNumber).height = 19;
-  }
-  for (let rowNumber = 19; rowNumber <= 48; rowNumber += 1) {
-    worksheet.getRow(rowNumber).height = 19;
-  }
-
-  styleReportRange(worksheet);
-  worksheet.views = [{ showGridLines: true }];
 
   return workbook;
 }
