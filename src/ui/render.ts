@@ -933,6 +933,13 @@ function renderTodos(): void {
     `;
 
     item.addEventListener("click", () => {
+      if (selectedTodoId === todo.id) {
+        selectedTodoId = null;
+        editingTodoId = null;
+        render();
+        return;
+      }
+
       selectedTodoId = todo.id;
       if (editingTodoId && editingTodoId !== todo.id) {
         editingTodoId = null;

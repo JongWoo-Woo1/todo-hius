@@ -66,6 +66,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Todo card clicks to toggle between expanded details and collapsed summary.
 - Changed Project name normalization to replace line breaks with ` - `.
 - Updated sample Project names to remove embedded line breaks.
 - Changed sidebar project names to a single-line truncated layout.
