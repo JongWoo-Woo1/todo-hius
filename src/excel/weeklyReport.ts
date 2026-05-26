@@ -123,8 +123,11 @@ export async function createWeeklyReportWorkbook(state: AppState, date: Date): P
   const worksheet = getTemplateWorksheet(workbook);
   const weekdays = getWeekdays(date);
   const buckets = fillWeeklyBuckets(state, date);
+  const weekLabel = getWeekOfMonthLabel(date);
 
-  setCellValue(worksheet, "B2", `${getWeekOfMonthLabel(date)} 주간업무 리포트`);
+  worksheet.name = weekLabel;
+
+  setCellValue(worksheet, "B2", `${weekLabel} 주간업무 리포트`);
   setCellValue(worksheet, "B5", "업무 계획");
   setCellValue(worksheet, "B7", "업무 내용");
   setCellValue(worksheet, "B17", "업무 일지");

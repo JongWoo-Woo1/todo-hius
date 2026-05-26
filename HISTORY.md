@@ -65,6 +65,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Weekly Report Excel Export to name the worksheet with the current month and week label.
 - Changed Weekly Report Excel Export to load the provided template and fill only target cells.
 - Preserved the Weekly Report template merge ranges, borders, fills, row heights, column widths, and worksheet formatting during export.
 - Changed Weekly Report Excel Export to match the 업무일지 example layout.
