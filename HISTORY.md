@@ -67,6 +67,9 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Project Ledger Excel Export to match the source ledger layout starting at `B2`.
+- Changed Project Ledger Excel Export alignment, font sizing, row/column spacing, and exported columns to better match the reference workbook.
+- Changed Weekly Report sections to use shared placeholder sizes from Monday through Friday.
 - Changed Ledger View to visually merge repeated 업체 and project-level cells.
 - Changed Ledger labels from 업체명/프로젝트명 to 업체/프로젝트.
 - Changed Ledger ordering to sort by 업체 in descending order.

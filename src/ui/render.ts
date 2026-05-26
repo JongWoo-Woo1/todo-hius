@@ -313,26 +313,32 @@ function renderWeeklyItem(item: WeeklyItem): HTMLElement {
   return wrapper;
 }
 
-function renderWeeklySection(title: string, items: WeeklyItem[]): HTMLElement {
+function renderWeeklySection(sectionKey: (typeof WEEKLY_SECTIONS)[number]["key"], title: string, items: WeeklyItem[]): HTMLElement {
   const section = document.createElement("section");
   section.className = "weekly-section";
+  section.dataset.weeklySection = sectionKey;
 
   const heading = document.createElement("h4");
   heading.textContent = title;
   section.append(heading);
 
+  const body = document.createElement("div");
+  body.className = "weekly-section-body";
+
   if (items.length === 0) {
     const empty = document.createElement("p");
     empty.className = "weekly-empty";
-    empty.textContent = "No items.";
-    section.append(empty);
+    empty.textContent = "No items yet.";
+    body.append(empty);
+    section.append(body);
     return section;
   }
 
   items.forEach((item) => {
-    section.append(renderWeeklyItem(item));
+    body.append(renderWeeklyItem(item));
   });
 
+  section.append(body);
   return section;
 }
 
@@ -403,7 +409,7 @@ function renderWeekly(): void {
     dayCard.append(dayTitle);
 
     WEEKLY_SECTIONS.forEach((section) => {
-      dayCard.append(renderWeeklySection(section.title, dayBuckets[section.key]));
+      dayCard.append(renderWeeklySection(section.key, section.title, dayBuckets[section.key]));
     });
 
     weeklyGrid.append(dayCard);

@@ -46,6 +46,7 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
   - 월 범위와 column 설정 캐싱
 - Weekly View:
   - 월요일~금요일 기준 주간업무 리포트 확인
+  - 월~금 업무 계획/업무 일지 영역은 같은 placeholder 크기로 표시
   - Todo due date 기준 업무 계획 자동 표시
   - 업무 계획, 업무 일지 WorkLog 추가
   - WorkLog 삭제
@@ -57,7 +58,7 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
   - 같은 업체와 프로젝트 정보는 병합된 셀로 표시
   - 상태, 업체명, 완료 업무 숨기기, 지연 업무만 보기 필터
   - 행 클릭 시 해당 Project와 Todo 상세 편집 화면으로 이동
-  - 병합 셀이 적용된 프로젝트 원장 `.xlsx` 파일 다운로드
+  - 회사 원장 양식에 맞춰 병합 셀이 적용된 프로젝트 원장 `.xlsx` 파일 다운로드
 
 ## Views
 
