@@ -28,7 +28,14 @@
         <header class="workspace-header">
           <div>
             <p class="eyebrow">Current project</p>
-            <h2 id="active-project-name">Add a project</h2>
+            <button id="active-project-name-button" class="project-title-button" type="button">
+              <span id="active-project-name">Add a project</span>
+            </button>
+            <form id="project-name-form" class="project-name-form" hidden>
+              <input id="project-name-input" type="text" aria-label="Project name" required />
+              <button type="submit">저장</button>
+              <button id="cancel-project-name-button" class="quiet-button" type="button">취소</button>
+            </form>
           </div>
           <div class="project-actions">
             <label class="color-field">

@@ -19,11 +19,13 @@ import { createId } from "./utils/id";
 import { getProjectColor } from "./utils/projectColor";
 import {
   addProjectButton,
+  activeProjectNameButton,
   calendarColumnSelect,
   calendarEndMonthSelect,
   calendarStartMonthSelect,
   calendarViewButton,
   cancelProjectInfoButton,
+  cancelProjectNameButton,
   deleteProjectButton,
   editProjectInfoButton,
   exportJsonButton,
@@ -40,6 +42,8 @@ import {
   projectClientNameInput,
   projectColorInput,
   projectInfoForm,
+  projectNameForm,
+  projectNameInput,
   projectNumberInput,
   projectPeriodEndInput,
   projectPeriodStartInput,
@@ -72,6 +76,7 @@ import {
   resetCalendarSelection,
   showLedgerView,
   showProjectInfoEditMode,
+  showProjectNameEditMode,
   showProjectView,
   showWeeklyView,
   toggleAllCalendarProjects,
@@ -169,6 +174,27 @@ resetSampleDataButton.addEventListener("click", () => {
   resetStateToSampleData();
   clearSelectedTodo();
   resetCalendarSelection();
+  render();
+});
+
+activeProjectNameButton.addEventListener("click", () => {
+  showProjectNameEditMode(true);
+});
+
+cancelProjectNameButton.addEventListener("click", () => {
+  showProjectNameEditMode(false);
+  render();
+});
+
+projectNameForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const name = projectNameInput.value.trim();
+  if (!name) {
+    return;
+  }
+
+  updateActiveProject({ name });
+  showProjectNameEditMode(false);
   render();
 });
 

@@ -22,6 +22,7 @@ import { formatProgressPercent, isTodoOverdue } from "../utils/task";
 import { getWeekRangeLabel, getWeekdays } from "../utils/week";
 import {
   activeProjectName,
+  activeProjectNameButton,
   calendarColumnSelect,
   calendarEndMonthSelect,
   calendarEmptyState,
@@ -34,6 +35,7 @@ import {
   calendarWeekdays,
   calendarWorkspace,
   cancelProjectInfoButton,
+  cancelProjectNameButton,
   deleteProjectButton,
   editProjectInfoButton,
   emptyState,
@@ -50,6 +52,8 @@ import {
   projectInfoForm,
   projectInfoView,
   projectList,
+  projectNameForm,
+  projectNameInput,
   projectNumberInput,
   projectPeriodEndInput,
   projectPeriodStartInput,
@@ -88,6 +92,7 @@ type WeeklyItem = {
 let selectedTodoId: string | null = null;
 let editingTodoId: string | null = null;
 let isProjectInfoEditing = false;
+let isProjectNameEditing = false;
 let currentView: "projects" | "ledger" | "weekly" | "calendar" = "calendar";
 let visibleMonth = new Date();
 let visibleWeekDate = new Date();
@@ -430,6 +435,7 @@ function renderProjects(): void {
     button.addEventListener("click", () => {
       selectProject(project.id);
       isProjectInfoEditing = false;
+      isProjectNameEditing = false;
       currentView = "projects";
       render();
     });
@@ -722,6 +728,24 @@ export function showProjectInfoEditMode(isEditing: boolean): void {
   cancelProjectInfoButton.hidden = !isEditing;
 }
 
+export function showProjectNameEditMode(isEditing: boolean): void {
+  const activeProject = getActiveProject();
+  isProjectNameEditing = isEditing && Boolean(activeProject);
+  activeProjectNameButton.hidden = isProjectNameEditing;
+  projectNameForm.hidden = !isProjectNameEditing;
+
+  if (activeProject) {
+    projectNameInput.value = activeProject.name;
+  }
+
+  if (isProjectNameEditing) {
+    window.requestAnimationFrame(() => {
+      projectNameInput.focus();
+      projectNameInput.select();
+    });
+  }
+}
+
 function renderTodoDetailView(todo: Todo): HTMLElement {
   const detail = document.createElement("div");
   detail.className = "todo-inline-detail";
@@ -900,6 +924,9 @@ function renderTodos(): void {
 
   if (!activeProject) {
     activeProjectName.textContent = "Add a project";
+    isProjectNameEditing = false;
+    showProjectNameEditMode(false);
+    activeProjectNameButton.disabled = true;
     todoCount.textContent = "0 items";
     emptyState.textContent = "Create a project first.";
     emptyState.hidden = false;
@@ -915,6 +942,8 @@ function renderTodos(): void {
 
   sortTodosByDueDate();
   activeProjectName.textContent = activeProject.name;
+  activeProjectNameButton.disabled = false;
+  showProjectNameEditMode(isProjectNameEditing);
   projectColorInput.value = activeProject.color;
   projectClientNameInput.value = activeProject.clientName;
   projectNumberInput.value = activeProject.projectNumber ?? "";

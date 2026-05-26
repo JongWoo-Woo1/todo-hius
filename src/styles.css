@@ -58,10 +58,54 @@ button {
   margin: 0;
 }
 
-.workspace-header h2 {
+.project-title-button {
+  max-width: 100%;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text);
+  padding: 4px 0;
+  text-align: left;
+}
+
+.project-title-button:hover,
+.project-title-button:focus-visible {
+  border-color: var(--line);
+  background: #fff;
+  padding-inline: 8px;
+}
+
+.project-title-button:disabled {
+  cursor: default;
+  color: var(--text);
+}
+
+.project-title-button:disabled:hover,
+.project-title-button:disabled:focus-visible {
+  border-color: transparent;
+  background: transparent;
+  padding-inline: 0;
+}
+
+.project-title-button span {
+  display: block;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.25;
   white-space: pre-wrap;
   word-break: keep-all;
   overflow-wrap: anywhere;
+}
+
+.project-name-form {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  max-width: 720px;
+}
+
+.project-name-form[hidden] {
+  display: none;
 }
 
 .view-switcher {
@@ -976,6 +1020,11 @@ button {
   .workspace-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .project-name-form {
+    grid-template-columns: 1fr;
+    width: 100%;
   }
 
   .project-actions {
