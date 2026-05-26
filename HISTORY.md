@@ -105,6 +105,7 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- Fixed sidebar project labels so long names truncate inside the sidebar instead of overflowing into the main panel.
 - Calendar range controls are hidden in normal monthly calendar mode.
 - Project active highlight is disabled while Calendar view is active.
 - The `+` project button only becomes visible when hovered or focused.
