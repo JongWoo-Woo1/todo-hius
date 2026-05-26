@@ -66,6 +66,8 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed sidebar project names to a single-line truncated layout.
+- Changed the selected Project title to show the full project name in the workspace header.
 - Changed Project Todo details from a separate right panel to an expanded Todo card.
 - Changed Todo detail editing to enter edit mode only after clicking the edit button.
 - Moved Todo delete action into the expanded Todo card.

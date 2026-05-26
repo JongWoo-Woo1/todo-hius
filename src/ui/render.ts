@@ -99,6 +99,10 @@ const WEEKLY_SECTIONS = [
   { key: "done", title: "업무 일지" },
 ] as const;
 
+function toSingleLineText(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
 function ensureCalendarSelection(): void {
   const projectIds = getState().projects.map((project) => project.id);
   if (!selectedCalendarProjectIds) {
@@ -400,13 +404,25 @@ function renderProjects(): void {
     button.draggable = true;
     button.dataset.projectId = project.id;
     button.classList.toggle("active", currentView === "projects" && project.id === getState().activeProjectId);
-    button.innerHTML = `
-      <span class="project-name">
-        <span class="project-swatch" style="--project-color: ${project.color}"></span>
-        ${project.name}
-      </span>
-      <span>${project.todos.length}</span>
-    `;
+
+    const name = document.createElement("span");
+    name.className = "project-name";
+    name.title = project.name;
+
+    const swatch = document.createElement("span");
+    swatch.className = "project-swatch";
+    swatch.style.setProperty("--project-color", project.color);
+
+    const label = document.createElement("span");
+    label.className = "project-label";
+    label.textContent = toSingleLineText(project.name);
+    name.append(swatch, label);
+
+    const count = document.createElement("span");
+    count.className = "project-count";
+    count.textContent = String(project.todos.length);
+
+    button.append(name, count);
     button.addEventListener("click", () => {
       selectProject(project.id);
       currentView = "projects";
