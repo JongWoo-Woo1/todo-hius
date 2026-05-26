@@ -166,35 +166,47 @@ function renderLedger(): void {
   const statusFilter = ledgerStatusFilter.value || "전체";
   const clientFilter = ledgerClientFilter.value || "전체";
   const overdueOnly = ledgerOverdueOnlyInput.checked;
-  let rowCount = 0;
 
-  getLedgerRows(getState()).forEach(({ project, todo, clientName, projectNumber, projectName, projectPeriod }) => {
+  const rows = getLedgerRows(getState()).filter(({ project, todo }) => {
     if (clientFilter !== "전체" && project.clientName !== clientFilter) {
-      return;
+      return false;
     }
 
     if (statusFilter !== "전체" && todo.status !== statusFilter) {
-      return;
+      return false;
     }
 
     if (ledgerHideCompletedInput.checked && todo.completed) {
-      return;
+      return false;
     }
 
     const overdue = isTodoOverdue(todo);
     if (overdueOnly && !overdue) {
-      return;
+      return false;
     }
 
+    return true;
+  });
+
+  rows.forEach(({ project, todo, clientName, projectNumber, projectName, projectPeriod }, index) => {
+    const clientRowSpan = rows.filter((row) => row.clientName === clientName).length;
+    const projectRowSpan = rows.filter((row) => row.project.id === project.id).length;
+    const isFirstClientRow = rows.findIndex((row) => row.clientName === clientName) === index;
+    const isFirstProjectRow = rows.findIndex((row) => row.project.id === project.id) === index;
     const row = document.createElement("tr");
     row.classList.toggle("completed", todo.completed);
-    row.classList.toggle("overdue", overdue);
+    row.classList.toggle("overdue", isTodoOverdue(todo));
     row.tabIndex = 0;
+
+    const groupedCells = [
+      isFirstClientRow ? `<td class="ledger-merged-cell" rowspan="${clientRowSpan}">${clientName}</td>` : "",
+      isFirstProjectRow ? `<td class="ledger-merged-cell" rowspan="${projectRowSpan}">${projectNumber}</td>` : "",
+      isFirstProjectRow ? `<td class="ledger-merged-cell" rowspan="${projectRowSpan}">${projectName}</td>` : "",
+      isFirstProjectRow ? `<td class="ledger-merged-cell" rowspan="${projectRowSpan}">${projectPeriod}</td>` : "",
+    ].join("");
+
     row.innerHTML = `
-        <td>${clientName}</td>
-        <td>${projectNumber}</td>
-        <td>${projectName}</td>
-        <td>${projectPeriod}</td>
+        ${groupedCells}
         <td>${todo.dueDate ?? ""}</td>
         <td>${todo.estimate ?? ""}</td>
         <td>${todo.title}</td>
@@ -223,10 +235,9 @@ function renderLedger(): void {
       render();
     });
     ledgerTableBody.append(row);
-    rowCount += 1;
   });
 
-  ledgerEmptyState.hidden = rowCount > 0;
+  ledgerEmptyState.hidden = rows.length > 0;
 }
 
 function renderWorkLogProjectOptions(): void {

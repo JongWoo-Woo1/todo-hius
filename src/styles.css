@@ -680,10 +680,16 @@ button {
 
 .ledger-table th,
 .ledger-table td {
+  border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   padding: 10px;
   text-align: left;
   vertical-align: top;
+}
+
+.ledger-table th:last-child,
+.ledger-table td:last-child {
+  border-right: 0;
 }
 
 .ledger-table th {
@@ -712,6 +718,12 @@ button {
 
 .ledger-table td {
   overflow-wrap: anywhere;
+}
+
+.ledger-table .ledger-merged-cell {
+  background: #fff;
+  font-weight: 600;
+  vertical-align: middle;
 }
 
 .calendar-controls {

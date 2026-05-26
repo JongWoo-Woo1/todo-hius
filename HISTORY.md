@@ -67,6 +67,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Ledger View to visually merge repeated 업체 and project-level cells.
 - Changed Ledger labels from 업체명/프로젝트명 to 업체/프로젝트.
 - Changed Ledger ordering to sort by 업체 in descending order.
 - Changed Project Ledger Excel Export to merge repeated 업체 and project-level cells.
