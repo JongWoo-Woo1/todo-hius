@@ -49,9 +49,9 @@ export function createSampleState(): AppState {
   const projects: Project[] = [
     {
       id: "project-katech-tms-aps-hils",
-      clientName: "KATECH 한국자동차연구원",
+      clientName: "KATECH\n한국자동차연구원",
       projectNumber: "",
-      name: "TMS HILs / APS HILs",
+      name: "TMS HILs\nAPS HILs",
       periodText: "26.06 ~",
       periodStart: "2026-06-01",
       periodEnd: null,
@@ -79,9 +79,9 @@ export function createSampleState(): AppState {
     },
     {
       id: "project-ksoe-custom-device",
-      clientName: "KSOE 한국조선해양",
+      clientName: "KSOE\n한국조선해양",
       projectNumber: "",
-      name: "Custom Device 개발 (OPCUA, ModbusTCP, MQTT)",
+      name: "Custom Device 개발\n(OPCUA,ModbusTCP,MQTT)",
       periodText: "연말 연기",
       periodStart: null,
       periodEnd: null,
@@ -138,9 +138,9 @@ export function createSampleState(): AppState {
     },
     {
       id: "project-ksoe-sofc-amesim",
-      clientName: "KSOE 한국조선해양",
+      clientName: "KSOE\n한국조선해양",
       projectNumber: "P260017",
-      name: "Simcenter Amesim 소프트웨어 활용 SOFC 시뮬레이션 모델 개발",
+      name: "Simcenter Amesim 소프트웨어 활용\nSOFC 시뮬레이션 모델 개발",
       periodText: "26.04 ~ 26.12",
       periodStart: "2026-04-01",
       periodEnd: "2026-12-31",
@@ -161,7 +161,7 @@ export function createSampleState(): AppState {
     },
     {
       id: "project-ksoe-pcs-hils",
-      clientName: "KSOE 한국조선해양",
+      clientName: "KSOE\n한국조선해양",
       projectNumber: "",
       name: "PCS HILs",
       periodText: "26.01 ~",
@@ -171,14 +171,14 @@ export function createSampleState(): AppState {
       todos: [
         createTodo({
           id: "todo-ksoe-pcs-hils-standby",
-          title: "PCS HILs 대기 업무",
+          title: "",
           estimate: "*",
         }),
       ],
     },
     {
       id: "project-ksoe-submarine-model",
-      clientName: "KSOE 한국조선해양",
+      clientName: "KSOE\n한국조선해양",
       projectNumber: "",
       name: "잠수함 모델 개발",
       periodText: "미확정",
@@ -188,7 +188,7 @@ export function createSampleState(): AppState {
       todos: [
         createTodo({
           id: "todo-ksoe-submarine-model-standby",
-          title: "잠수함 모델 개발 대기 업무",
+          title: "",
           estimate: "*",
         }),
       ],
