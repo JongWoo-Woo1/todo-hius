@@ -21,6 +21,9 @@ const TABLE_START_COLUMN = 2;
 const HEADER_ROW_NUMBER = TABLE_START_ROW;
 const DATA_START_ROW = TABLE_START_ROW + 1;
 const TABLE_END_COLUMN = TABLE_START_COLUMN + LEDGER_HEADERS.length - 1;
+const MAIN_CONTENT_COLUMN_CHARACTER_WIDTH = 44;
+const BASE_DATA_ROW_HEIGHT = 19;
+const LINE_HEIGHT = 15;
 
 const thinBorder: Partial<ExcelJS.Borders> = {
   top: { style: "thin" },
@@ -70,6 +73,25 @@ function formatLedgerDate(date: string | null | undefined): string {
   }
 
   return `${year.slice(-2)}-${month}-${day}`;
+}
+
+function getTextWidth(value: string): number {
+  return Array.from(value).reduce((total, character) => {
+    return total + (character.charCodeAt(0) > 255 ? 2 : 1);
+  }, 0);
+}
+
+function estimateWrappedLineCount(value: string, columnCharacterWidth: number): number {
+  const lines = value.split(/\r?\n/);
+  return lines.reduce((lineCount, line) => {
+    const textWidth = getTextWidth(line);
+    return lineCount + Math.max(1, Math.ceil(textWidth / columnCharacterWidth));
+  }, 0);
+}
+
+function getDataRowHeight(mainContent: string): number {
+  const lineCount = estimateWrappedLineCount(mainContent, MAIN_CONTENT_COLUMN_CHARACTER_WIDTH);
+  return Math.max(BASE_DATA_ROW_HEIGHT, lineCount * LINE_HEIGHT + 4);
 }
 
 function applyTableCellStyle(
@@ -131,7 +153,7 @@ export function createProjectLedgerWorkbook(state: AppState): ExcelJS.Workbook {
 
   rows.forEach(({ todo, clientName, projectNumber, projectName, projectPeriod }, index) => {
     const row = worksheet.getRow(DATA_START_ROW + index);
-    row.height = 19;
+    row.height = getDataRowHeight(todo.title);
 
     [
       clientName,

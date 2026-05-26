@@ -118,6 +118,7 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- Fixed Project Ledger Excel Export row heights so long 주요 추진내용 values remain visible.
 - Fixed sidebar project labels so long names truncate inside the sidebar instead of overflowing into the main panel.
 - Calendar range controls are hidden in normal monthly calendar mode.
 - Project active highlight is disabled while Calendar view is active.
