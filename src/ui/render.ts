@@ -97,8 +97,7 @@ const RANGE_CALENDAR_YEAR = 2026;
 const MONTH_LABELS = Array.from({ length: 12 }, (_, index) => `${index + 1}`);
 const WEEKLY_SECTIONS = [
   { key: "plan", title: "업무 계획" },
-  { key: "done", title: "업무 내용" },
-  { key: "note", title: "특이사항" },
+  { key: "done", title: "업무 일지" },
 ] as const;
 
 function ensureCalendarSelection(): void {
@@ -260,7 +259,6 @@ function createWeeklyBuckets(): Map<string, Record<(typeof WEEKLY_SECTIONS)[numb
     buckets.set(toDateKey(date), {
       plan: [],
       done: [],
-      note: [],
     });
   });
 
@@ -363,7 +361,7 @@ function renderWeekly(): void {
     } else if (workLog.type === "수행") {
       bucket.done.push(item);
     } else {
-      bucket.note.push(item);
+      return;
     }
     weeklyItemCount += 1;
   });

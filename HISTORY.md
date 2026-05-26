@@ -64,6 +64,9 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Weekly Report Excel Export to match the 업무일지 example layout.
+- Changed Weekly reports to use only 업무 계획 and 업무 일지 sections.
+- Removed the 특이사항 section from Weekly View and Weekly Excel Export.
 - Added the default Git push workflow to `AGENTS.md` so future changes are committed and pushed promptly.
 - Moved global CSS from root `styles.css` to `src/styles.css` and load it through `src/main.ts`.
 - Removed the sidebar Project view button and ordered top-level navigation as Calendar, then Ledger.

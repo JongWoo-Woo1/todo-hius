@@ -1,20 +1,25 @@
 import ExcelJS from "exceljs";
 import type { AppState } from "../types";
 import { toDateKey } from "../utils/calendar";
-import { getWeekRangeLabel, getWeekdays } from "../utils/week";
+import { getWeekdays } from "../utils/week";
 
-type WeeklySectionKey = "plan" | "done" | "note";
+type WeeklySectionKey = "plan" | "done";
 
 type WeeklyItem = {
   projectName: string;
   content: string;
 };
 
-const WEEKLY_SECTIONS: Array<{ key: WeeklySectionKey; title: string }> = [
-  { key: "plan", title: "업무 계획" },
-  { key: "done", title: "업무 내용" },
-  { key: "note", title: "특이사항" },
-];
+const DAY_BLOCKS = [
+  { start: 3, end: 7 },
+  { start: 8, end: 12 },
+  { start: 13, end: 17 },
+  { start: 18, end: 22 },
+  { start: 23, end: 27 },
+] as const;
+
+const REPORT_START_COLUMN = 2;
+const REPORT_END_COLUMN = 27;
 
 function createWeeklyBuckets(date: Date): Map<string, Record<WeeklySectionKey, WeeklyItem[]>> {
   const buckets = new Map<string, Record<WeeklySectionKey, WeeklyItem[]>>();
@@ -23,24 +28,112 @@ function createWeeklyBuckets(date: Date): Map<string, Record<WeeklySectionKey, W
     buckets.set(toDateKey(weekday), {
       plan: [],
       done: [],
-      note: [],
     });
   });
 
   return buckets;
 }
 
-function formatWeeklyItem(item: WeeklyItem): string {
-  return `[${item.projectName}] ${item.content}`;
+function getWeekOfMonthLabel(date: Date): string {
+  const monday = getWeekdays(date)[0];
+  const weekNumber = Math.ceil(monday.getDate() / 7);
+
+  return `${monday.getMonth() + 1}월 ${weekNumber}주차`;
 }
 
-function applyBorder(cell: ExcelJS.Cell): void {
+function formatGroupedItems(items: WeeklyItem[]): string {
+  const groupedItems = new Map<string, string[]>();
+
+  items.forEach((item) => {
+    const projectItems = groupedItems.get(item.projectName) ?? [];
+    projectItems.push(item.content);
+    groupedItems.set(item.projectName, projectItems);
+  });
+
+  return Array.from(groupedItems.entries())
+    .map(([projectName, contents]) => `${projectName}\n${contents.map((content) => `- ${content}`).join("\n")}`)
+    .join("\n\n");
+}
+
+function applyThinBorder(cell: ExcelJS.Cell): void {
   cell.border = {
     top: { style: "thin" },
     left: { style: "thin" },
     bottom: { style: "thin" },
     right: { style: "thin" },
   };
+}
+
+function styleReportRange(worksheet: ExcelJS.Worksheet): void {
+  for (let rowNumber = 2; rowNumber <= 48; rowNumber += 1) {
+    for (let columnNumber = REPORT_START_COLUMN; columnNumber <= REPORT_END_COLUMN; columnNumber += 1) {
+      const cell = worksheet.getCell(rowNumber, columnNumber);
+      const existingFont = cell.font ?? {};
+      applyThinBorder(cell);
+      cell.font = {
+        name: "Malgun Gothic",
+        size: existingFont.size ?? 11,
+        bold: existingFont.bold,
+      };
+      cell.alignment = {
+        ...cell.alignment,
+        vertical: cell.alignment?.vertical ?? "top",
+        wrapText: true,
+      };
+    }
+  }
+}
+
+function styleMergedHeader(cell: ExcelJS.Cell, fontSize: number): void {
+  cell.font = { name: "Malgun Gothic", bold: true, size: fontSize };
+  cell.alignment = { horizontal: "center", vertical: "middle" };
+  cell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFD9D9D9" },
+  };
+}
+
+function styleSectionHeader(cell: ExcelJS.Cell): void {
+  cell.font = { name: "Malgun Gothic", bold: true, size: 16 };
+  cell.alignment = { horizontal: "center", vertical: "middle" };
+  cell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFF2F2F2" },
+  };
+}
+
+function setSection(
+  worksheet: ExcelJS.Worksheet,
+  label: string,
+  headerRows: [number, number],
+  contentRows: [number, number],
+  weekdays: Date[],
+  buckets: Map<string, Record<WeeklySectionKey, WeeklyItem[]>>,
+  sectionKey: WeeklySectionKey,
+): void {
+  worksheet.mergeCells(headerRows[0], REPORT_START_COLUMN, headerRows[1], REPORT_END_COLUMN);
+  const sectionCell = worksheet.getCell(headerRows[0], REPORT_START_COLUMN);
+  sectionCell.value = label;
+  styleSectionHeader(sectionCell);
+
+  worksheet.mergeCells(contentRows[0], REPORT_START_COLUMN, contentRows[1], REPORT_START_COLUMN);
+  const labelCell = worksheet.getCell(contentRows[0], REPORT_START_COLUMN);
+  labelCell.value = "업무 내용";
+  labelCell.font = { name: "Malgun Gothic", bold: true, size: 11 };
+  labelCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+
+  weekdays.forEach((weekday, index) => {
+    const block = DAY_BLOCKS[index];
+    worksheet.mergeCells(contentRows[0], block.start, contentRows[1], block.end);
+
+    const contentCell = worksheet.getCell(contentRows[0], block.start);
+    const items = buckets.get(toDateKey(weekday))![sectionKey];
+    contentCell.value = formatGroupedItems(items);
+    contentCell.font = { name: "Malgun Gothic", size: 11 };
+    contentCell.alignment = { vertical: "top", wrapText: true };
+  });
 }
 
 export function getWeeklyReportFileDate(date: Date): string {
@@ -80,81 +173,42 @@ export function createWeeklyReportWorkbook(state: AppState, date: Date): ExcelJS
 
     if (workLog.type === "계획") {
       bucket.plan.push(item);
-    } else if (workLog.type === "수행") {
+    }
+
+    if (workLog.type === "수행") {
       bucket.done.push(item);
-    } else {
-      bucket.note.push(item);
     }
   });
 
-  worksheet.mergeCells(1, 1, 1, 5);
-  const titleCell = worksheet.getCell(1, 1);
-  titleCell.value = "주간업무 리포트";
-  titleCell.font = { bold: true, size: 16 };
-  titleCell.alignment = { horizontal: "center", vertical: "middle" };
+  worksheet.mergeCells(2, REPORT_START_COLUMN, 4, REPORT_END_COLUMN);
+  const titleCell = worksheet.getCell(2, REPORT_START_COLUMN);
+  titleCell.value = `${getWeekOfMonthLabel(date)} 주간업무 리포트`;
+  styleMergedHeader(titleCell, 16);
 
-  worksheet.mergeCells(2, 1, 2, 5);
-  const rangeCell = worksheet.getCell(2, 1);
-  rangeCell.value = getWeekRangeLabel(date);
-  rangeCell.font = { bold: true };
-  rangeCell.alignment = { horizontal: "center", vertical: "middle" };
+  setSection(worksheet, "업무 계획", [5, 6], [7, 16], weekdays, buckets, "plan");
+  setSection(worksheet, "업무 일지", [17, 18], [19, 48], weekdays, buckets, "done");
 
-  const dayHeaderRow = worksheet.getRow(4);
-  weekdays.forEach((weekday, index) => {
-    const cell = dayHeaderRow.getCell(index + 1);
-    cell.value = `${weekday.toLocaleDateString("en-US", { weekday: "long" })}\n${toDateKey(weekday)}`;
-    cell.font = { bold: true };
-    cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
-    cell.fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FFE5E7EB" },
-    };
+  worksheet.getColumn(1).width = 3;
+  worksheet.getColumn(REPORT_START_COLUMN).width = 12;
+  for (let columnNumber = 3; columnNumber <= REPORT_END_COLUMN; columnNumber += 1) {
+    worksheet.getColumn(columnNumber).width = 7.5;
+  }
+
+  [2, 3, 4].forEach((rowNumber) => {
+    worksheet.getRow(rowNumber).height = rowNumber === 3 ? 26 : 20;
   });
-
-  WEEKLY_SECTIONS.forEach((section, sectionIndex) => {
-    const labelRow = worksheet.getRow(5 + sectionIndex * 2);
-    const contentRow = worksheet.getRow(6 + sectionIndex * 2);
-
-    weekdays.forEach((weekday, dayIndex) => {
-      const dateKey = toDateKey(weekday);
-      const labelCell = labelRow.getCell(dayIndex + 1);
-      const contentCell = contentRow.getCell(dayIndex + 1);
-      const items = buckets.get(dateKey)![section.key];
-
-      labelCell.value = section.title;
-      labelCell.font = { bold: true };
-      labelCell.alignment = { horizontal: "center", vertical: "middle" };
-      labelCell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: section.key === "note" ? "FFFFF7ED" : "FFF8FAFC" },
-      };
-
-      contentCell.value = items.length > 0 ? items.map(formatWeeklyItem).join("\n") : "";
-      contentCell.alignment = { vertical: "top", wrapText: true };
-    });
+  [5, 6, 17, 18].forEach((rowNumber) => {
+    worksheet.getRow(rowNumber).height = 22;
   });
+  for (let rowNumber = 7; rowNumber <= 16; rowNumber += 1) {
+    worksheet.getRow(rowNumber).height = 19;
+  }
+  for (let rowNumber = 19; rowNumber <= 48; rowNumber += 1) {
+    worksheet.getRow(rowNumber).height = 19;
+  }
 
-  worksheet.columns = Array.from({ length: 5 }, () => ({ width: 34 }));
-
-  worksheet.eachRow((row) => {
-    row.eachCell({ includeEmpty: true }, (cell) => {
-      applyBorder(cell);
-      cell.alignment = {
-        ...cell.alignment,
-        vertical: cell.alignment?.vertical ?? "top",
-        wrapText: true,
-      };
-    });
-  });
-
-  worksheet.getRow(1).height = 24;
-  worksheet.getRow(2).height = 22;
-  worksheet.getRow(4).height = 38;
-  worksheet.getRow(6).height = 90;
-  worksheet.getRow(8).height = 90;
-  worksheet.getRow(10).height = 90;
+  styleReportRange(worksheet);
+  worksheet.views = [{ showGridLines: true }];
 
   return workbook;
 }

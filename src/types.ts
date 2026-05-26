@@ -2,7 +2,7 @@ export type TaskStatus = "대기" | "진행중" | "미완" | "완료" | "보류"
 
 export type TaskPriority = "낮음" | "보통" | "높음" | "최우선";
 
-export type WorkLogType = "계획" | "수행" | "특이사항";
+export type WorkLogType = "계획" | "수행";
 
 export type Todo = {
   id: string;

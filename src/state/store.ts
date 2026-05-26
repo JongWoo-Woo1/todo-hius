@@ -20,7 +20,7 @@ type LegacyAppState = Partial<AppState> & {
 
 const TASK_STATUSES: TaskStatus[] = ["대기", "진행중", "미완", "완료", "보류"];
 const TASK_PRIORITIES: TaskPriority[] = ["낮음", "보통", "높음", "최우선"];
-const WORK_LOG_TYPES: WorkLogType[] = ["계획", "수행", "특이사항"];
+const WORK_LOG_TYPES: WorkLogType[] = ["계획", "수행"];
 
 let state = loadState();
 
@@ -99,13 +99,19 @@ function normalizeProject(project: LegacyProject, index: number): Project {
   };
 }
 
-function normalizeWorkLog(workLog: LegacyWorkLog, index: number): WorkLog {
+function normalizeWorkLog(workLog: LegacyWorkLog, index: number): WorkLog | null {
+  const rawType = (workLog as { type?: unknown }).type;
+  const type = rawType === undefined || rawType === null || rawType === "" ? "계획" : rawType;
+  if (!isWorkLogType(type)) {
+    return null;
+  }
+
   return {
     id: workLog.id ?? `work-log-${index}`,
     projectId: workLog.projectId ?? "",
     todoId: workLog.todoId,
     date: workLog.date ?? new Date().toISOString().slice(0, 10),
-    type: isWorkLogType(workLog.type) ? workLog.type : "계획",
+    type,
     content: workLog.content ?? "",
   };
 }
@@ -120,7 +126,7 @@ function migrateState(rawState: LegacyAppState): AppState {
   return {
     projects,
     activeProjectId,
-    workLogs: (rawState.workLogs ?? []).map(normalizeWorkLog),
+    workLogs: (rawState.workLogs ?? []).map(normalizeWorkLog).filter((workLog): workLog is WorkLog => workLog !== null),
   };
 }
 
@@ -253,7 +259,12 @@ export function deleteTodo(todoId: string): void {
 }
 
 export function addWorkLog(workLog: WorkLog): void {
-  state.workLogs.push(normalizeWorkLog(workLog, state.workLogs.length));
+  const normalizedWorkLog = normalizeWorkLog(workLog, state.workLogs.length);
+  if (!normalizedWorkLog) {
+    return;
+  }
+
+  state.workLogs.push(normalizedWorkLog);
   saveState();
 }
 
@@ -263,13 +274,18 @@ export function updateWorkLog(workLogId: string, updates: Partial<WorkLog>): voi
     return;
   }
 
-  state.workLogs[workLogIndex] = normalizeWorkLog(
+  const normalizedWorkLog = normalizeWorkLog(
     {
       ...state.workLogs[workLogIndex],
       ...updates,
     },
     workLogIndex,
   );
+  if (!normalizedWorkLog) {
+    state.workLogs.splice(workLogIndex, 1);
+  } else {
+    state.workLogs[workLogIndex] = normalizedWorkLog;
+  }
   saveState();
 }
 
