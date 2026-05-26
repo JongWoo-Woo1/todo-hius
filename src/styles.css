@@ -289,6 +289,17 @@ button {
   gap: 12px;
 }
 
+.project-info-view {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.project-info-view[hidden] {
+  display: none;
+}
+
 .project-info-form[hidden] {
   display: none;
 }
@@ -298,6 +309,13 @@ button {
   gap: 8px;
   color: var(--muted);
   font-size: 14px;
+}
+
+.project-info-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .todo-form {
@@ -965,7 +983,8 @@ button {
     justify-content: space-between;
   }
 
-  .project-info-form {
+  .project-info-form,
+  .project-info-view {
     grid-template-columns: 1fr;
   }
 

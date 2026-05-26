@@ -42,8 +42,10 @@
         <section class="project-info-card">
           <div class="section-header">
             <h3>Project Info</h3>
+            <button id="edit-project-info-button" class="quiet-button" type="button">수정</button>
           </div>
-          <form id="project-info-form" class="project-info-form">
+          <dl id="project-info-view" class="project-info-view"></dl>
+          <form id="project-info-form" class="project-info-form" hidden>
             <label>
               Client
               <input id="project-client-name" type="text" placeholder="Client name" />
@@ -64,6 +66,10 @@
               End
               <input id="project-period-end" type="date" />
             </label>
+            <div class="project-info-actions">
+              <button type="submit">저장</button>
+              <button id="cancel-project-info-button" class="quiet-button" type="button">취소</button>
+            </div>
           </form>
         </section>
 

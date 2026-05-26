@@ -33,7 +33,9 @@ import {
   calendarViewButton,
   calendarWeekdays,
   calendarWorkspace,
+  cancelProjectInfoButton,
   deleteProjectButton,
+  editProjectInfoButton,
   emptyState,
   ledgerClientFilter,
   ledgerEmptyState,
@@ -46,6 +48,7 @@ import {
   projectColorInput,
   projectClientNameInput,
   projectInfoForm,
+  projectInfoView,
   projectList,
   projectNumberInput,
   projectPeriodEndInput,
@@ -84,6 +87,7 @@ type WeeklyItem = {
 
 let selectedTodoId: string | null = null;
 let editingTodoId: string | null = null;
+let isProjectInfoEditing = false;
 let currentView: "projects" | "ledger" | "weekly" | "calendar" = "calendar";
 let visibleMonth = new Date();
 let visibleWeekDate = new Date();
@@ -425,6 +429,7 @@ function renderProjects(): void {
     button.append(name, count);
     button.addEventListener("click", () => {
       selectProject(project.id);
+      isProjectInfoEditing = false;
       currentView = "projects";
       render();
     });
@@ -692,6 +697,31 @@ function createDetailRow(label: string, value: string): HTMLElement {
   return row;
 }
 
+function renderProjectInfoView(): void {
+  const activeProject = getActiveProject();
+  projectInfoView.innerHTML = "";
+
+  if (!activeProject) {
+    return;
+  }
+
+  projectInfoView.append(
+    createDetailRow("업체명", getDetailValue(activeProject.clientName)),
+    createDetailRow("프로젝트 번호", getDetailValue(activeProject.projectNumber)),
+    createDetailRow("프로젝트 기간", getDetailValue(activeProject.periodText)),
+    createDetailRow("시작일", getDetailValue(activeProject.periodStart)),
+    createDetailRow("종료일", getDetailValue(activeProject.periodEnd)),
+  );
+}
+
+export function showProjectInfoEditMode(isEditing: boolean): void {
+  isProjectInfoEditing = isEditing;
+  projectInfoView.hidden = isEditing;
+  projectInfoForm.hidden = !isEditing;
+  editProjectInfoButton.hidden = isEditing || !getActiveProject();
+  cancelProjectInfoButton.hidden = !isEditing;
+}
+
 function renderTodoDetailView(todo: Todo): HTMLElement {
   const detail = document.createElement("div");
   detail.className = "todo-inline-detail";
@@ -874,7 +904,9 @@ function renderTodos(): void {
     emptyState.textContent = "Create a project first.";
     emptyState.hidden = false;
     todoForm.hidden = true;
-    projectInfoForm.hidden = true;
+    isProjectInfoEditing = false;
+    showProjectInfoEditMode(false);
+    projectInfoView.hidden = true;
     deleteProjectButton.hidden = true;
     selectedTodoId = null;
     editingTodoId = null;
@@ -889,11 +921,12 @@ function renderTodos(): void {
   projectPeriodTextInput.value = activeProject.periodText ?? "";
   projectPeriodStartInput.value = activeProject.periodStart ?? "";
   projectPeriodEndInput.value = activeProject.periodEnd ?? "";
+  renderProjectInfoView();
+  showProjectInfoEditMode(isProjectInfoEditing);
   todoCount.textContent = `${activeProject.todos.length} items`;
   emptyState.textContent = "선택된 프로젝트에 업무가 없습니다.";
   emptyState.hidden = activeProject.todos.length > 0;
   todoForm.hidden = false;
-  projectInfoForm.hidden = false;
   deleteProjectButton.hidden = false;
 
   activeProject.todos.forEach((todo) => {

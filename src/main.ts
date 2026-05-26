@@ -23,7 +23,9 @@ import {
   calendarEndMonthSelect,
   calendarStartMonthSelect,
   calendarViewButton,
+  cancelProjectInfoButton,
   deleteProjectButton,
+  editProjectInfoButton,
   exportJsonButton,
   importJsonButton,
   importJsonFileInput,
@@ -69,6 +71,7 @@ import {
   render,
   resetCalendarSelection,
   showLedgerView,
+  showProjectInfoEditMode,
   showProjectView,
   showWeeklyView,
   toggleAllCalendarProjects,
@@ -169,7 +172,17 @@ resetSampleDataButton.addEventListener("click", () => {
   render();
 });
 
-projectInfoForm.addEventListener("change", () => {
+editProjectInfoButton.addEventListener("click", () => {
+  showProjectInfoEditMode(true);
+});
+
+cancelProjectInfoButton.addEventListener("click", () => {
+  showProjectInfoEditMode(false);
+  render();
+});
+
+projectInfoForm.addEventListener("submit", (event) => {
+  event.preventDefault();
   updateActiveProject({
     clientName: projectClientNameInput.value.trim(),
     projectNumber: projectNumberInput.value.trim(),
@@ -177,6 +190,7 @@ projectInfoForm.addEventListener("change", () => {
     periodStart: projectPeriodStartInput.value || null,
     periodEnd: projectPeriodEndInput.value || null,
   });
+  showProjectInfoEditMode(false);
   render();
 });
 

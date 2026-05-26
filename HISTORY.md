@@ -66,6 +66,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Project Info to show a read-only card by default and enter edit mode from the edit button.
 - Changed Todo card clicks to toggle between expanded details and collapsed summary.
 - Changed Project name normalization to replace line breaks with ` - `.
 - Updated sample Project names to remove embedded line breaks.
