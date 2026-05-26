@@ -36,6 +36,18 @@ function isWorkLogType(value: unknown): value is WorkLogType {
   return typeof value === "string" && WORK_LOG_TYPES.includes(value as WorkLogType);
 }
 
+function normalizeProjectName(value: unknown): string {
+  if (typeof value !== "string") {
+    return "new project";
+  }
+
+  return value
+    .split(/\r?\n/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" - ") || "new project";
+}
+
 function normalizeProgress(value: unknown, completed: boolean): number {
   if (completed) {
     return 1;
@@ -88,7 +100,7 @@ function normalizeTodo(todo: LegacyTodo, index: number): Todo {
 function normalizeProject(project: LegacyProject, index: number): Project {
   return {
     id: project.id ?? `project-${index}`,
-    name: project.name ?? "new project",
+    name: normalizeProjectName(project.name),
     clientName: project.clientName ?? "",
     projectNumber: project.projectNumber ?? "",
     periodStart: project.periodStart ?? null,
@@ -169,6 +181,10 @@ export function updateActiveProject(updates: Partial<Project>): void {
   const activeProject = getActiveProject();
   if (!activeProject) {
     return;
+  }
+
+  if ("name" in updates) {
+    updates.name = normalizeProjectName(updates.name);
   }
 
   Object.assign(activeProject, updates);

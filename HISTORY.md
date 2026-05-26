@@ -66,6 +66,8 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Project name normalization to replace line breaks with ` - `.
+- Updated sample Project names to remove embedded line breaks.
 - Changed sidebar project names to a single-line truncated layout.
 - Changed the selected Project title to show the full project name in the workspace header.
 - Changed Project Todo details from a separate right panel to an expanded Todo card.
