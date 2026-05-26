@@ -308,6 +308,11 @@ export function replaceState(rawState: unknown): boolean {
   return true;
 }
 
+export function resetStateToSampleData(): void {
+  state = createSampleState();
+  saveState();
+}
+
 export function importStateFromJson(json: string): boolean {
   try {
     return replaceState(JSON.parse(json));

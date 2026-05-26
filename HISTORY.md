@@ -6,6 +6,7 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added a reset action to replace current localStorage data with the latest `sampleProjects.ts` data.
 - Added `public/templates/weekly-report-template.xlsx` for template-based Weekly Report Export.
 - Added JSON backup export.
 - Added JSON restore/import with minimal validation and migration reuse.
