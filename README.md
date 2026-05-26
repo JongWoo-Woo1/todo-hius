@@ -10,7 +10,10 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
 - 프로젝트 생성, 삭제, 이름 수정
 - 프로젝트 색상 변경
 - 왼쪽 Nav에서 프로젝트 drag and drop 순서 변경
+- JSON 백업 파일 Export
+- JSON 백업 파일 Import / Restore
 - Todo 생성, 삭제, 완료 체크
+- 지연 업무 표시
 - Todo 상세 정보 수정:
   - 업무명
   - 내부 목표 완료일
@@ -43,7 +46,7 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
   - 주간업무 리포트 `.xlsx` 파일 다운로드
 - Ledger View:
   - 모든 프로젝트와 모든 Todo를 하나의 표로 확인
-  - 상태, 업체명, 완료 업무 숨기기 필터
+  - 상태, 업체명, 완료 업무 숨기기, 지연 업무만 보기 필터
   - 행 클릭 시 해당 Project와 Todo 상세 편집 화면으로 이동
   - 프로젝트 원장 `.xlsx` 파일 다운로드
 
@@ -98,6 +101,7 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
 - `src/excel/downloadWorkbook.ts`: browser `.xlsx` download helper
 - `src/ui/render.ts`: Project, Ledger, Weekly, and Calendar rendering
 - `src/ui/dom.ts`: shared DOM element lookups
+- `src/utils/task.ts`: task progress and overdue helpers
 - `src/utils/week.ts`: Monday-Friday weekly date helpers
 - `src/types.ts`: shared TypeScript types
 

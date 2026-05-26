@@ -16,6 +16,11 @@
 
         <nav id="project-list" class="project-list" aria-label="Project list"></nav>
         <button id="add-project-button" class="add-project-button" type="button" aria-label="Add project">+</button>
+        <div class="backup-actions" aria-label="Data backup actions">
+          <button id="export-json-button" class="quiet-button" type="button">Export JSON</button>
+          <button id="import-json-button" class="quiet-button" type="button">Import JSON</button>
+          <input id="import-json-file" type="file" accept="application/json,.json" hidden />
+        </div>
       </aside>
 
       <section id="project-workspace" class="workspace">
@@ -215,6 +220,7 @@
         </section>
 
         <section id="weekly-grid" class="weekly-grid"></section>
+        <p id="weekly-empty-state" class="empty-state">이번 주 업무 기록이 없습니다.</p>
       </section>
 
       <section id="ledger-workspace" class="workspace" hidden>
@@ -250,6 +256,11 @@
             <input id="ledger-hide-completed" type="checkbox" />
             Hide completed
           </label>
+
+          <label class="checkbox-field">
+            <input id="ledger-overdue-only" type="checkbox" />
+            Overdue only
+          </label>
         </section>
 
         <section class="ledger-table-wrap">
@@ -273,7 +284,7 @@
             </thead>
             <tbody id="ledger-table-body"></tbody>
           </table>
-          <p id="ledger-empty-state" class="empty-state">No ledger items.</p>
+          <p id="ledger-empty-state" class="empty-state">조건에 맞는 업무가 없습니다.</p>
         </section>
       </section>
 
@@ -324,6 +335,7 @@
           <span>Sat</span>
         </div>
         <div id="calendar-grid" class="calendar-grid"></div>
+        <p id="calendar-empty-state" class="empty-state">표시할 일정이 없습니다.</p>
       </section>
     </main>
 

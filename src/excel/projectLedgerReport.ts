@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
-import type { AppState, Todo } from "../types";
+import type { AppState } from "../types";
 import { formatProjectPeriod } from "../utils/project";
+import { formatProgressPercent } from "../utils/task";
 
 const LEDGER_HEADERS = [
   "업체명",
@@ -17,10 +18,6 @@ const LEDGER_HEADERS = [
   "Comment 담당자",
   "Comment 관리자",
 ];
-
-function formatProgress(todo: Todo): string {
-  return `${Math.round(todo.progress * 100)}%`;
-}
 
 export function createProjectLedgerWorkbook(state: AppState): ExcelJS.Workbook {
   const workbook = new ExcelJS.Workbook();
@@ -56,7 +53,7 @@ export function createProjectLedgerWorkbook(state: AppState): ExcelJS.Workbook {
         todo.estimate ?? "",
         todo.title,
         todo.status,
-        formatProgress(todo),
+        formatProgressPercent(todo.progress),
         todo.priority ?? "",
         todo.issueRisk ?? "",
         todo.workerComment ?? "",

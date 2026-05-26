@@ -141,6 +141,10 @@ function saveState(): void {
   saveRawState(state);
 }
 
+function isImportableState(value: unknown): value is LegacyAppState {
+  return typeof value === "object" && value !== null && Array.isArray((value as LegacyAppState).projects);
+}
+
 export function getState(): AppState {
   return state;
 }
@@ -272,4 +276,26 @@ export function updateWorkLog(workLogId: string, updates: Partial<WorkLog>): voi
 export function deleteWorkLog(workLogId: string): void {
   state.workLogs = state.workLogs.filter((workLog) => workLog.id !== workLogId);
   saveState();
+}
+
+export function exportStateJson(): string {
+  return JSON.stringify(state, null, 2);
+}
+
+export function replaceState(rawState: unknown): boolean {
+  if (!isImportableState(rawState)) {
+    return false;
+  }
+
+  state = migrateState(rawState);
+  saveState();
+  return true;
+}
+
+export function importStateFromJson(json: string): boolean {
+  try {
+    return replaceState(JSON.parse(json));
+  } catch {
+    return false;
+  }
 }

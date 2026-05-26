@@ -6,6 +6,13 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added JSON backup export.
+- Added JSON restore/import with minimal validation and migration reuse.
+- Added overdue task indicators in Todo, Ledger, and Calendar views.
+- Added Ledger overdue-only filter.
+- Added priority badges and shared progress display helpers.
+- Added clearer empty states across work views.
+- Added `src/utils/task.ts` for progress and overdue helpers.
 - Added Weekly Report Excel Export.
 - Added Weekly View export button.
 - Added Weekly Report workbook creation under `src/excel/weeklyReport.ts`.

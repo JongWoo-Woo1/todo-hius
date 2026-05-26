@@ -5,8 +5,10 @@ import {
   addTodo,
   addWorkLog,
   deleteActiveProject,
+  exportStateJson,
   getActiveProject,
   getState,
+  importStateFromJson,
   updateActiveProject,
   updateActiveProjectColor,
   updateTodo,
@@ -23,9 +25,13 @@ import {
   calendarViewButton,
   closeTodoDetailButton,
   deleteProjectButton,
+  exportJsonButton,
+  importJsonButton,
+  importJsonFileInput,
   ledgerClientFilter,
   ledgerExportButton,
   ledgerHideCompletedInput,
+  ledgerOverdueOnlyInput,
   ledgerStatusFilter,
   ledgerViewButton,
   nextMonthButton,
@@ -73,6 +79,7 @@ import {
   goToPreviousWeek,
   getVisibleWeekDate,
   render,
+  resetCalendarSelection,
   showLedgerView,
   showProjectView,
   showWeeklyView,
@@ -104,6 +111,19 @@ function getProgressFromPercentInput(): number {
   return Math.min(1, Math.max(0, progressPercent / 100));
 }
 
+function downloadTextFile(content: string, fileName: string, type: string): void {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 addProjectButton.addEventListener("click", () => {
   const project: Project = {
     id: createId(),
@@ -119,6 +139,40 @@ addProjectButton.addEventListener("click", () => {
 
   addProject(project);
   showProjectView();
+  render();
+});
+
+exportJsonButton.addEventListener("click", () => {
+  downloadTextFile(exportStateJson(), `project-todo-backup-${toDateKey(new Date())}.json`, "application/json");
+});
+
+importJsonButton.addEventListener("click", () => {
+  importJsonFileInput.click();
+});
+
+importJsonFileInput.addEventListener("change", async () => {
+  const file = importJsonFileInput.files?.[0];
+  if (!file) {
+    return;
+  }
+
+  const shouldImport = window.confirm("Importing this JSON file will overwrite the current local data. Continue?");
+  if (!shouldImport) {
+    importJsonFileInput.value = "";
+    return;
+  }
+
+  const json = await file.text();
+  const imported = importStateFromJson(json);
+  importJsonFileInput.value = "";
+
+  if (!imported) {
+    window.alert("Invalid backup file. Please select a JSON file exported from this app.");
+    return;
+  }
+
+  clearSelectedTodo();
+  resetCalendarSelection();
   render();
 });
 
@@ -223,6 +277,10 @@ ledgerClientFilter.addEventListener("change", () => {
 });
 
 ledgerHideCompletedInput.addEventListener("change", () => {
+  render();
+});
+
+ledgerOverdueOnlyInput.addEventListener("change", () => {
   render();
 });
 

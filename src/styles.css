@@ -191,6 +191,15 @@ button {
   color: var(--text);
 }
 
+.backup-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
 .workspace {
   padding: 28px;
 }
@@ -326,6 +335,11 @@ button {
   background: #f0fdf4;
 }
 
+.todo-item.overdue {
+  border-color: #fca5a5;
+  background: #fff7ed;
+}
+
 .todo-item.completed .todo-title {
   color: var(--muted);
   text-decoration: line-through;
@@ -361,7 +375,9 @@ button {
 }
 
 .status-badge,
-.progress-pill {
+.progress-pill,
+.priority-badge,
+.overdue-badge {
   display: inline-flex;
   align-items: center;
   min-height: 22px;
@@ -420,6 +436,18 @@ button {
 .progress-pill {
   background: #f3f4f6;
   color: var(--text);
+}
+
+.priority-badge {
+  margin-right: 6px;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.overdue-badge {
+  margin-right: 6px;
+  background: #fee2e2;
+  color: #b42318;
 }
 
 .delete-todo-button {
@@ -495,7 +523,7 @@ button {
 
 .ledger-filter-card {
   display: grid;
-  grid-template-columns: 180px 220px auto;
+  grid-template-columns: 180px 220px auto auto;
   gap: 12px;
   align-items: end;
   margin-bottom: 18px;
@@ -566,6 +594,10 @@ button {
 .ledger-table tr.completed {
   color: var(--muted);
   opacity: 0.72;
+}
+
+.ledger-table tr.overdue:not(.completed) {
+  background: #fff7ed;
 }
 
 .ledger-table td {
@@ -739,6 +771,10 @@ button {
 .calendar-item.completed {
   border-left-color: #94a3b8;
   background: #f8fafc;
+}
+
+.calendar-item.overdue:not(.completed) {
+  background: #fff7ed;
 }
 
 .calendar-item.completed strong {

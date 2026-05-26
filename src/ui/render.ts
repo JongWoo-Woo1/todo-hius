@@ -8,11 +8,13 @@ import { deleteTodo, deleteWorkLog, getActiveProject, getState, reorderProjects,
 import { getMonthGridDates, getMonthLabel, toDateKey } from "../utils/calendar";
 import { formatDueDate } from "../utils/date";
 import { formatProjectPeriod } from "../utils/project";
+import { formatProgressPercent, isTodoOverdue } from "../utils/task";
 import { getWeekRangeLabel, getWeekdays } from "../utils/week";
 import {
   activeProjectName,
   calendarColumnSelect,
   calendarEndMonthSelect,
+  calendarEmptyState,
   calendarFilterList,
   calendarGrid,
   calendarMonthLabel,
@@ -26,6 +28,7 @@ import {
   ledgerClientFilter,
   ledgerEmptyState,
   ledgerHideCompletedInput,
+  ledgerOverdueOnlyInput,
   ledgerStatusFilter,
   ledgerTableBody,
   ledgerViewButton,
@@ -55,6 +58,7 @@ import {
   todoForm,
   todoList,
   toggleAllProjectsButton,
+  weeklyEmptyState,
   weeklyGrid,
   weeklyRangeLabel,
   weeklyViewButton,
@@ -68,6 +72,7 @@ type CalendarTodo = {
   projectName: string;
   title: string;
   completed: boolean;
+  overdue: boolean;
   color: string;
 };
 
@@ -149,6 +154,7 @@ function renderLedger(): void {
 
   const statusFilter = ledgerStatusFilter.value || "전체";
   const clientFilter = ledgerClientFilter.value || "전체";
+  const overdueOnly = ledgerOverdueOnlyInput.checked;
   let rowCount = 0;
 
   getState().projects.forEach((project) => {
@@ -165,8 +171,14 @@ function renderLedger(): void {
         return;
       }
 
+      const overdue = isTodoOverdue(todo);
+      if (overdueOnly && !overdue) {
+        return;
+      }
+
       const row = document.createElement("tr");
       row.classList.toggle("completed", todo.completed);
+      row.classList.toggle("overdue", overdue);
       row.tabIndex = 0;
       row.innerHTML = `
         <td>${project.clientName}</td>
@@ -177,8 +189,8 @@ function renderLedger(): void {
         <td>${todo.estimate ?? ""}</td>
         <td>${todo.title}</td>
         <td><span class="status-badge" data-status="${todo.status}">${todo.status}</span></td>
-        <td>${Math.round(todo.progress * 100)}%</td>
-        <td>${todo.priority ?? ""}</td>
+        <td><span class="progress-pill">${formatProgressPercent(todo.progress)}</span></td>
+        <td>${todo.priority ? `<span class="priority-badge">${todo.priority}</span>` : ""}</td>
         <td>${todo.issueRisk ?? ""}</td>
         <td>${todo.workerComment ?? ""}</td>
         <td>${todo.managerComment ?? ""}</td>
@@ -311,6 +323,7 @@ function renderWeekly(): void {
   weeklyGrid.innerHTML = "";
 
   const buckets = createWeeklyBuckets();
+  let weeklyItemCount = 0;
 
   getState().projects.forEach((project) => {
     project.todos.forEach((todo) => {
@@ -324,6 +337,7 @@ function renderWeekly(): void {
         color: project.color,
         source: "todo",
       });
+      weeklyItemCount += 1;
     });
   });
 
@@ -351,6 +365,7 @@ function renderWeekly(): void {
     } else {
       bucket.note.push(item);
     }
+    weeklyItemCount += 1;
   });
 
   getWeekdays(visibleWeekDate).forEach((date) => {
@@ -374,6 +389,8 @@ function renderWeekly(): void {
 
     weeklyGrid.append(dayCard);
   });
+
+  weeklyEmptyState.hidden = weeklyItemCount > 0;
 }
 
 function renderProjects(): void {
@@ -454,6 +471,7 @@ function getDueTodosByDate(): Map<string, CalendarTodo[]> {
         projectName: project.name,
         title: todo.title,
         completed: todo.completed,
+        overdue: isTodoOverdue(todo),
         color: project.color,
       });
       dueTodosByDate.set(todo.dueDate, items);
@@ -463,7 +481,9 @@ function getDueTodosByDate(): Map<string, CalendarTodo[]> {
   return dueTodosByDate;
 }
 
-function appendMonthGrid(monthDate: Date, dueTodosByDate: Map<string, CalendarTodo[]>, container: HTMLElement): void {
+function appendMonthGrid(monthDate: Date, dueTodosByDate: Map<string, CalendarTodo[]>, container: HTMLElement): number {
+  let itemCount = 0;
+
   getMonthGridDates(monthDate).forEach((date) => {
     const dateKey = toDateKey(date);
     const cell = document.createElement("section");
@@ -480,16 +500,20 @@ function appendMonthGrid(monthDate: Date, dueTodosByDate: Map<string, CalendarTo
       const item = document.createElement("div");
       item.className = "calendar-item";
       item.classList.toggle("completed", todo.completed);
+      item.classList.toggle("overdue", todo.overdue);
       item.style.setProperty("--project-color", todo.color);
       item.innerHTML = `
         <strong>${todo.title}</strong>
-        <span>${todo.projectName}</span>
+        <span>${todo.projectName}${todo.overdue ? " · Overdue" : ""}</span>
       `;
       cell.append(item);
+      itemCount += 1;
     });
 
     container.append(cell);
   });
+
+  return itemCount;
 }
 
 function appendWeekdays(container: HTMLElement): void {
@@ -508,19 +532,20 @@ function appendWeekdays(container: HTMLElement): void {
   container.append(weekdays);
 }
 
-function renderMonthCalendar(dueTodosByDate: Map<string, CalendarTodo[]>): void {
+function renderMonthCalendar(dueTodosByDate: Map<string, CalendarTodo[]>): number {
   calendarMonthLabel.textContent = getMonthLabel(visibleMonth);
   calendarGrid.className = "calendar-grid";
   calendarGrid.removeAttribute("style");
-  appendMonthGrid(visibleMonth, dueTodosByDate, calendarGrid);
+  return appendMonthGrid(visibleMonth, dueTodosByDate, calendarGrid);
 }
 
-function renderRangeCalendar(dueTodosByDate: Map<string, CalendarTodo[]>): void {
+function renderRangeCalendar(dueTodosByDate: Map<string, CalendarTodo[]>): number {
   const preferences = normalizeCalendarRangePreferences(calendarRangePreferences);
   calendarRangePreferences = preferences;
   calendarMonthLabel.textContent = `${RANGE_CALENDAR_YEAR}`;
   calendarGrid.className = "calendar-range-grid";
   calendarGrid.style.setProperty("--calendar-range-columns", String(preferences.columns));
+  let itemCount = 0;
 
   for (let month = preferences.startMonth; month <= preferences.endMonth; month += 1) {
     const monthSection = document.createElement("section");
@@ -533,11 +558,13 @@ function renderRangeCalendar(dueTodosByDate: Map<string, CalendarTodo[]>): void 
 
     const monthGrid = document.createElement("div");
     monthGrid.className = "calendar-grid compact-calendar-grid";
-    appendMonthGrid(new Date(RANGE_CALENDAR_YEAR, month - 1, 1), dueTodosByDate, monthGrid);
+    itemCount += appendMonthGrid(new Date(RANGE_CALENDAR_YEAR, month - 1, 1), dueTodosByDate, monthGrid);
     monthSection.append(monthGrid);
 
     calendarGrid.append(monthSection);
   }
+
+  return itemCount;
 }
 
 function renderCalendar(): void {
@@ -546,13 +573,15 @@ function renderCalendar(): void {
   calendarGrid.innerHTML = "";
   calendarRangeControls.hidden = calendarMode !== "range";
   calendarWeekdays.hidden = calendarMode === "range";
+  let itemCount = 0;
 
   if (calendarMode === "range") {
-    renderRangeCalendar(dueTodosByDate);
-    return;
+    itemCount = renderRangeCalendar(dueTodosByDate);
+  } else {
+    itemCount = renderMonthCalendar(dueTodosByDate);
   }
 
-  renderMonthCalendar(dueTodosByDate);
+  calendarEmptyState.hidden = itemCount > 0;
 }
 
 function renderCalendarFilters(): void {
@@ -650,7 +679,7 @@ function renderTodos(): void {
   projectPeriodStartInput.value = activeProject.periodStart ?? "";
   projectPeriodEndInput.value = activeProject.periodEnd ?? "";
   todoCount.textContent = `${activeProject.todos.length} items`;
-  emptyState.textContent = "No tasks yet.";
+  emptyState.textContent = "선택된 프로젝트에 업무가 없습니다.";
   emptyState.hidden = activeProject.todos.length > 0;
   todoForm.hidden = false;
   projectInfoForm.hidden = false;
@@ -661,6 +690,7 @@ function renderTodos(): void {
     item.className = "todo-item";
     item.classList.toggle("completed", todo.completed);
     item.classList.toggle("selected", todo.id === selectedTodoId);
+    item.classList.toggle("overdue", isTodoOverdue(todo));
 
     const checkbox = document.createElement("input");
     checkbox.className = "todo-checkbox";
@@ -676,14 +706,16 @@ function renderTodos(): void {
 
     const copy = document.createElement("div");
     copy.className = "todo-copy";
-    const progressPercent = Math.round(todo.progress * 100);
+    const overdue = isTodoOverdue(todo);
     copy.innerHTML = `
       <p class="todo-title">
         <span class="status-badge" data-status="${todo.status}">${todo.status}</span>
+        ${todo.priority ? `<span class="priority-badge">${todo.priority}</span>` : ""}
+        ${overdue ? `<span class="overdue-badge">Overdue</span>` : ""}
         ${todo.title}
       </p>
       <p class="todo-meta">
-        <span class="progress-pill">${progressPercent}%</span>
+        <span class="progress-pill">${formatProgressPercent(todo.progress)}</span>
         <span>${formatDueDate(todo.dueDate)}</span>
       </p>
     `;
@@ -738,6 +770,10 @@ function renderTodoDetail(): void {
 
 export function clearSelectedTodo(): void {
   selectedTodoId = null;
+}
+
+export function resetCalendarSelection(): void {
+  selectedCalendarProjectIds = null;
 }
 
 export function selectTodo(todoId: string): void {
