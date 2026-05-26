@@ -291,8 +291,7 @@ button {
 
 .content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
@@ -317,7 +316,7 @@ button {
 
 .todo-item {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   border: 1px solid var(--line);
@@ -333,6 +332,10 @@ button {
 .todo-item.selected {
   border-color: #86efac;
   background: #f0fdf4;
+}
+
+.todo-item.expanded {
+  align-items: start;
 }
 
 .todo-item.overdue {
@@ -460,27 +463,6 @@ button {
   color: var(--muted);
 }
 
-.todo-detail-panel {
-  margin-top: 24px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  padding: 18px;
-}
-
-.todo-detail-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: start;
-  margin-bottom: 18px;
-}
-
-.todo-detail-header h3 {
-  margin: 0;
-  word-break: break-word;
-}
-
 .quiet-button {
   background: transparent;
   color: var(--muted);
@@ -511,6 +493,46 @@ button {
 
 .detail-form textarea {
   min-height: 96px;
+}
+
+.todo-inline-detail,
+.todo-inline-form {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.todo-detail-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.todo-detail-row {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.todo-detail-row dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.todo-detail-row dd {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.todo-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
 }
 
 .calendar-header {

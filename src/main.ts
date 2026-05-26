@@ -12,9 +12,8 @@ import {
   resetStateToSampleData,
   updateActiveProject,
   updateActiveProjectColor,
-  updateTodo,
 } from "./state/store";
-import type { Project, TaskPriority, TaskStatus, Todo, WorkLogType } from "./types";
+import type { Project, Todo, WorkLogType } from "./types";
 import { toDateKey } from "./utils/calendar";
 import { createId } from "./utils/id";
 import { getProjectColor } from "./utils/projectColor";
@@ -24,7 +23,6 @@ import {
   calendarEndMonthSelect,
   calendarStartMonthSelect,
   calendarViewButton,
-  closeTodoDetailButton,
   deleteProjectButton,
   exportJsonButton,
   importJsonButton,
@@ -45,17 +43,6 @@ import {
   projectPeriodStartInput,
   projectPeriodTextInput,
   resetSampleDataButton,
-  todoDetailDueDateInput,
-  todoDetailEstimateInput,
-  todoDetailForm,
-  todoDetailIssueRiskInput,
-  todoDetailManagerCommentInput,
-  todoDetailMemoInput,
-  todoDetailPrioritySelect,
-  todoDetailProgressInput,
-  todoDetailStatusSelect,
-  todoDetailTaskTitleInput,
-  todoDetailWorkerCommentInput,
   todoDueDateInput,
   todoForm,
   todoTitleInput,
@@ -74,7 +61,6 @@ import {
 import {
   activateCalendarButton,
   clearSelectedTodo,
-  getSelectedTodoId,
   goToNextMonth,
   goToNextWeek,
   goToPreviousMonth,
@@ -102,15 +88,6 @@ function createUniqueProjectName(): string {
   }
 
   return `${baseName} ${count}`;
-}
-
-function getProgressFromPercentInput(): number {
-  const progressPercent = Number(todoDetailProgressInput.value);
-  if (Number.isNaN(progressPercent)) {
-    return 0;
-  }
-
-  return Math.min(1, Math.max(0, progressPercent / 100));
 }
 
 function downloadTextFile(content: string, fileName: string, type: string): void {
@@ -239,38 +216,6 @@ deleteProjectButton.addEventListener("click", () => {
 
 projectColorInput.addEventListener("input", () => {
   updateActiveProjectColor(projectColorInput.value);
-  render();
-});
-
-todoDetailForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const selectedTodoId = getSelectedTodoId();
-  if (!selectedTodoId) {
-    return;
-  }
-
-  const progress = getProgressFromPercentInput();
-  const selectedStatus = todoDetailStatusSelect.value as TaskStatus;
-  const status: TaskStatus = progress >= 1 ? "완료" : selectedStatus;
-
-  updateTodo(selectedTodoId, {
-    title: todoDetailTaskTitleInput.value.trim(),
-    dueDate: todoDetailDueDateInput.value || null,
-    estimate: todoDetailEstimateInput.value.trim(),
-    status,
-    progress,
-    completed: status === "완료",
-    priority: todoDetailPrioritySelect.value as TaskPriority,
-    workerComment: todoDetailWorkerCommentInput.value.trim(),
-    managerComment: todoDetailManagerCommentInput.value.trim(),
-    issueRisk: todoDetailIssueRiskInput.value.trim(),
-    memo: todoDetailMemoInput.value.trim(),
-  });
-  render();
-});
-
-closeTodoDetailButton.addEventListener("click", () => {
-  clearSelectedTodo();
   render();
 });
 

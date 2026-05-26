@@ -19,22 +19,6 @@ export const todoDueDateInput = document.querySelector<HTMLInputElement>("#todo-
 export const todoList = document.querySelector<HTMLUListElement>("#todo-list")!;
 export const todoCount = document.querySelector<HTMLElement>("#todo-count")!;
 export const emptyState = document.querySelector<HTMLElement>("#empty-state")!;
-export const todoDetailPanel = document.querySelector<HTMLElement>("#todo-detail-panel")!;
-export const todoDetailForm = document.querySelector<HTMLFormElement>("#todo-detail-form")!;
-export const todoDetailTitle = document.querySelector<HTMLElement>("#todo-detail-title")!;
-export const todoDetailTaskTitleInput = document.querySelector<HTMLInputElement>("#todo-detail-task-title")!;
-export const todoDetailDueDateInput = document.querySelector<HTMLInputElement>("#todo-detail-due-date")!;
-export const todoDetailEstimateInput = document.querySelector<HTMLInputElement>("#todo-detail-estimate")!;
-export const todoDetailStatusSelect = document.querySelector<HTMLSelectElement>("#todo-detail-status")!;
-export const todoDetailProgressInput = document.querySelector<HTMLInputElement>("#todo-detail-progress")!;
-export const todoDetailPrioritySelect = document.querySelector<HTMLSelectElement>("#todo-detail-priority")!;
-export const todoDetailWorkerCommentInput =
-  document.querySelector<HTMLTextAreaElement>("#todo-detail-worker-comment")!;
-export const todoDetailManagerCommentInput =
-  document.querySelector<HTMLTextAreaElement>("#todo-detail-manager-comment")!;
-export const todoDetailIssueRiskInput = document.querySelector<HTMLTextAreaElement>("#todo-detail-issue-risk")!;
-export const todoDetailMemoInput = document.querySelector<HTMLTextAreaElement>("#todo-detail-memo")!;
-export const closeTodoDetailButton = document.querySelector<HTMLButtonElement>("#close-todo-detail-button")!;
 export const weeklyViewButton = document.querySelector<HTMLButtonElement>("#weekly-view-button")!;
 export const ledgerViewButton = document.querySelector<HTMLButtonElement>("#ledger-view-button")!;
 export const calendarViewButton = document.querySelector<HTMLButtonElement>("#calendar-view-button")!;

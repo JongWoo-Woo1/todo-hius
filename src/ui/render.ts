@@ -4,7 +4,17 @@ import {
   saveCalendarRangePreferences,
   type CalendarRangePreferences,
 } from "../state/calendarPreferences";
-import { deleteTodo, deleteWorkLog, getActiveProject, getState, reorderProjects, selectProject, toggleTodo } from "../state/store";
+import {
+  deleteTodo,
+  deleteWorkLog,
+  getActiveProject,
+  getState,
+  reorderProjects,
+  selectProject,
+  toggleTodo,
+  updateTodo,
+} from "../state/store";
+import type { TaskPriority, TaskStatus, Todo } from "../types";
 import { getMonthGridDates, getMonthLabel, toDateKey } from "../utils/calendar";
 import { formatDueDate } from "../utils/date";
 import { formatProjectPeriod } from "../utils/project";
@@ -43,18 +53,6 @@ import {
   projectPeriodTextInput,
   projectWorkspace,
   todoCount,
-  todoDetailDueDateInput,
-  todoDetailEstimateInput,
-  todoDetailIssueRiskInput,
-  todoDetailManagerCommentInput,
-  todoDetailMemoInput,
-  todoDetailPanel,
-  todoDetailPrioritySelect,
-  todoDetailProgressInput,
-  todoDetailStatusSelect,
-  todoDetailTaskTitleInput,
-  todoDetailTitle,
-  todoDetailWorkerCommentInput,
   todoForm,
   todoList,
   toggleAllProjectsButton,
@@ -85,6 +83,7 @@ type WeeklyItem = {
 };
 
 let selectedTodoId: string | null = null;
+let editingTodoId: string | null = null;
 let currentView: "projects" | "ledger" | "weekly" | "calendar" = "calendar";
 let visibleMonth = new Date();
 let visibleWeekDate = new Date();
@@ -651,6 +650,204 @@ function renderRangeControls(): void {
   renderColumnOptions();
 }
 
+function getProgressFromInput(input: HTMLInputElement): number {
+  const progressPercent = Number(input.value);
+  if (Number.isNaN(progressPercent)) {
+    return 0;
+  }
+
+  return Math.min(1, Math.max(0, progressPercent / 100));
+}
+
+function getDetailValue(value: string | null | undefined): string {
+  return value && value.trim() ? value : "-";
+}
+
+function createDetailRow(label: string, value: string): HTMLElement {
+  const row = document.createElement("div");
+  row.className = "todo-detail-row";
+
+  const term = document.createElement("dt");
+  term.textContent = label;
+  const description = document.createElement("dd");
+  description.textContent = value;
+
+  row.append(term, description);
+  return row;
+}
+
+function renderTodoDetailView(todo: Todo): HTMLElement {
+  const detail = document.createElement("div");
+  detail.className = "todo-inline-detail";
+
+  const list = document.createElement("dl");
+  list.className = "todo-detail-list";
+  list.append(
+    createDetailRow("내부 목표 완료일", getDetailValue(todo.dueDate)),
+    createDetailRow("공수", getDetailValue(todo.estimate)),
+    createDetailRow("진행상태", todo.status),
+    createDetailRow("진척률", formatProgressPercent(todo.progress)),
+    createDetailRow("우선순위", getDetailValue(todo.priority)),
+    createDetailRow("Comment 담당자", getDetailValue(todo.workerComment)),
+    createDetailRow("Comment 관리자", getDetailValue(todo.managerComment)),
+    createDetailRow("이슈/리스크", getDetailValue(todo.issueRisk)),
+    createDetailRow("메모", getDetailValue(todo.memo)),
+  );
+
+  const actions = document.createElement("div");
+  actions.className = "todo-card-actions";
+
+  const editButton = document.createElement("button");
+  editButton.type = "button";
+  editButton.className = "quiet-button";
+  editButton.textContent = "수정";
+  editButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    editingTodoId = todo.id;
+    render();
+  });
+
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.className = "delete-todo-button";
+  deleteButton.textContent = "삭제";
+  deleteButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    deleteTodo(todo.id);
+    selectedTodoId = null;
+    editingTodoId = null;
+    render();
+  });
+
+  actions.append(editButton, deleteButton);
+  detail.append(list, actions);
+  return detail;
+}
+
+function renderTodoEditForm(todo: Todo): HTMLElement {
+  const form = document.createElement("form");
+  form.className = "detail-form todo-inline-form";
+  form.innerHTML = `
+    <label>
+      Task
+      <input name="title" type="text" required />
+    </label>
+    <label>
+      Target date
+      <input name="dueDate" type="date" />
+    </label>
+    <label>
+      Estimate
+      <input name="estimate" type="text" placeholder="Example: 2d" />
+    </label>
+    <label>
+      Status
+      <select name="status">
+        <option value="대기">대기</option>
+        <option value="진행중">진행중</option>
+        <option value="미완">미완</option>
+        <option value="완료">완료</option>
+        <option value="보류">보류</option>
+      </select>
+    </label>
+    <label>
+      Progress (%)
+      <input name="progress" type="number" min="0" max="100" step="1" />
+    </label>
+    <label>
+      Priority
+      <select name="priority">
+        <option value="낮음">낮음</option>
+        <option value="보통">보통</option>
+        <option value="높음">높음</option>
+        <option value="최우선">최우선</option>
+      </select>
+    </label>
+    <label class="full-field">
+      Worker Comment
+      <textarea name="workerComment" rows="3" placeholder="Comment from owner"></textarea>
+    </label>
+    <label class="full-field">
+      Manager Comment
+      <textarea name="managerComment" rows="3" placeholder="Comment from manager"></textarea>
+    </label>
+    <label class="full-field">
+      Issue / Risk
+      <textarea name="issueRisk" rows="3" placeholder="Known issue or risk"></textarea>
+    </label>
+    <label class="full-field">
+      Memo
+      <textarea name="memo" rows="5" placeholder="Add notes for this task"></textarea>
+    </label>
+    <div class="todo-card-actions full-field">
+      <button type="submit">저장</button>
+      <button class="quiet-button" type="button" data-action="cancel">취소</button>
+      <button class="delete-todo-button" type="button" data-action="delete">삭제</button>
+    </div>
+  `;
+
+  const titleInput = form.querySelector<HTMLInputElement>('[name="title"]')!;
+  const dueDateInput = form.querySelector<HTMLInputElement>('[name="dueDate"]')!;
+  const estimateInput = form.querySelector<HTMLInputElement>('[name="estimate"]')!;
+  const statusSelect = form.querySelector<HTMLSelectElement>('[name="status"]')!;
+  const progressInput = form.querySelector<HTMLInputElement>('[name="progress"]')!;
+  const prioritySelect = form.querySelector<HTMLSelectElement>('[name="priority"]')!;
+  const workerCommentInput = form.querySelector<HTMLTextAreaElement>('[name="workerComment"]')!;
+  const managerCommentInput = form.querySelector<HTMLTextAreaElement>('[name="managerComment"]')!;
+  const issueRiskInput = form.querySelector<HTMLTextAreaElement>('[name="issueRisk"]')!;
+  const memoInput = form.querySelector<HTMLTextAreaElement>('[name="memo"]')!;
+
+  titleInput.value = todo.title;
+  dueDateInput.value = todo.dueDate ?? "";
+  estimateInput.value = todo.estimate ?? "";
+  statusSelect.value = todo.status;
+  progressInput.value = String(Math.round(todo.progress * 100));
+  prioritySelect.value = todo.priority ?? "보통";
+  workerCommentInput.value = todo.workerComment ?? "";
+  managerCommentInput.value = todo.managerComment ?? "";
+  issueRiskInput.value = todo.issueRisk ?? "";
+  memoInput.value = todo.memo;
+
+  form.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const progress = getProgressFromInput(progressInput);
+    const selectedStatus = statusSelect.value as TaskStatus;
+    const status: TaskStatus = progress >= 1 ? "완료" : selectedStatus;
+
+    updateTodo(todo.id, {
+      title: titleInput.value.trim(),
+      dueDate: dueDateInput.value || null,
+      estimate: estimateInput.value.trim(),
+      status,
+      progress,
+      completed: status === "완료",
+      priority: prioritySelect.value as TaskPriority,
+      workerComment: workerCommentInput.value.trim(),
+      managerComment: managerCommentInput.value.trim(),
+      issueRisk: issueRiskInput.value.trim(),
+      memo: memoInput.value.trim(),
+    });
+    editingTodoId = null;
+    render();
+  });
+
+  form.querySelector<HTMLButtonElement>('[data-action="cancel"]')!.addEventListener("click", () => {
+    editingTodoId = null;
+    render();
+  });
+  form.querySelector<HTMLButtonElement>('[data-action="delete"]')!.addEventListener("click", () => {
+    deleteTodo(todo.id);
+    selectedTodoId = null;
+    editingTodoId = null;
+    render();
+  });
+
+  return form;
+}
+
 function renderTodos(): void {
   const activeProject = getActiveProject();
   todoList.innerHTML = "";
@@ -664,7 +861,7 @@ function renderTodos(): void {
     projectInfoForm.hidden = true;
     deleteProjectButton.hidden = true;
     selectedTodoId = null;
-    renderTodoDetail();
+    editingTodoId = null;
     return;
   }
 
@@ -688,6 +885,7 @@ function renderTodos(): void {
     item.className = "todo-item";
     item.classList.toggle("completed", todo.completed);
     item.classList.toggle("selected", todo.id === selectedTodoId);
+    item.classList.toggle("expanded", todo.id === selectedTodoId);
     item.classList.toggle("overdue", isTodoOverdue(todo));
 
     const checkbox = document.createElement("input");
@@ -718,56 +916,26 @@ function renderTodos(): void {
       </p>
     `;
 
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "delete-todo-button";
-    deleteButton.textContent = "Delete";
-    deleteButton.addEventListener("click", () => {
-      deleteTodo(todo.id);
-      if (selectedTodoId === todo.id) {
-        selectedTodoId = null;
+    item.addEventListener("click", () => {
+      selectedTodoId = todo.id;
+      if (editingTodoId && editingTodoId !== todo.id) {
+        editingTodoId = null;
       }
       render();
     });
-    deleteButton.addEventListener("click", (event) => {
-      event.stopPropagation();
-    });
 
-    item.addEventListener("click", () => {
-      selectedTodoId = todo.id;
-      render();
-    });
-
-    item.append(checkbox, copy, deleteButton);
+    item.append(checkbox, copy);
+    if (todo.id === selectedTodoId) {
+      const detail = editingTodoId === todo.id ? renderTodoEditForm(todo) : renderTodoDetailView(todo);
+      item.append(detail);
+    }
     todoList.append(item);
   });
-
-  renderTodoDetail();
-}
-
-function renderTodoDetail(): void {
-  const selectedTodo = getActiveProject()?.todos.find((todo) => todo.id === selectedTodoId);
-  if (!selectedTodo) {
-    todoDetailPanel.hidden = true;
-    return;
-  }
-
-  todoDetailTitle.textContent = selectedTodo.title;
-  todoDetailTaskTitleInput.value = selectedTodo.title;
-  todoDetailDueDateInput.value = selectedTodo.dueDate ?? "";
-  todoDetailEstimateInput.value = selectedTodo.estimate ?? "";
-  todoDetailStatusSelect.value = selectedTodo.status;
-  todoDetailProgressInput.value = String(Math.round(selectedTodo.progress * 100));
-  todoDetailPrioritySelect.value = selectedTodo.priority ?? "보통";
-  todoDetailWorkerCommentInput.value = selectedTodo.workerComment ?? "";
-  todoDetailManagerCommentInput.value = selectedTodo.managerComment ?? "";
-  todoDetailIssueRiskInput.value = selectedTodo.issueRisk ?? "";
-  todoDetailMemoInput.value = selectedTodo.memo;
-  todoDetailPanel.hidden = false;
 }
 
 export function clearSelectedTodo(): void {
   selectedTodoId = null;
+  editingTodoId = null;
 }
 
 export function resetCalendarSelection(): void {
@@ -776,6 +944,7 @@ export function resetCalendarSelection(): void {
 
 export function selectTodo(todoId: string): void {
   selectedTodoId = todoId;
+  editingTodoId = null;
 }
 
 export function getSelectedTodoId(): string | null {

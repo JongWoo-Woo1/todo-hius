@@ -66,6 +66,9 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Project Todo details from a separate right panel to an expanded Todo card.
+- Changed Todo detail editing to enter edit mode only after clicking the edit button.
+- Moved Todo delete action into the expanded Todo card.
 - Replaced the initial sample projects with the current real project list.
 - Corrected the sample project data to preserve the source table text without invented task names.
 - Changed Weekly Report Excel Export to name the worksheet with the current month and week label.
