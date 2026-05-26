@@ -65,6 +65,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Replaced the initial sample projects with the current real project list.
 - Changed Weekly Report Excel Export to name the worksheet with the current month and week label.
 - Changed Weekly Report Excel Export to load the provided template and fill only target cells.
 - Preserved the Weekly Report template merge ranges, borders, fills, row heights, column widths, and worksheet formatting during export.
