@@ -68,6 +68,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Improved Calendar weekday header readability with larger, bolder labels.
 - Changed Calendar range settings to persist only during the current app session and reset to the current month plus two months on restart.
 - Changed Calendar to always use the multi-month range view by default.
 - Removed the Calendar button mode toggle and single-month Calendar view.
