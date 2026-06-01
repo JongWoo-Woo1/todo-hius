@@ -884,6 +884,7 @@ button {
   background: color-mix(in srgb, var(--project-color) 12%, white);
   padding: 7px 8px;
   font-size: 13px;
+  cursor: pointer;
 }
 
 .calendar-item strong,
@@ -907,6 +908,59 @@ button {
 .calendar-item.completed strong {
   color: var(--muted);
   text-decoration: line-through;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgb(15 23 42 / 42%);
+  padding: 24px;
+}
+
+.modal-backdrop[hidden] {
+  display: none;
+}
+
+.modal-card {
+  width: min(760px, 100%);
+  max-height: min(86vh, 820px);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 24px 80px rgb(15 23 42 / 24%);
+  padding: 20px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.calendar-detail-card .todo-detail-list {
+  margin-top: 18px;
+}
+
+.calendar-detail-form {
+  gap: 12px;
 }
 
 .work-log-card {

@@ -13,7 +13,7 @@ import {
   toggleTodo,
   updateTodo,
 } from "../state/store";
-import type { TaskPriority, TaskStatus, Todo } from "../types";
+import type { Project, TaskPriority, TaskStatus, Todo } from "../types";
 import { getMonthGridDates, toDateKey } from "../utils/calendar";
 import { formatDueDate } from "../utils/date";
 import { getLedgerRows } from "../utils/ledger";
@@ -23,6 +23,8 @@ import {
   activeProjectName,
   activeProjectNameButton,
   calendarColumnSelect,
+  calendarDetailContent,
+  calendarDetailModal,
   calendarEndMonthSelect,
   calendarEmptyState,
   calendarFilterList,
@@ -72,6 +74,8 @@ import {
 } from "./dom";
 
 type CalendarTodo = {
+  projectId: string;
+  todoId: string;
   projectName: string;
   title: string;
   completed: boolean;
@@ -94,6 +98,8 @@ let isProjectNameEditing = false;
 let currentView: "projects" | "ledger" | "weekly" | "calendar" = "calendar";
 let visibleWeekDate = new Date();
 let selectedCalendarProjectIds: Set<string> | null = null;
+let selectedCalendarTodoId: string | null = null;
+let isCalendarTodoEditing = false;
 let draggedProjectId: string | null = null;
 let calendarRangePreferences = getDefaultCalendarRangePreferences();
 
@@ -503,6 +509,8 @@ function getDueTodosByDate(): Map<string, CalendarTodo[]> {
 
       const items = dueTodosByDate.get(todo.dueDate) ?? [];
       items.push({
+        projectId: project.id,
+        todoId: todo.id,
         projectName: project.name,
         title: todo.title,
         completed: todo.completed,
@@ -541,6 +549,11 @@ function appendMonthGrid(monthDate: Date, dueTodosByDate: Map<string, CalendarTo
         <strong>${todo.title}</strong>
         <span>${todo.projectName}${todo.overdue ? " · Overdue" : ""}</span>
       `;
+      item.addEventListener("click", () => {
+        selectedCalendarTodoId = todo.todoId;
+        isCalendarTodoEditing = false;
+        render();
+      });
       cell.append(item);
       itemCount += 1;
     });
@@ -698,6 +711,236 @@ function createDetailRow(label: string, value: string): HTMLElement {
 
   row.append(term, description);
   return row;
+}
+
+function closeCalendarDetailModal(): void {
+  selectedCalendarTodoId = null;
+  isCalendarTodoEditing = false;
+}
+
+function goToCalendarTodoProject(projectId: string, todoId: string): void {
+  selectProject(projectId);
+  selectedTodoId = todoId;
+  editingTodoId = null;
+  closeCalendarDetailModal();
+  currentView = "projects";
+}
+
+function renderCalendarTodoView(project: Project, todo: Todo): HTMLElement {
+  const wrapper = document.createElement("div");
+  wrapper.className = "calendar-detail-view";
+
+  const header = document.createElement("div");
+  header.className = "modal-header";
+  header.innerHTML = `
+    <div>
+      <p class="eyebrow">${project.name}</p>
+      <h3 id="calendar-detail-title">${todo.title}</h3>
+    </div>
+  `;
+
+  const closeButton = document.createElement("button");
+  closeButton.type = "button";
+  closeButton.className = "quiet-button";
+  closeButton.textContent = "닫기";
+  closeButton.addEventListener("click", () => {
+    closeCalendarDetailModal();
+    render();
+  });
+  header.append(closeButton);
+
+  const list = document.createElement("dl");
+  list.className = "todo-detail-list calendar-detail-list";
+  list.append(
+    createDetailRow("내부 목표 완료일", getDetailValue(todo.dueDate)),
+    createDetailRow("공수", getDetailValue(todo.estimate)),
+    createDetailRow("진행상태", todo.status),
+    createDetailRow("진척률", formatProgressPercent(todo.progress)),
+    createDetailRow("우선순위", getDetailValue(todo.priority)),
+    createDetailRow("Comment 담당자", getDetailValue(todo.workerComment)),
+    createDetailRow("Comment 관리자", getDetailValue(todo.managerComment)),
+    createDetailRow("이슈/리스크", getDetailValue(todo.issueRisk)),
+    createDetailRow("메모", getDetailValue(todo.memo)),
+  );
+
+  const actions = document.createElement("div");
+  actions.className = "modal-actions";
+
+  const projectButton = document.createElement("button");
+  projectButton.type = "button";
+  projectButton.className = "quiet-button";
+  projectButton.textContent = "Project로 이동";
+  projectButton.addEventListener("click", () => {
+    goToCalendarTodoProject(project.id, todo.id);
+    render();
+  });
+
+  const editButton = document.createElement("button");
+  editButton.type = "button";
+  editButton.textContent = "수정";
+  editButton.addEventListener("click", () => {
+    isCalendarTodoEditing = true;
+    render();
+  });
+
+  actions.append(projectButton, editButton);
+  wrapper.append(header, list, actions);
+  return wrapper;
+}
+
+function renderCalendarTodoEditForm(project: Project, todo: Todo): HTMLElement {
+  const form = document.createElement("form");
+  form.className = "detail-form calendar-detail-form";
+  form.innerHTML = `
+    <div class="modal-header full-field">
+      <div>
+        <p class="eyebrow">${project.name}</p>
+        <h3 id="calendar-detail-title">Task 수정</h3>
+      </div>
+      <button class="quiet-button" type="button" data-action="close">닫기</button>
+    </div>
+    <label>
+      Task
+      <input name="title" type="text" required />
+    </label>
+    <label>
+      Target date
+      <input name="dueDate" type="date" />
+    </label>
+    <label>
+      Estimate
+      <input name="estimate" type="text" placeholder="Example: 2d" />
+    </label>
+    <label>
+      Status
+      <select name="status">
+        <option value="대기">대기</option>
+        <option value="진행중">진행중</option>
+        <option value="미완">미완</option>
+        <option value="완료">완료</option>
+        <option value="보류">보류</option>
+      </select>
+    </label>
+    <label>
+      Progress (%)
+      <input name="progress" type="number" min="0" max="100" step="1" />
+    </label>
+    <label>
+      Priority
+      <select name="priority">
+        <option value="낮음">낮음</option>
+        <option value="보통">보통</option>
+        <option value="높음">높음</option>
+        <option value="최우선">최우선</option>
+      </select>
+    </label>
+    <label class="full-field">
+      Worker Comment
+      <textarea name="workerComment" rows="3"></textarea>
+    </label>
+    <label class="full-field">
+      Manager Comment
+      <textarea name="managerComment" rows="3"></textarea>
+    </label>
+    <label class="full-field">
+      Issue / Risk
+      <textarea name="issueRisk" rows="3"></textarea>
+    </label>
+    <label class="full-field">
+      Memo
+      <textarea name="memo" rows="4"></textarea>
+    </label>
+    <div class="modal-actions full-field">
+      <button class="quiet-button" type="button" data-action="project">Project로 이동</button>
+      <button class="quiet-button" type="button" data-action="cancel">취소</button>
+      <button type="submit">저장</button>
+    </div>
+  `;
+
+  const titleInput = form.querySelector<HTMLInputElement>('[name="title"]')!;
+  const dueDateInput = form.querySelector<HTMLInputElement>('[name="dueDate"]')!;
+  const estimateInput = form.querySelector<HTMLInputElement>('[name="estimate"]')!;
+  const statusSelect = form.querySelector<HTMLSelectElement>('[name="status"]')!;
+  const progressInput = form.querySelector<HTMLInputElement>('[name="progress"]')!;
+  const prioritySelect = form.querySelector<HTMLSelectElement>('[name="priority"]')!;
+  const workerCommentInput = form.querySelector<HTMLTextAreaElement>('[name="workerComment"]')!;
+  const managerCommentInput = form.querySelector<HTMLTextAreaElement>('[name="managerComment"]')!;
+  const issueRiskInput = form.querySelector<HTMLTextAreaElement>('[name="issueRisk"]')!;
+  const memoInput = form.querySelector<HTMLTextAreaElement>('[name="memo"]')!;
+
+  titleInput.value = todo.title;
+  dueDateInput.value = todo.dueDate ?? "";
+  estimateInput.value = todo.estimate ?? "";
+  statusSelect.value = todo.status;
+  progressInput.value = String(Math.round(todo.progress * 100));
+  prioritySelect.value = todo.priority ?? "보통";
+  workerCommentInput.value = todo.workerComment ?? "";
+  managerCommentInput.value = todo.managerComment ?? "";
+  issueRiskInput.value = todo.issueRisk ?? "";
+  memoInput.value = todo.memo;
+
+  form.querySelector<HTMLButtonElement>('[data-action="close"]')!.addEventListener("click", () => {
+    closeCalendarDetailModal();
+    render();
+  });
+  form.querySelector<HTMLButtonElement>('[data-action="project"]')!.addEventListener("click", () => {
+    goToCalendarTodoProject(project.id, todo.id);
+    render();
+  });
+  form.querySelector<HTMLButtonElement>('[data-action="cancel"]')!.addEventListener("click", () => {
+    isCalendarTodoEditing = false;
+    render();
+  });
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const progress = getTodoProgressFromPercentValue(progressInput.value);
+    const selectedStatus = statusSelect.value as TaskStatus;
+    const status: TaskStatus = progress >= 1 ? "완료" : selectedStatus;
+
+    updateTodo(todo.id, {
+      title: titleInput.value.trim(),
+      dueDate: dueDateInput.value || null,
+      estimate: estimateInput.value.trim(),
+      status,
+      progress,
+      completed: status === "완료",
+      priority: prioritySelect.value as TaskPriority,
+      workerComment: workerCommentInput.value.trim(),
+      managerComment: managerCommentInput.value.trim(),
+      issueRisk: issueRiskInput.value.trim(),
+      memo: memoInput.value.trim(),
+    });
+    isCalendarTodoEditing = false;
+    render();
+  });
+
+  return form;
+}
+
+function renderCalendarDetailModal(): void {
+  const selection = findTodoWithProject(selectedCalendarTodoId);
+  calendarDetailContent.innerHTML = "";
+  calendarDetailModal.onclick = (event) => {
+    if (event.target !== calendarDetailModal) {
+      return;
+    }
+
+    closeCalendarDetailModal();
+    render();
+  };
+
+  if (currentView !== "calendar" || !selection) {
+    calendarDetailModal.hidden = true;
+    return;
+  }
+
+  calendarDetailContent.append(
+    isCalendarTodoEditing
+      ? renderCalendarTodoEditForm(selection.project, selection.todo)
+      : renderCalendarTodoView(selection.project, selection.todo),
+  );
+  calendarDetailModal.hidden = false;
 }
 
 function renderProjectInfoView(): void {
@@ -1022,6 +1265,7 @@ export function clearSelectedTodo(): void {
 
 export function resetCalendarSelection(): void {
   selectedCalendarProjectIds = null;
+  closeCalendarDetailModal();
 }
 
 export function selectTodo(todoId: string): void {
@@ -1047,6 +1291,30 @@ export function showWeeklyView(): void {
 
 export function activateCalendarButton(): void {
   currentView = "calendar";
+}
+
+function getTodoProgressFromPercentValue(value: string): number {
+  const progressPercent = Number(value);
+  if (Number.isNaN(progressPercent)) {
+    return 0;
+  }
+
+  return Math.min(1, Math.max(0, progressPercent / 100));
+}
+
+function findTodoWithProject(todoId: string | null): { project: Project; todo: Todo } | null {
+  if (!todoId) {
+    return null;
+  }
+
+  for (const project of getState().projects) {
+    const todo = project.todos.find((item) => item.id === todoId);
+    if (todo) {
+      return { project, todo };
+    }
+  }
+
+  return null;
 }
 
 export function goToPreviousWeek(): void {
@@ -1085,6 +1353,7 @@ export function render(): void {
   renderWeekly();
   renderCalendarFilters();
   renderCalendar();
+  renderCalendarDetailModal();
   projectWorkspace.hidden = currentView !== "projects";
   ledgerWorkspace.hidden = currentView !== "ledger";
   weeklyWorkspace.hidden = currentView !== "weekly";

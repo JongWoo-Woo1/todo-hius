@@ -41,6 +41,8 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
   - 모든 프로젝트의 Todo 일정을 여러 달 Calendar에서 확인
   - 프로젝트별 색상 구분
   - 프로젝트 체크박스로 원하는 프로젝트만 표시
+  - Calendar 일정 클릭 시 상세 팝업에서 Todo 확인과 수정
+  - 상세 팝업에서 관련 Project 화면으로 이동
   - 2026년 월 범위 Calendar를 기본 화면으로 표시
   - 월 범위 Calendar 기본값은 현재 월부터 3개월, 1 column
   - 월 범위와 column 설정은 앱을 사용하는 동안 유지되고, 새로 시작하면 현재 월 기준 기본값으로 초기화

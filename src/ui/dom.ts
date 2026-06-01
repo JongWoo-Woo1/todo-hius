@@ -61,3 +61,5 @@ export const calendarRangeControls = document.querySelector<HTMLElement>("#calen
 export const calendarStartMonthSelect = document.querySelector<HTMLSelectElement>("#calendar-start-month")!;
 export const calendarEndMonthSelect = document.querySelector<HTMLSelectElement>("#calendar-end-month")!;
 export const calendarColumnSelect = document.querySelector<HTMLSelectElement>("#calendar-columns")!;
+export const calendarDetailModal = document.querySelector<HTMLElement>("#calendar-detail-modal")!;
+export const calendarDetailContent = document.querySelector<HTMLElement>("#calendar-detail-content")!;
