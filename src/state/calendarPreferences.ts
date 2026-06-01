@@ -22,6 +22,16 @@ function getDefaultPreferences(): CalendarRangePreferences {
   };
 }
 
+function isRollingDefaultPreference(preferences: Partial<CalendarRangePreferences>): boolean {
+  const currentMonth = new Date().getMonth() + 1;
+  if (!preferences.startMonth || !preferences.endMonth || preferences.columns !== 1) {
+    return false;
+  }
+
+  const expectedEndMonth = Math.min(12, preferences.startMonth + 2);
+  return preferences.startMonth < currentMonth && preferences.endMonth === expectedEndMonth;
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
@@ -55,6 +65,10 @@ export function loadCalendarRangePreferences(): CalendarRangePreferences {
       preferences.endMonth === LEGACY_DEFAULT_PREFERENCES.endMonth &&
       preferences.columns === LEGACY_DEFAULT_PREFERENCES.columns
     ) {
+      return getDefaultPreferences();
+    }
+
+    if (isRollingDefaultPreference(preferences)) {
       return getDefaultPreferences();
     }
 
