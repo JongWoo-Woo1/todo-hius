@@ -4,15 +4,7 @@ export type CalendarRangePreferences = {
   columns: number;
 };
 
-const CALENDAR_RANGE_PREFERENCES_KEY = "project-calendar-range-preferences";
-
-const LEGACY_DEFAULT_PREFERENCES: CalendarRangePreferences = {
-  startMonth: 1,
-  endMonth: 12,
-  columns: 4,
-};
-
-function getDefaultPreferences(): CalendarRangePreferences {
+export function getDefaultCalendarRangePreferences(): CalendarRangePreferences {
   const startMonth = new Date().getMonth() + 1;
 
   return {
@@ -22,16 +14,6 @@ function getDefaultPreferences(): CalendarRangePreferences {
   };
 }
 
-function isRollingDefaultPreference(preferences: Partial<CalendarRangePreferences>): boolean {
-  const currentMonth = new Date().getMonth() + 1;
-  if (!preferences.startMonth || !preferences.endMonth || preferences.columns !== 1) {
-    return false;
-  }
-
-  const expectedEndMonth = Math.min(12, preferences.startMonth + 2);
-  return preferences.startMonth < currentMonth && preferences.endMonth === expectedEndMonth;
-}
-
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
@@ -39,7 +21,7 @@ function clamp(value: number, min: number, max: number): number {
 export function normalizeCalendarRangePreferences(
   preferences: Partial<CalendarRangePreferences>,
 ): CalendarRangePreferences {
-  const defaultPreferences = getDefaultPreferences();
+  const defaultPreferences = getDefaultCalendarRangePreferences();
   const startMonth = clamp(preferences.startMonth ?? defaultPreferences.startMonth, 1, 12);
   const endMonth = clamp(preferences.endMonth ?? defaultPreferences.endMonth, startMonth, 12);
   const monthCount = endMonth - startMonth + 1;
@@ -50,34 +32,4 @@ export function normalizeCalendarRangePreferences(
     endMonth,
     columns,
   };
-}
-
-export function loadCalendarRangePreferences(): CalendarRangePreferences {
-  const rawPreferences = localStorage.getItem(CALENDAR_RANGE_PREFERENCES_KEY);
-  if (!rawPreferences) {
-    return getDefaultPreferences();
-  }
-
-  try {
-    const preferences = JSON.parse(rawPreferences) as Partial<CalendarRangePreferences>;
-    if (
-      preferences.startMonth === LEGACY_DEFAULT_PREFERENCES.startMonth &&
-      preferences.endMonth === LEGACY_DEFAULT_PREFERENCES.endMonth &&
-      preferences.columns === LEGACY_DEFAULT_PREFERENCES.columns
-    ) {
-      return getDefaultPreferences();
-    }
-
-    if (isRollingDefaultPreference(preferences)) {
-      return getDefaultPreferences();
-    }
-
-    return normalizeCalendarRangePreferences(preferences);
-  } catch {
-    return getDefaultPreferences();
-  }
-}
-
-export function saveCalendarRangePreferences(preferences: CalendarRangePreferences): void {
-  localStorage.setItem(CALENDAR_RANGE_PREFERENCES_KEY, JSON.stringify(normalizeCalendarRangePreferences(preferences)));
 }

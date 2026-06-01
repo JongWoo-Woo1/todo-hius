@@ -1,7 +1,6 @@
 import {
-  loadCalendarRangePreferences,
+  getDefaultCalendarRangePreferences,
   normalizeCalendarRangePreferences,
-  saveCalendarRangePreferences,
   type CalendarRangePreferences,
 } from "../state/calendarPreferences";
 import {
@@ -96,7 +95,7 @@ let currentView: "projects" | "ledger" | "weekly" | "calendar" = "calendar";
 let visibleWeekDate = new Date();
 let selectedCalendarProjectIds: Set<string> | null = null;
 let draggedProjectId: string | null = null;
-let calendarRangePreferences = loadCalendarRangePreferences();
+let calendarRangePreferences = getDefaultCalendarRangePreferences();
 
 const RANGE_CALENDAR_YEAR = 2026;
 const MONTH_LABELS = Array.from({ length: 12 }, (_, index) => `${index + 1}`);
@@ -1076,7 +1075,6 @@ export function updateCalendarRangePreferences(updates: Partial<CalendarRangePre
     ...calendarRangePreferences,
     ...updates,
   });
-  saveCalendarRangePreferences(calendarRangePreferences);
 }
 
 export function render(): void {

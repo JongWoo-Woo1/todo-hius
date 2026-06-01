@@ -34,7 +34,7 @@ Main files:
 - `src/vite-env.d.ts`: Vite client type declarations for CSS and asset imports
 - `src/state/store.ts`: state mutation, migration, persistence, active project handling
 - `src/state/storage.ts`: localStorage raw read/write wrapper
-- `src/state/calendarPreferences.ts`: cached calendar range preferences
+- `src/state/calendarPreferences.ts`: in-session calendar range preference defaults and normalization
 - `src/data/sampleProjects.ts`: initial sample data for empty browser state
 - `src/excel/`: Excel workbook creation and browser download helpers
 - `src/ui/dom.ts`: DOM element references
