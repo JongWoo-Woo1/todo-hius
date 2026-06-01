@@ -40,7 +40,6 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
 - Calendar View:
   - 모든 프로젝트의 Todo 일정을 한 달 달력에서 확인
   - 프로젝트별 색상 구분
-  - 임박한 일정은 폭탄 표시와 강조 배경으로 표시
   - 프로젝트 체크박스로 원하는 프로젝트만 표시
   - 2026년 월 범위 Calendar 보기
   - 월 범위 Calendar 기본값은 현재 월부터 3개월, 1 column

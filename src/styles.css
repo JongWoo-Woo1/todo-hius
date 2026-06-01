@@ -899,21 +899,9 @@ button {
   background: #fff7ed;
 }
 
-.calendar-item.due-soon:not(.completed) {
-  border-left-width: 5px;
-  background: #fff7ed;
-  box-shadow: inset 0 0 0 1px #fdba74;
-}
-
 .calendar-item.completed strong {
   color: var(--muted);
   text-decoration: line-through;
-}
-
-.due-soon-marker {
-  display: inline-block;
-  margin-right: 4px;
-  filter: saturate(1.1);
 }
 
 .work-log-card {

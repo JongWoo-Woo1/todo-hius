@@ -18,7 +18,7 @@ import type { TaskPriority, TaskStatus, Todo } from "../types";
 import { getMonthGridDates, getMonthLabel, toDateKey } from "../utils/calendar";
 import { formatDueDate } from "../utils/date";
 import { getLedgerRows } from "../utils/ledger";
-import { formatProgressPercent, isTodoDueSoon, isTodoOverdue } from "../utils/task";
+import { formatProgressPercent, isTodoOverdue } from "../utils/task";
 import { getWeekRangeLabel, getWeekdays } from "../utils/week";
 import {
   activeProjectName,
@@ -78,7 +78,6 @@ type CalendarTodo = {
   title: string;
   completed: boolean;
   overdue: boolean;
-  dueSoon: boolean;
   color: string;
 };
 
@@ -512,7 +511,6 @@ function getDueTodosByDate(): Map<string, CalendarTodo[]> {
         title: todo.title,
         completed: todo.completed,
         overdue: isTodoOverdue(todo),
-        dueSoon: isTodoDueSoon(todo),
         color: project.color,
       });
       dueTodosByDate.set(todo.dueDate, items);
@@ -542,11 +540,10 @@ function appendMonthGrid(monthDate: Date, dueTodosByDate: Map<string, CalendarTo
       item.className = "calendar-item";
       item.classList.toggle("completed", todo.completed);
       item.classList.toggle("overdue", todo.overdue);
-      item.classList.toggle("due-soon", todo.dueSoon);
       item.style.setProperty("--project-color", todo.color);
       item.innerHTML = `
-        <strong>${todo.dueSoon ? `<span class="due-soon-marker" title="임박">💣</span>` : ""}${todo.title}</strong>
-        <span>${todo.projectName}${todo.overdue ? " · Overdue" : todo.dueSoon ? " · Due soon" : ""}</span>
+        <strong>${todo.title}</strong>
+        <span>${todo.projectName}${todo.overdue ? " · Overdue" : ""}</span>
       `;
       cell.append(item);
       itemCount += 1;

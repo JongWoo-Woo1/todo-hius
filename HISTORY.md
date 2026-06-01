@@ -6,7 +6,6 @@ All notable changes to this project are documented here.
 
 ### Added
 
-- Added Calendar due-soon indicators with a bomb marker for tasks due within seven days.
 - Added inline Project name editing from the Project workspace header.
 - Added a reset action to replace current localStorage data with the latest `sampleProjects.ts` data.
 - Added `public/templates/weekly-report-template.xlsx` for template-based Weekly Report Export.
