@@ -737,6 +737,11 @@ button {
   text-align: center;
 }
 
+.calendar-range-label {
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .calendar-filters {
   margin-bottom: 18px;
 }

@@ -15,7 +15,7 @@ import {
   updateTodo,
 } from "../state/store";
 import type { TaskPriority, TaskStatus, Todo } from "../types";
-import { getMonthGridDates, getMonthLabel, toDateKey } from "../utils/calendar";
+import { getMonthGridDates, toDateKey } from "../utils/calendar";
 import { formatDueDate } from "../utils/date";
 import { getLedgerRows } from "../utils/ledger";
 import { formatProgressPercent, isTodoOverdue } from "../utils/task";
@@ -32,7 +32,6 @@ import {
   calendarRangeControls,
   calendarStartMonthSelect,
   calendarViewButton,
-  calendarWeekdays,
   calendarWorkspace,
   cancelProjectInfoButton,
   cancelProjectNameButton,
@@ -94,11 +93,9 @@ let editingTodoId: string | null = null;
 let isProjectInfoEditing = false;
 let isProjectNameEditing = false;
 let currentView: "projects" | "ledger" | "weekly" | "calendar" = "calendar";
-let visibleMonth = new Date();
 let visibleWeekDate = new Date();
 let selectedCalendarProjectIds: Set<string> | null = null;
 let draggedProjectId: string | null = null;
-let calendarMode: "month" | "range" = "month";
 let calendarRangePreferences = loadCalendarRangePreferences();
 
 const RANGE_CALENDAR_YEAR = 2026;
@@ -571,13 +568,6 @@ function appendWeekdays(container: HTMLElement): void {
   container.append(weekdays);
 }
 
-function renderMonthCalendar(dueTodosByDate: Map<string, CalendarTodo[]>): number {
-  calendarMonthLabel.textContent = getMonthLabel(visibleMonth);
-  calendarGrid.className = "calendar-grid";
-  calendarGrid.removeAttribute("style");
-  return appendMonthGrid(visibleMonth, dueTodosByDate, calendarGrid);
-}
-
 function renderRangeCalendar(dueTodosByDate: Map<string, CalendarTodo[]>): number {
   const preferences = normalizeCalendarRangePreferences(calendarRangePreferences);
   calendarRangePreferences = preferences;
@@ -610,15 +600,8 @@ function renderCalendar(): void {
   ensureCalendarSelection();
   const dueTodosByDate = getDueTodosByDate();
   calendarGrid.innerHTML = "";
-  calendarRangeControls.hidden = calendarMode !== "range";
-  calendarWeekdays.hidden = calendarMode === "range";
-  let itemCount = 0;
-
-  if (calendarMode === "range") {
-    itemCount = renderRangeCalendar(dueTodosByDate);
-  } else {
-    itemCount = renderMonthCalendar(dueTodosByDate);
-  }
+  calendarRangeControls.hidden = false;
+  const itemCount = renderRangeCalendar(dueTodosByDate);
 
   calendarEmptyState.hidden = itemCount > 0;
 }
@@ -1064,20 +1047,7 @@ export function showWeeklyView(): void {
 }
 
 export function activateCalendarButton(): void {
-  if (currentView === "calendar") {
-    calendarMode = calendarMode === "month" ? "range" : "month";
-    return;
-  }
-
   currentView = "calendar";
-}
-
-export function goToPreviousMonth(): void {
-  visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
-}
-
-export function goToNextMonth(): void {
-  visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
 }
 
 export function goToPreviousWeek(): void {

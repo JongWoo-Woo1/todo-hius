@@ -67,6 +67,8 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Calendar to always use the multi-month range view by default.
+- Removed the Calendar button mode toggle and single-month Calendar view.
 - Changed Project Ledger Excel Export to match the source ledger layout starting at `B2`.
 - Changed Project Ledger Excel Export alignment, font sizing, row/column spacing, and exported columns to better match the reference workbook.
 - Changed Weekly Report sections to use shared placeholder sizes from Monday through Friday.

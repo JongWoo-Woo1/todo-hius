@@ -37,8 +37,6 @@ import {
   ledgerOverdueOnlyInput,
   ledgerStatusFilter,
   ledgerViewButton,
-  nextMonthButton,
-  previousMonthButton,
   projectClientNameInput,
   projectColorInput,
   projectInfoForm,
@@ -67,9 +65,7 @@ import {
 import {
   activateCalendarButton,
   clearSelectedTodo,
-  goToNextMonth,
   goToNextWeek,
-  goToPreviousMonth,
   goToPreviousWeek,
   getVisibleWeekDate,
   render,
@@ -317,16 +313,6 @@ calendarColumnSelect.addEventListener("change", () => {
   updateCalendarRangePreferences({
     columns: Number(calendarColumnSelect.value),
   });
-  render();
-});
-
-previousMonthButton.addEventListener("click", () => {
-  goToPreviousMonth();
-  render();
-});
-
-nextMonthButton.addEventListener("click", () => {
-  goToNextMonth();
   render();
 });
 
