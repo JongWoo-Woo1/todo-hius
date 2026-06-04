@@ -11,6 +11,7 @@ import {
   importStateFromJson,
   replaceState,
   resetStateToSampleData,
+  setStateChangeListener,
   updateActiveProject,
   updateActiveProjectColor,
 } from "./state/store";
@@ -38,7 +39,6 @@ import {
   ledgerOverdueOnlyInput,
   ledgerStatusFilter,
   ledgerViewButton,
-  openTodoWorkspaceButton,
   projectClientNameInput,
   projectColorInput,
   projectInfoForm,
@@ -49,12 +49,9 @@ import {
   projectPeriodStartInput,
   projectPeriodTextInput,
   resetSampleDataButton,
-  saveTodoWorkspaceButton,
-  todoFileActions,
   todoDueDateInput,
   todoForm,
   todoTitleInput,
-  todoWorkspacePath,
   toggleAllProjectsButton,
   nextWeekButton,
   previousWeekButton,
@@ -85,6 +82,7 @@ import {
 } from "./ui/render";
 
 let currentTodoWorkspacePath: string | undefined;
+let isDirty = false;
 
 function createUniqueProjectName(): string {
   const baseName = "new project";
@@ -101,14 +99,17 @@ function createUniqueProjectName(): string {
   return `${baseName} ${count}`;
 }
 
-function getDisplayPath(filePath: string): string {
-  return filePath.split(/[\\/]/).slice(-2).join("/");
-}
-
 function updateTodoWorkspacePath(filePath: string | undefined): void {
   currentTodoWorkspacePath = filePath;
-  todoWorkspacePath.textContent = filePath ? getDisplayPath(filePath) : "No .todo workspace selected";
-  todoWorkspacePath.title = filePath ?? "";
+}
+
+function setDirty(value: boolean): void {
+  isDirty = value;
+  window.hiusTodoFile?.setDirty(value);
+}
+
+function markDirty(): void {
+  setDirty(true);
 }
 
 function downloadTextFile(content: string, fileName: string, type: string): void {
@@ -124,55 +125,78 @@ function downloadTextFile(content: string, fileName: string, type: string): void
   URL.revokeObjectURL(url);
 }
 
-if (window.hiusTodoFile) {
-  todoFileActions.hidden = false;
-  updateTodoWorkspacePath(undefined);
-}
-
-openTodoWorkspaceButton.addEventListener("click", async () => {
+async function openProject(): Promise<boolean> {
   if (!window.hiusTodoFile) {
-    return;
+    return false;
   }
 
   try {
     const result = await window.hiusTodoFile.openWorkspace();
     if (result.canceled) {
-      return;
+      return false;
     }
 
     const imported = replaceState(result.state);
     if (!imported) {
       window.alert("Invalid .todo workspace. Please select a HIUS Todo workspace file.");
-      return;
+      return false;
     }
 
     updateTodoWorkspacePath(result.workspacePath);
+    setDirty(false);
     clearSelectedTodo();
     resetCalendarSelection();
     render();
+    return true;
   } catch (error) {
     console.error(error);
     window.alert("Failed to open the selected .todo workspace.");
+    return false;
   }
-});
+}
 
-saveTodoWorkspaceButton.addEventListener("click", async () => {
+async function saveProject({ saveAs = false }: { saveAs?: boolean } = {}): Promise<boolean> {
   if (!window.hiusTodoFile) {
-    return;
+    return false;
   }
 
   try {
-    const result = await window.hiusTodoFile.saveWorkspace(getState(), currentTodoWorkspacePath);
+    const result = saveAs
+      ? await window.hiusTodoFile.saveWorkspaceAs(getState())
+      : await window.hiusTodoFile.saveWorkspace(getState(), currentTodoWorkspacePath);
     if (result.canceled) {
-      return;
+      return false;
     }
 
     updateTodoWorkspacePath(result.workspacePath);
+    setDirty(false);
+    return true;
   } catch (error) {
     console.error(error);
     window.alert("Failed to save the .todo workspace.");
+    return false;
+  }
+}
+
+setStateChangeListener(markDirty);
+
+window.hiusTodoFile?.onMenuCommand((command) => {
+  if (command === "open-project") {
+    void openProject();
+    return;
+  }
+
+  if (command === "save-project") {
+    void saveProject();
+    return;
+  }
+
+  if (command === "save-project-as") {
+    void saveProject({ saveAs: true });
   }
 });
+
+window.hiusTodoFile?.onSaveRequest(async (_requestId, saveAs) => saveProject({ saveAs }));
 
 addProjectButton.addEventListener("click", () => {
   const project: Project = {
@@ -228,7 +252,7 @@ importJsonFileInput.addEventListener("change", async () => {
 
 resetSampleDataButton.addEventListener("click", () => {
   const shouldReset = window.confirm(
-    "현재 작업 중인 데이터를 sampleProjects 데이터로 교체합니다. 필요한 경우 먼저 Save .todo 또는 Export JSON으로 백업하세요. 계속할까요?",
+    "현재 작업 중인 데이터를 sampleProjects 데이터로 교체합니다. 필요한 경우 먼저 Save Project 또는 Export JSON으로 백업하세요. 계속할까요?",
   );
   if (!shouldReset) {
     return;

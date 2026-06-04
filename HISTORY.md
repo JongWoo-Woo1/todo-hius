@@ -6,6 +6,9 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added Electron File menu actions for Open Project, Save Project, and Save Project As.
+- Added `Ctrl+S` Save Project support.
+- Added unsaved-change tracking and a save prompt when closing with pending changes.
 - Added `.todo` files for every current sample project, including Custom Device, PCS HILs, E-Shift HILs, and related projects.
 - Moved Weekly plan/work log persistence into each project-level `.todo` file.
 - Added Electron `.todo` workspace open/save support.

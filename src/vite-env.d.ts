@@ -17,11 +17,17 @@ type SaveTodoWorkspaceResult = {
   workspacePath?: string;
 };
 
+type TodoFileMenuCommand = "open-project" | "save-project" | "save-project-as";
+
 declare global {
   interface Window {
     hiusTodoFile?: {
       openWorkspace: () => Promise<OpenTodoWorkspaceResult>;
       saveWorkspace: (state: AppState, workspacePath?: string) => Promise<SaveTodoWorkspaceResult>;
+      saveWorkspaceAs: (state: AppState) => Promise<SaveTodoWorkspaceResult>;
+      setDirty: (isDirty: boolean) => void;
+      onMenuCommand: (callback: (command: TodoFileMenuCommand) => void) => () => void;
+      onSaveRequest: (callback: (requestId: string, saveAs: boolean) => Promise<boolean>) => () => void;
     };
   }
 }

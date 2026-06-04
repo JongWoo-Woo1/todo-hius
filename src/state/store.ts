@@ -25,6 +25,7 @@ const MERGED_AI_SHIP_PROJECT_IDS = new Set([AI_SHIP_PROJECT_ID, "project-ksoe-ai
 const REMOVED_PROJECT_IDS = new Set(["project-hd-grc-ni-seminar"]);
 
 let state = createSampleState();
+let stateChangeListener: (() => void) | null = null;
 
 function isTaskStatus(value: unknown): value is TaskStatus {
   return typeof value === "string" && TASK_STATUSES.includes(value as TaskStatus);
@@ -221,7 +222,8 @@ function migrateState(rawState: LegacyAppState): AppState {
 }
 
 function saveState(): void {
-  // Electron branch keeps runtime state in memory. Persist with Save .todo.
+  // Electron branch keeps runtime state in memory. Persist with File > Save Project.
+  stateChangeListener?.();
 }
 
 function isImportableState(value: unknown): value is LegacyAppState {
@@ -230,6 +232,10 @@ function isImportableState(value: unknown): value is LegacyAppState {
 
 export function getState(): AppState {
   return state;
+}
+
+export function setStateChangeListener(listener: (() => void) | null): void {
+  stateChangeListener = listener;
 }
 
 export function getActiveProject(): Project | undefined {
