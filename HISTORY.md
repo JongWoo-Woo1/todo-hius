@@ -6,6 +6,8 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added `.todo` files for every current sample project, including Custom Device, PCS HILs, E-Shift HILs, and related projects.
+- Moved Weekly plan/work log persistence into each project-level `.todo` file.
 - Added Electron `.todo` workspace open/save support.
 - Added the `hius-dt-jw-todo` workspace folder with a `hius-dt-jw.todo` manifest and project-level `.todo` file example.
 - Added project-level `.todo` JSON file persistence under each workspace `projects/` folder.
@@ -78,6 +80,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Removed runtime localStorage persistence on the Electron branch; state now stays in memory until saved to `.todo`.
 - Renamed the Ledger `이슈/리스크` column label to `비고`.
 - Removed the `Comment 담당자` and `Comment 관리자` columns from Ledger View and Project Ledger Excel Export.
 - Merged the duplicated UIPA/KSOE AI ship entries into one `AI 선박` project with client `UIPA`, and removed the HD현대그룹 NI 실습 세미나 sample project.

@@ -1,7 +1,6 @@
 import { createSampleState } from "../data/sampleProjects";
 import type { AppState, Project, TaskPriority, TaskStatus, Todo, WorkLog, WorkLogType } from "../types";
 import { getProjectColor } from "../utils/projectColor";
-import { loadRawState, saveRawState } from "./storage";
 
 type LegacyTodo = Partial<Todo> & {
   completed?: boolean;
@@ -25,7 +24,7 @@ const AI_SHIP_PROJECT_ID = "project-uipa-ai-ship";
 const MERGED_AI_SHIP_PROJECT_IDS = new Set([AI_SHIP_PROJECT_ID, "project-ksoe-ai-ship"]);
 const REMOVED_PROJECT_IDS = new Set(["project-hd-grc-ni-seminar"]);
 
-let state = loadState();
+let state = createSampleState();
 
 function isTaskStatus(value: unknown): value is TaskStatus {
   return typeof value === "string" && TASK_STATUSES.includes(value as TaskStatus);
@@ -221,21 +220,8 @@ function migrateState(rawState: LegacyAppState): AppState {
   };
 }
 
-function loadState(): AppState {
-  const rawState = loadRawState();
-  if (!rawState) {
-    return createSampleState();
-  }
-
-  try {
-    return migrateState(JSON.parse(rawState) as LegacyAppState);
-  } catch {
-    return createSampleState();
-  }
-}
-
 function saveState(): void {
-  saveRawState(state);
+  // Electron branch keeps runtime state in memory. Persist with Save .todo.
 }
 
 function isImportableState(value: unknown): value is LegacyAppState {

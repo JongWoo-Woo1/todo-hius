@@ -3,12 +3,12 @@
   "version": 1,
   "project": {
     "id": "project-katech-tms-aps-hils",
-    "name": "TMS HILs - APS HILs",
     "clientName": "KATECH",
     "projectNumber": "",
+    "name": "TMS HILs - APS HILs",
+    "periodText": "26.06 ~",
     "periodStart": "2026-06-01",
     "periodEnd": null,
-    "periodText": "26.06 ~",
     "color": "#2563eb",
     "todos": [
       {
@@ -54,5 +54,6 @@
         "completed": false
       }
     ]
-  }
+  },
+  "workLogs": []
 }

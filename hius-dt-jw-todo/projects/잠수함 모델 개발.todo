@@ -1,0 +1,31 @@
+{
+  "kind": "hius.todo.project",
+  "version": 1,
+  "project": {
+    "id": "project-ksoe-submarine-model",
+    "clientName": "KSOE",
+    "projectNumber": "",
+    "name": "잠수함 모델 개발",
+    "periodText": "미확정",
+    "periodStart": null,
+    "periodEnd": null,
+    "color": "#0891b2",
+    "todos": [
+      {
+        "id": "todo-ksoe-submarine-model-standby",
+        "title": "잠수함 모델 개발 업무 범위 확인",
+        "dueDate": null,
+        "estimate": "*",
+        "status": "대기",
+        "progress": 0,
+        "workerComment": "업무 확인 필요",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": false
+      }
+    ]
+  },
+  "workLogs": []
+}

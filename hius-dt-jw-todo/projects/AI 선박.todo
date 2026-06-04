@@ -1,0 +1,84 @@
+{
+  "kind": "hius.todo.project",
+  "version": 1,
+  "project": {
+    "id": "project-uipa-ai-ship",
+    "clientName": "UIPA",
+    "projectNumber": "",
+    "name": "AI 선박",
+    "periodText": "26.05 ~",
+    "periodStart": "2026-05-01",
+    "periodEnd": null,
+    "color": "#14b8a6",
+    "todos": [
+      {
+        "id": "todo-uipa-kickoff",
+        "title": "1차년도 착수회의 참석",
+        "dueDate": "2026-05-18",
+        "estimate": "1D",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": true
+      },
+      {
+        "id": "todo-uipa-taehwa",
+        "title": "태화호 탑승 및 AI선박 로드맵 확인",
+        "dueDate": "2026-05-19",
+        "estimate": "1D",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": true
+      },
+      {
+        "id": "todo-ksoe-ai-ship-scope",
+        "title": "사업 내용 및 연구개발 범위 파악",
+        "dueDate": "2026-05-14",
+        "estimate": "1D",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "KSOE AI에이전트, SDS 플랫폼, HIUS XIL 플랫폼 범위 확인",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": true
+      }
+    ]
+  },
+  "workLogs": [
+    {
+      "id": "worklog-2026-05-14-ksoe-ai-done",
+      "projectId": "project-uipa-ai-ship",
+      "todoId": "todo-ksoe-ai-ship-scope",
+      "date": "2026-05-14",
+      "type": "수행",
+      "content": "사업 내용과 연구개발 범위 파악. KSOE AI에이전트/SDS 플랫폼, HIUS XIL 플랫폼 범위 확인"
+    },
+    {
+      "id": "worklog-2026-05-18-uipa-done",
+      "projectId": "project-uipa-ai-ship",
+      "todoId": "todo-uipa-kickoff",
+      "date": "2026-05-18",
+      "type": "수행",
+      "content": "1차년도 착수회의 참석. 오후 두왕동 방문 및 회식 참석"
+    },
+    {
+      "id": "worklog-2026-05-19-uipa-done",
+      "projectId": "project-uipa-ai-ship",
+      "todoId": "todo-uipa-taehwa",
+      "date": "2026-05-19",
+      "type": "수행",
+      "content": "태화호 탑승. 엔진룸/기관실 방문, 태화호 ICT 융합 및 AI선박 로드맵 확인"
+    }
+  ]
+}

@@ -50,13 +50,14 @@ type TodoWorkspaceManifest = {
   name: string;
   activeProjectId: string | null;
   projectFiles: string[];
-  workLogs: WorkLog[];
+  workLogs?: WorkLog[];
 };
 
 type TodoProjectFile = {
   kind: "hius.todo.project";
   version: 1;
   project: Project;
+  workLogs?: WorkLog[];
 };
 
 type OpenWorkspaceResult =
@@ -117,19 +118,22 @@ async function openWorkspaceFile(workspacePath: string): Promise<AppState> {
   assertWorkspaceManifest(manifest);
 
   const workspaceDirectory = path.dirname(workspacePath);
-  const projects = await Promise.all(
+  const projectFiles = await Promise.all(
     manifest.projectFiles.map(async (projectFile) => {
       const projectFilePath = path.resolve(workspaceDirectory, projectFile);
       const projectData = await readJsonFile(projectFilePath);
       assertProjectFile(projectData);
-      return projectData.project;
+      return projectData;
     }),
   );
 
   return {
-    projects,
+    projects: projectFiles.map((projectFile) => projectFile.project),
     activeProjectId: manifest.activeProjectId,
-    workLogs: Array.isArray(manifest.workLogs) ? manifest.workLogs : [],
+    workLogs: [
+      ...(Array.isArray(manifest.workLogs) ? manifest.workLogs : []),
+      ...projectFiles.flatMap((projectFile) => (Array.isArray(projectFile.workLogs) ? projectFile.workLogs : [])),
+    ],
   };
 }
 
@@ -138,7 +142,15 @@ async function saveWorkspaceFile(workspacePath: string, state: AppState): Promis
   const projectsDirectory = path.join(workspaceDirectory, "projects");
   const usedFileNames = new Set<string>();
   const projectFiles: string[] = [];
+  const workLogsByProjectId = new Map<string, WorkLog[]>();
 
+  state.workLogs.forEach((workLog) => {
+    const projectWorkLogs = workLogsByProjectId.get(workLog.projectId) ?? [];
+    projectWorkLogs.push(workLog);
+    workLogsByProjectId.set(workLog.projectId, projectWorkLogs);
+  });
+
+  await fs.rm(projectsDirectory, { recursive: true, force: true });
   await fs.mkdir(projectsDirectory, { recursive: true });
 
   for (const project of state.projects) {
@@ -157,6 +169,7 @@ async function saveWorkspaceFile(workspacePath: string, state: AppState): Promis
       kind: PROJECT_KIND,
       version: 1,
       project,
+      workLogs: workLogsByProjectId.get(project.id) ?? [],
     } satisfies TodoProjectFile);
   }
 
@@ -166,7 +179,6 @@ async function saveWorkspaceFile(workspacePath: string, state: AppState): Promis
     name: path.basename(workspacePath, ".todo"),
     activeProjectId: state.activeProjectId,
     projectFiles,
-    workLogs: state.workLogs,
   };
 
   await writeJsonFile(workspacePath, manifest);

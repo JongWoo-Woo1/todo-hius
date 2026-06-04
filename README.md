@@ -2,7 +2,7 @@
 
 Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니다.
 
-프로젝트별 업무를 관리하고, 모든 프로젝트의 일정과 업무 현황을 Calendar, Weekly, Ledger View에서 확인할 수 있습니다. 데이터는 브라우저 `localStorage`에 저장됩니다.
+프로젝트별 업무를 관리하고, 모든 프로젝트의 일정과 업무 현황을 Calendar, Weekly, Ledger View에서 확인할 수 있습니다. Electron 브랜치에서는 데이터가 `.todo` workspace 파일로 저장됩니다.
 
 ## Main Features
 
@@ -99,7 +99,7 @@ WorkLog는 Project와 선택적으로 Todo에 연결됩니다. Weekly 항목의 
 
 - `src/`: TypeScript source code
 - `src/styles.css`: app styling loaded by Vite
-- `src/state/`: app state, migration, localStorage persistence
+- `src/state/`: app state, migration, and in-memory runtime state
 - `src/ui/`: DOM references and rendering
 - `src/data/`: sample project data
 - `src/utils/`: shared helpers
@@ -111,7 +111,6 @@ WorkLog는 Project와 선택적으로 Todo에 연결됩니다. Weekly 항목의 
 - `src/vite-env.d.ts`: Vite client type declarations for CSS and asset imports
 - `src/data/sampleProjects.ts`: initial demo projects for an empty browser state
 - `src/state/store.ts`: project, todo, and work log state changes
-- `src/state/storage.ts`: localStorage raw read/write wrapper
 - `src/state/calendarPreferences.ts`: Calendar range preference storage
 - `src/excel/projectLedgerReport.ts`: Project Ledger Excel workbook creation
 - `src/excel/weeklyReport.ts`: Weekly Report Excel workbook creation
@@ -141,7 +140,7 @@ The `electron` branch adds a desktop shell around the existing Vite + TypeScript
 - Electron main process source lives in `electron/main.ts`.
 - Electron build output is emitted to `dist-electron/`.
 - `npm run dev:electron` runs Vite with hot reload and restarts Electron when the main process changes.
-- The app still uses the existing browser UI and localStorage workflow.
+- The app still uses the existing browser UI, but persistence is handled through `.todo` workspace files.
 
 ## Todo Workspace Files
 
@@ -152,7 +151,8 @@ The Electron branch can open and save `.todo` workspace files.
 - A project file can use a name such as `TMS HILs - APS HILs.todo`.
 - The `.todo` files use JSON with a `kind` and `version` field so the format can be migrated later.
 - Opening a workspace loads the project files into the app for viewing and editing.
-- Saving a workspace writes one `.todo` file per Project and keeps WorkLogs in the workspace manifest.
+- Saving a workspace writes one `.todo` file per Project.
+- Weekly plan/work entries are stored as `workLogs` inside the matching Project `.todo` file.
 
 ## Project History
 

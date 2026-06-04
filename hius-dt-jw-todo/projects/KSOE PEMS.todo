@@ -1,0 +1,76 @@
+{
+  "kind": "hius.todo.project",
+  "version": 1,
+  "project": {
+    "id": "project-ksoe-pems",
+    "clientName": "KSOE",
+    "projectNumber": "",
+    "name": "KSOE PEMS",
+    "periodText": "26.05 ~",
+    "periodStart": "2026-05-01",
+    "periodEnd": null,
+    "color": "#64748b",
+    "todos": [
+      {
+        "id": "todo-ksoe-pems-research-note-23",
+        "title": "23년 연구노트 작성",
+        "dueDate": null,
+        "estimate": "1D",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": true
+      },
+      {
+        "id": "todo-ksoe-pems-research-note-24",
+        "title": "24년 연구노트 작성",
+        "dueDate": null,
+        "estimate": "1D",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": true
+      },
+      {
+        "id": "todo-ksoe-pems-research-note-25",
+        "title": "25년 연구노트 목차 정리 및 작성",
+        "dueDate": null,
+        "estimate": "2D",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": true
+      }
+    ]
+  },
+  "workLogs": [
+    {
+      "id": "worklog-2026-05-19-pems-done",
+      "projectId": "project-ksoe-pems",
+      "todoId": "todo-ksoe-pems-research-note-25",
+      "date": "2026-05-19",
+      "type": "수행",
+      "content": "25년 연구노트 목차 정리 및 내용 작성. PPT 형태로 작성"
+    },
+    {
+      "id": "worklog-2026-05-22-pems-done",
+      "projectId": "project-ksoe-pems",
+      "todoId": "todo-ksoe-pems-research-note-24",
+      "date": "2026-05-22",
+      "type": "수행",
+      "content": "24년 연구노트 작성 완료"
+    }
+  ]
+}

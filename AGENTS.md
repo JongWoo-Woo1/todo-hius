@@ -9,7 +9,7 @@ Codex should preserve this direction on the main browser app unless the user exp
 - Do not migrate the app to React.
 - Do not migrate the app to Electron unless the user explicitly requests Electron work or the current branch is the Electron branch.
 - Keep `src/` as the source of truth.
-- Keep the current browser/localStorage-based workflow unless the user explicitly changes direction.
+- On the Electron branch, use `.todo` workspace files instead of localStorage for persistence.
 
 ## File Access Rules
 
@@ -44,7 +44,6 @@ Main files:
 - `src/types.ts`: shared TypeScript types
 - `src/vite-env.d.ts`: Vite client type declarations for CSS and asset imports
 - `src/state/store.ts`: state mutation, migration, persistence, active project handling
-- `src/state/storage.ts`: localStorage raw read/write wrapper
 - `src/state/calendarPreferences.ts`: in-session calendar range preference defaults and normalization
 - `src/data/sampleProjects.ts`: initial sample data for empty browser state
 - `src/excel/`: Excel workbook creation and browser download helpers
@@ -57,17 +56,15 @@ Main files:
 - `tsconfig.electron.json`: Electron main process TypeScript build config
 - `hius-dt-jw-todo/`: example `.todo` workspace folder for the Electron branch
 
-Data is persisted in localStorage with this key:
+On the Electron branch, data is persisted through `.todo` workspace files:
 
-```text
-project-todo-state
-```
-
-Keep this key stable so existing user data remains compatible.
+- workspace manifest: `hius-dt-jw.todo`
+- project files: `projects/<project name>.todo`
+- each project file stores its own `workLogs`
 
 ## Compatibility Rules
 
-Existing legacy localStorage data must continue to load.
+Legacy JSON imports should continue to load through migration.
 
 Project and Todo migration lives in `src/state/store.ts`.
 
@@ -107,7 +104,7 @@ Standing rules that do not need to be repeated include:
 - Do not migrate the app to Electron unless the user explicitly requests Electron work or the current branch is the Electron branch.
 - Electron work is allowed only when the user explicitly asks for it or when continuing work on the Electron branch.
 - Keep the current Vite + TypeScript + pure DOM direction.
-- Keep the browser/localStorage-based workflow.
+- On the Electron branch, keep the `.todo` workspace file workflow.
 - Respect `.gitignore`.
 - Do not inspect or edit `node_modules/`, `dist/`, or `build/`.
 - Run typecheck and build after meaningful code changes.

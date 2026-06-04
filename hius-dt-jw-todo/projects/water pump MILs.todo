@@ -1,0 +1,73 @@
+{
+  "kind": "hius.todo.project",
+  "version": 1,
+  "project": {
+    "id": "project-gmb-water-pump-mils",
+    "clientName": "GMB",
+    "projectNumber": "",
+    "name": "water pump MILs",
+    "periodText": "25.08 ~ 26.06",
+    "periodStart": "2025-08-01",
+    "periodEnd": "2026-06-30",
+    "color": "#9333ea",
+    "todos": [
+      {
+        "id": "todo-gmb-mils-system-test",
+        "title": "MILs 시스템 단독테스트",
+        "dueDate": null,
+        "estimate": "1W",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": true
+      },
+      {
+        "id": "todo-gmb-pump-auto-test",
+        "title": "펌프 대상 AUTO TEST",
+        "dueDate": null,
+        "estimate": "1M",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": true
+      },
+      {
+        "id": "todo-gmb-mils-program-add",
+        "title": "MILs 프로그램 추가개발 (manual test, dashboard, 사용자 메뉴얼 등)",
+        "dueDate": null,
+        "estimate": "2M",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": true
+      },
+      {
+        "id": "todo-gmb-mils-feedback",
+        "title": "MILs 프로그램 피드백 및 개선",
+        "dueDate": "2026-06-12",
+        "estimate": "1W",
+        "status": "진행중",
+        "progress": 0,
+        "workerComment": "피드백 대기중",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": false
+      }
+    ]
+  },
+  "workLogs": []
+}

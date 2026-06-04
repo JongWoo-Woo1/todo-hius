@@ -1,0 +1,92 @@
+{
+  "kind": "hius.todo.project",
+  "version": 1,
+  "project": {
+    "id": "project-kyungchang-e-shift-hils",
+    "clientName": "경창산업",
+    "projectNumber": "",
+    "name": "E-Shift HILs",
+    "periodText": "26.04 ~ 26.07",
+    "periodStart": "2026-04-01",
+    "periodEnd": "2026-07-31",
+    "color": "#f97316",
+    "todos": [
+      {
+        "id": "todo-kyungchang-fpga-spi",
+        "title": "FPGA SPI 통신 프로토콜 추가, MLX90363 대상 개발",
+        "dueDate": "2026-06-04",
+        "estimate": "1W",
+        "status": "진행중",
+        "progress": 0,
+        "workerComment": "준비 완료",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": false
+      },
+      {
+        "id": "todo-kyungchang-auto-test-upgrade",
+        "title": "AUTO TEST 업그레이드: DTC, Current, Past 기능 추가",
+        "dueDate": "2026-06-16",
+        "estimate": "3D",
+        "status": "미완",
+        "progress": 0,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": false
+      },
+      {
+        "id": "todo-kyungchang-veristand-project",
+        "title": "4개 차종 대상 VeriStand Project 개발",
+        "dueDate": "2026-06-16",
+        "estimate": "1W",
+        "status": "미완",
+        "progress": 0,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": false
+      }
+    ]
+  },
+  "workLogs": [
+    {
+      "id": "worklog-2026-05-21-kyungchang-done",
+      "projectId": "project-kyungchang-e-shift-hils",
+      "todoId": "todo-kyungchang-fpga-spi",
+      "date": "2026-05-21",
+      "type": "수행",
+      "content": "FPGA SPI 통신, MLX90363 대상 개발"
+    },
+    {
+      "id": "worklog-2026-05-29-kyungchang-done",
+      "projectId": "project-kyungchang-e-shift-hils",
+      "todoId": "todo-kyungchang-fpga-spi",
+      "date": "2026-05-29",
+      "type": "수행",
+      "content": "VeriStand 원격 기술지원. Channel Mapping, CAN Frame Disable 구성, VeriStand API/get channel value 사용방법 가이드"
+    },
+    {
+      "id": "worklog-2026-06-02-kyungchang-plan",
+      "projectId": "project-kyungchang-e-shift-hils",
+      "todoId": "todo-kyungchang-fpga-spi",
+      "date": "2026-06-02",
+      "type": "계획",
+      "content": "FPGA SPI 통신 프로토콜 추가, MLX90363"
+    },
+    {
+      "id": "worklog-2026-06-04-kyungchang-plan",
+      "projectId": "project-kyungchang-e-shift-hils",
+      "todoId": "todo-kyungchang-fpga-spi",
+      "date": "2026-06-04",
+      "type": "계획",
+      "content": "FPGA SPI 통신 프로토콜 추가 완료 목표 및 개발사항 공유"
+    }
+  ]
+}

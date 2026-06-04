@@ -1,0 +1,150 @@
+{
+  "kind": "hius.todo.project",
+  "version": 1,
+  "project": {
+    "id": "project-hdx-adas",
+    "clientName": "HDX",
+    "projectNumber": "",
+    "name": "ADAS",
+    "periodText": "25.08 ~ 26.06",
+    "periodStart": "2025-08-01",
+    "periodEnd": "2026-06-30",
+    "color": "#dc2626",
+    "todos": [
+      {
+        "id": "todo-hdx-sensor-single-test",
+        "title": "센서 단동 테스트: 라이다, 레이더, 카메라",
+        "dueDate": null,
+        "estimate": "1W",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": true
+      },
+      {
+        "id": "todo-hdx-crio-ros2",
+        "title": "cRIO ROS2 연동 프로그램 개발",
+        "dueDate": null,
+        "estimate": "1W",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": true
+      },
+      {
+        "id": "todo-hdx-host-program",
+        "title": "HOST 프로그램 개발 (RT 모니터링)",
+        "dueDate": null,
+        "estimate": "1W",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": true
+      },
+      {
+        "id": "todo-hdx-sensor-logging-replay",
+        "title": "Sensor, Logging and Replay 기능 개발",
+        "dueDate": null,
+        "estimate": "1W",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": true
+      },
+      {
+        "id": "todo-hdx-signal-generation",
+        "title": "Signal Generation 기능 개발",
+        "dueDate": "2026-05-23",
+        "estimate": "1W",
+        "status": "완료",
+        "progress": 1,
+        "workerComment": "개발 완료, HDX 담당자와 개발내용 공유 예정",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "최우선",
+        "memo": "",
+        "completed": true
+      },
+      {
+        "id": "todo-hdx-development-feedback",
+        "title": "개발 내용 공유 및 피드백 검토",
+        "dueDate": "2026-06-01",
+        "estimate": "3D",
+        "status": "진행중",
+        "progress": 0,
+        "workerComment": "",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": false
+      }
+    ]
+  },
+  "workLogs": [
+    {
+      "id": "worklog-2026-05-06-hdx-done",
+      "projectId": "project-hdx-adas",
+      "todoId": "todo-hdx-signal-generation",
+      "date": "2026-05-06",
+      "type": "수행",
+      "content": "Signal Generation 개발. RT 코드와 SigGen 모듈 개발, Lidar/Radar/Camera 데이터 송신 구조 검토"
+    },
+    {
+      "id": "worklog-2026-05-08-hdx-done",
+      "projectId": "project-hdx-adas",
+      "todoId": "todo-hdx-signal-generation",
+      "date": "2026-05-08",
+      "type": "수행",
+      "content": "Replay 기능 저장파일 만료 시 state 처리 버그 해결. 하위 모듈 idle 확인 후 close msg 전송 코드 추가"
+    },
+    {
+      "id": "worklog-2026-05-11-hdx-done",
+      "projectId": "project-hdx-adas",
+      "todoId": "todo-hdx-signal-generation",
+      "date": "2026-05-11",
+      "type": "수행",
+      "content": "Signal Generation 개발. Radar/Lidar/Camera siggen 모듈 개발 및 Camera 포트 병렬 루프 검토"
+    },
+    {
+      "id": "worklog-2026-05-21-hdx-done",
+      "projectId": "project-hdx-adas",
+      "todoId": "todo-hdx-signal-generation",
+      "date": "2026-05-21",
+      "type": "수행",
+      "content": "Signal Generation 개발 마무리 및 사용자 설정값 타입 정의 작성"
+    },
+    {
+      "id": "worklog-2026-05-26-hdx-done",
+      "projectId": "project-hdx-adas",
+      "todoId": "todo-hdx-signal-generation",
+      "date": "2026-05-26",
+      "type": "수행",
+      "content": "Signal Generation 개발 완료. Camera UDP Streaming Demo 개발 및 실시간 송수신 확인"
+    },
+    {
+      "id": "worklog-2026-06-01-hdx-plan",
+      "projectId": "project-hdx-adas",
+      "todoId": "todo-hdx-development-feedback",
+      "date": "2026-06-01",
+      "type": "계획",
+      "content": "개발사항 공유 to 배경한 이사, HDX 담당자와 일정 논의"
+    }
+  ]
+}
