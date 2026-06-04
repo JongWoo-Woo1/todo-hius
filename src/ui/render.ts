@@ -104,8 +104,8 @@ let isProjectNameEditing = false;
 let currentView: "projects" | "ledger" | "weekly" | "calendar" = "calendar";
 let visibleWeekDate = new Date();
 let selectedCalendarProjectIds: Set<string> | null = null;
-let selectedCalendarTodoId: string | null = null;
-let isCalendarTodoEditing = false;
+let selectedModalTodoId: string | null = null;
+let isModalTodoEditing = false;
 let draggedProjectId: string | null = null;
 let calendarRangePreferences = getDefaultCalendarRangePreferences();
 let expandedProjectWorkLogId: string | null = null;
@@ -229,9 +229,8 @@ function renderLedger(): void {
         <td class="ledger-issue-cell">${todo.issueRisk ?? ""}</td>
       `;
     row.addEventListener("click", () => {
-      selectProject(project.id);
-      selectedTodoId = todo.id;
-      currentView = "projects";
+      selectedModalTodoId = todo.id;
+      isModalTodoEditing = false;
       render();
     });
     row.addEventListener("keydown", (event) => {
@@ -240,9 +239,8 @@ function renderLedger(): void {
       }
 
       event.preventDefault();
-      selectProject(project.id);
-      selectedTodoId = todo.id;
-      currentView = "projects";
+      selectedModalTodoId = todo.id;
+      isModalTodoEditing = false;
       render();
     });
     ledgerTableBody.append(row);
@@ -705,8 +703,8 @@ function appendMonthGrid(monthDate: Date, dueTodosByDate: Map<string, CalendarTo
         <span>${todo.projectName}${todo.overdue ? " · Overdue" : ""}</span>
       `;
       item.addEventListener("click", () => {
-        selectedCalendarTodoId = todo.todoId;
-        isCalendarTodoEditing = false;
+        selectedModalTodoId = todo.todoId;
+        isModalTodoEditing = false;
         render();
       });
       cell.append(item);
@@ -869,8 +867,8 @@ function createDetailRow(label: string, value: string): HTMLElement {
 }
 
 function closeCalendarDetailModal(): void {
-  selectedCalendarTodoId = null;
-  isCalendarTodoEditing = false;
+  selectedModalTodoId = null;
+  isModalTodoEditing = false;
 }
 
 function goToProjectTodo(projectId: string, todoId: string | null): void {
@@ -940,7 +938,7 @@ function renderCalendarTodoView(project: Project, todo: Todo): HTMLElement {
   editButton.type = "button";
   editButton.textContent = "수정";
   editButton.addEventListener("click", () => {
-    isCalendarTodoEditing = true;
+    isModalTodoEditing = true;
     render();
   });
 
@@ -1049,7 +1047,7 @@ function renderCalendarTodoEditForm(project: Project, todo: Todo): HTMLElement {
     render();
   });
   form.querySelector<HTMLButtonElement>('[data-action="cancel"]')!.addEventListener("click", () => {
-    isCalendarTodoEditing = false;
+    isModalTodoEditing = false;
     render();
   });
 
@@ -1072,7 +1070,7 @@ function renderCalendarTodoEditForm(project: Project, todo: Todo): HTMLElement {
       issueRisk: issueRiskInput.value.trim(),
       memo: memoInput.value.trim(),
     });
-    isCalendarTodoEditing = false;
+    isModalTodoEditing = false;
     render();
   });
 
@@ -1080,7 +1078,7 @@ function renderCalendarTodoEditForm(project: Project, todo: Todo): HTMLElement {
 }
 
 function renderCalendarDetailModal(): void {
-  const selection = findTodoWithProject(selectedCalendarTodoId);
+  const selection = findTodoWithProject(selectedModalTodoId);
   calendarDetailContent.innerHTML = "";
   calendarDetailModal.onclick = (event) => {
     if (event.target !== calendarDetailModal) {
@@ -1091,13 +1089,13 @@ function renderCalendarDetailModal(): void {
     render();
   };
 
-  if (currentView !== "calendar" || !selection) {
+  if ((currentView !== "calendar" && currentView !== "ledger") || !selection) {
     calendarDetailModal.hidden = true;
     return;
   }
 
   calendarDetailContent.append(
-    isCalendarTodoEditing
+    isModalTodoEditing
       ? renderCalendarTodoEditForm(selection.project, selection.todo)
       : renderCalendarTodoView(selection.project, selection.todo),
   );
