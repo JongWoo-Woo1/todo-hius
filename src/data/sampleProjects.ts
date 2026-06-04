@@ -49,7 +49,7 @@ export function createSampleState(): AppState {
   const projects: Project[] = [
     {
       id: "project-katech-tms-aps-hils",
-      clientName: "KATECH\n한국자동차연구원",
+      clientName: "KATECH",
       projectNumber: "",
       name: "TMS HILs - APS HILs",
       periodText: "26.06 ~",
@@ -79,7 +79,7 @@ export function createSampleState(): AppState {
     },
     {
       id: "project-ksoe-custom-device",
-      clientName: "KSOE\n한국조선해양",
+      clientName: "KSOE",
       projectNumber: "",
       name: "Custom Device 개발 - (OPCUA,ModbusTCP,MQTT)",
       periodText: "25.06 ~",
@@ -138,7 +138,7 @@ export function createSampleState(): AppState {
     },
     {
       id: "project-ksoe-sofc-amesim",
-      clientName: "KSOE\n한국조선해양",
+      clientName: "KSOE",
       projectNumber: "P260017",
       name: "Simcenter Amesim 소프트웨어 활용 - SOFC 시뮬레이션 모델 개발",
       periodText: "26.04 ~ 26.12",
@@ -186,7 +186,7 @@ export function createSampleState(): AppState {
     },
     {
       id: "project-ksoe-pcs-hils",
-      clientName: "KSOE\n한국조선해양",
+      clientName: "KSOE",
       projectNumber: "",
       name: "PCS HILs",
       periodText: "26.01 ~",
@@ -205,7 +205,7 @@ export function createSampleState(): AppState {
     },
     {
       id: "project-ksoe-submarine-model",
-      clientName: "KSOE\n한국조선해양",
+      clientName: "KSOE",
       projectNumber: "",
       name: "잠수함 모델 개발",
       periodText: "미확정",

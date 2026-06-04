@@ -48,6 +48,23 @@ function normalizeProjectName(value: unknown): string {
     .join(" - ") || "new project";
 }
 
+function normalizeClientName(value: unknown): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const trimmedValue = value.trim();
+  if (trimmedValue.startsWith("KSOE")) {
+    return "KSOE";
+  }
+
+  if (trimmedValue.startsWith("KATECH")) {
+    return "KATECH";
+  }
+
+  return trimmedValue;
+}
+
 function normalizeProgress(value: unknown, completed: boolean): number {
   if (completed) {
     return 1;
@@ -101,7 +118,7 @@ function normalizeProject(project: LegacyProject, index: number): Project {
   return {
     id: project.id ?? `project-${index}`,
     name: normalizeProjectName(project.name),
-    clientName: project.clientName ?? "",
+    clientName: normalizeClientName(project.clientName),
     projectNumber: project.projectNumber ?? "",
     periodStart: project.periodStart ?? null,
     periodEnd: project.periodEnd ?? null,
@@ -185,6 +202,10 @@ export function updateActiveProject(updates: Partial<Project>): void {
 
   if ("name" in updates) {
     updates.name = normalizeProjectName(updates.name);
+  }
+
+  if ("clientName" in updates) {
+    updates.clientName = normalizeClientName(updates.clientName);
   }
 
   Object.assign(activeProject, updates);
