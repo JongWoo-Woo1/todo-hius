@@ -23,6 +23,17 @@ Do not inspect or edit ignored folders or generated output, including:
 
 Do not read ignored environment or log files unless the user explicitly asks for them.
 
+### Read Command Guidance
+
+Avoid read-only pipelines such as `Get-Content ... | Select-Object ...` when inspecting files. The Windows sandbox often treats the pipeline segments separately and may require repeated approval.
+
+Prefer these safer read patterns:
+
+- Use `Select-String -Path <file> -Pattern <pattern> -Context <before>,<after>` for focused code inspection.
+- Use `Get-Content -Path <file>` for full small files.
+- Use `rg` / `rg --files` when available for searching files and text.
+- If line-window reads are needed, prefer a single non-pipelined command or an already approved exact command pattern.
+
 ## Core Architecture
 
 Main files:
