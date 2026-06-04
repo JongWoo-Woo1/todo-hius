@@ -174,12 +174,14 @@ button {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  height: 42px;
-  display: flex;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(68px, auto);
   justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+  align-items: stretch;
+  gap: 10px;
   overflow: hidden;
+  padding: 9px 12px;
   border-color: var(--line);
   background: #fff;
   color: var(--text);
@@ -204,7 +206,6 @@ button {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  flex: 1;
   overflow: hidden;
 }
 
@@ -230,9 +231,32 @@ button {
   background: var(--accent-soft);
 }
 
+.project-meta {
+  display: grid;
+  align-content: space-between;
+  justify-items: end;
+  min-width: 0;
+  max-width: 96px;
+  gap: 4px;
+}
+
 .project-count {
-  flex: none;
+  display: block;
   color: var(--muted);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.project-client {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .add-project-button {

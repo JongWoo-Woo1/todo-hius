@@ -71,6 +71,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed sidebar Project buttons to show Project name with client metadata in a compact two-column layout.
 - Updated sample project task data from the 2026-06-04 work summary sheet.
 - Limited Calendar range control widths so Start, End, and Columns stop stretching on wide screens.
 - Improved Calendar weekday header readability with larger, bolder labels.

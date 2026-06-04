@@ -557,11 +557,20 @@ function renderProjects(): void {
     label.textContent = toSingleLineText(project.name);
     name.append(swatch, label);
 
+    const meta = document.createElement("span");
+    meta.className = "project-meta";
+
     const count = document.createElement("span");
     count.className = "project-count";
-    count.textContent = String(project.todos.length);
+    count.textContent = `${project.todos.length} tasks`;
 
-    button.append(name, count);
+    const client = document.createElement("span");
+    client.className = "project-client";
+    client.textContent = toSingleLineText(project.clientName) || "No client";
+    client.title = project.clientName || "No client";
+
+    meta.append(count, client);
+    button.append(name, meta);
     button.addEventListener("click", () => {
       selectProject(project.id);
       isProjectInfoEditing = false;
