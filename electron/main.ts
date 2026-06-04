@@ -75,21 +75,21 @@ function createAppMenu(mainWindow: BrowserWindow): Menu {
       label: "File",
       submenu: [
         {
-          label: "Open Project",
+          label: "Open",
           accelerator: "CmdOrCtrl+O",
           click: () => {
             void openProjectFromMenu(mainWindow);
           },
         },
         {
-          label: "Save Project",
+          label: "Save",
           accelerator: "CmdOrCtrl+S",
           click: () => {
             mainWindow.webContents.send("todo-workspace:menu-command", "save-project");
           },
         },
         {
-          label: "Save Project As",
+          label: "Save As",
           accelerator: "CmdOrCtrl+Shift+S",
           click: () => {
             mainWindow.webContents.send("todo-workspace:menu-command", "save-project-as");

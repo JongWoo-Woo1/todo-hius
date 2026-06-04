@@ -215,7 +215,7 @@ export function registerTodoWorkspaceHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle("todo-workspace:open", async (): Promise<OpenWorkspaceResult> => {
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: "Open Project",
+      title: "Open",
       filters: [{ name: "HIUS Todo Workspace", extensions: ["todo"] }],
       properties: ["openFile"],
     });
@@ -239,7 +239,7 @@ export function registerTodoWorkspaceHandlers(mainWindow: BrowserWindow): void {
 
       if (!workspacePath) {
         const result = await dialog.showSaveDialog(mainWindow, {
-          title: "Save Project",
+          title: "Save As",
           defaultPath: DEFAULT_WORKSPACE_FILE_NAME,
           filters: [{ name: "HIUS Todo Workspace", extensions: ["todo"] }],
         });

@@ -146,9 +146,9 @@ The `electron` branch adds a desktop shell around the existing Vite + TypeScript
 
 The Electron branch can open and save `.todo` workspace files.
 
-- Use `File > Open Project` to open a workspace.
-- Use `File > Save Project` or `Ctrl+S` to save the current workspace.
-- Use `File > Save Project As` to choose a new workspace path.
+- Use `File > Open` to open a workspace.
+- Use `File > Save` or `Ctrl+S` to save the current workspace.
+- Use `File > Save As` to choose a new workspace path.
 - If the app is closed with unsaved changes, it asks whether to save first.
 - During development, `hius-dt-jw-todo/hius-dt-jw.todo` opens automatically as the default workspace.
 - `hius-dt-jw-todo/hius-dt-jw.todo` is the workspace manifest.

@@ -280,7 +280,7 @@ importJsonFileInput.addEventListener("change", async () => {
 
 resetSampleDataButton.addEventListener("click", () => {
   const shouldReset = window.confirm(
-    "현재 작업 중인 데이터를 sampleProjects 데이터로 교체합니다. 필요한 경우 먼저 Save Project 또는 Export JSON으로 백업하세요. 계속할까요?",
+    "현재 작업 중인 데이터를 sampleProjects 데이터로 교체합니다. 필요한 경우 먼저 Save 또는 Export JSON으로 백업하세요. 계속할까요?",
   );
   if (!shouldReset) {
     return;

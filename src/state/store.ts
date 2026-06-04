@@ -222,7 +222,7 @@ function migrateState(rawState: LegacyAppState): AppState {
 }
 
 function saveState(): void {
-  // Electron branch keeps runtime state in memory. Persist with File > Save Project.
+  // Electron branch keeps runtime state in memory. Persist with File > Save.
   stateChangeListener?.();
 }
 
