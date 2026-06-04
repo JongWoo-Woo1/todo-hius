@@ -21,6 +21,9 @@ type LegacyAppState = Partial<AppState> & {
 const TASK_STATUSES: TaskStatus[] = ["대기", "진행중", "미완", "완료", "보류"];
 const TASK_PRIORITIES: TaskPriority[] = ["낮음", "보통", "높음", "최우선"];
 const WORK_LOG_TYPES: WorkLogType[] = ["계획", "수행"];
+const AI_SHIP_PROJECT_ID = "project-uipa-ai-ship";
+const MERGED_AI_SHIP_PROJECT_IDS = new Set([AI_SHIP_PROJECT_ID, "project-ksoe-ai-ship"]);
+const REMOVED_PROJECT_IDS = new Set(["project-hd-grc-ni-seminar"]);
 
 let state = loadState();
 
@@ -63,6 +66,26 @@ function normalizeClientName(value: unknown): string {
   }
 
   return trimmedValue;
+}
+
+function isAiShipProject(id: string, name: string): boolean {
+  return MERGED_AI_SHIP_PROJECT_IDS.has(id) || name === "UIPA AI 선박" || name === "KSOE AI선박" || name === "AI 선박";
+}
+
+function normalizeProjectId(id: string, name: string): string {
+  return isAiShipProject(id, name) ? AI_SHIP_PROJECT_ID : id;
+}
+
+function normalizeWorkLogProjectId(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  if (REMOVED_PROJECT_IDS.has(value)) {
+    return null;
+  }
+
+  return MERGED_AI_SHIP_PROJECT_IDS.has(value) ? AI_SHIP_PROJECT_ID : value;
 }
 
 function normalizeProgress(value: unknown, completed: boolean): number {
@@ -115,10 +138,14 @@ function normalizeTodo(todo: LegacyTodo, index: number): Todo {
 }
 
 function normalizeProject(project: LegacyProject, index: number): Project {
+  const id = project.id ?? `project-${index}`;
+  const name = normalizeProjectName(project.name);
+  const isAiShip = isAiShipProject(id, name);
+
   return {
-    id: project.id ?? `project-${index}`,
-    name: normalizeProjectName(project.name),
-    clientName: normalizeClientName(project.clientName),
+    id: normalizeProjectId(id, name),
+    name: isAiShip ? "AI 선박" : name,
+    clientName: isAiShip ? "UIPA" : normalizeClientName(project.clientName),
     projectNumber: project.projectNumber ?? "",
     periodStart: project.periodStart ?? null,
     periodEnd: project.periodEnd ?? null,
@@ -135,9 +162,14 @@ function normalizeWorkLog(workLog: LegacyWorkLog, index: number): WorkLog | null
     return null;
   }
 
+  const projectId = normalizeWorkLogProjectId(workLog.projectId);
+  if (projectId === null) {
+    return null;
+  }
+
   return {
     id: workLog.id ?? `work-log-${index}`,
-    projectId: workLog.projectId ?? "",
+    projectId,
     todoId: workLog.todoId,
     date: workLog.date ?? new Date().toISOString().slice(0, 10),
     type,
@@ -145,11 +177,41 @@ function normalizeWorkLog(workLog: LegacyWorkLog, index: number): WorkLog | null
   };
 }
 
+function shouldKeepProject(project: Project): boolean {
+  return !REMOVED_PROJECT_IDS.has(project.id);
+}
+
+function mergeDuplicateProjects(projects: Project[]): Project[] {
+  const mergedProjects: Project[] = [];
+  const projectById = new Map<string, Project>();
+
+  projects.filter(shouldKeepProject).forEach((project) => {
+    const existingProject = projectById.get(project.id);
+    if (!existingProject) {
+      projectById.set(project.id, project);
+      mergedProjects.push(project);
+      return;
+    }
+
+    const existingTodoIds = new Set(existingProject.todos.map((todo) => todo.id));
+    project.todos.forEach((todo) => {
+      if (!existingTodoIds.has(todo.id)) {
+        existingProject.todos.push(todo);
+        existingTodoIds.add(todo.id);
+      }
+    });
+  });
+
+  return mergedProjects;
+}
+
 function migrateState(rawState: LegacyAppState): AppState {
-  const projects = (rawState.projects ?? []).map(normalizeProject);
+  const projects = mergeDuplicateProjects((rawState.projects ?? []).map(normalizeProject));
+  const requestedActiveProjectId =
+    typeof rawState.activeProjectId === "string" ? normalizeWorkLogProjectId(rawState.activeProjectId) : null;
   const activeProjectId =
-    rawState.activeProjectId && projects.some((project) => project.id === rawState.activeProjectId)
-      ? rawState.activeProjectId
+    requestedActiveProjectId && projects.some((project) => project.id === requestedActiveProjectId)
+      ? requestedActiveProjectId
       : projects[0]?.id ?? null;
 
   return {
