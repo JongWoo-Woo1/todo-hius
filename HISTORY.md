@@ -72,6 +72,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Removed the `Comment 담당자` and `Comment 관리자` columns from Ledger View and Project Ledger Excel Export.
 - Merged the duplicated UIPA/KSOE AI ship entries into one `AI 선박` project with client `UIPA`, and removed the HD현대그룹 NI 실습 세미나 sample project.
 - Rebuilt sample data from the May and June work diary files, adding project-mapped WorkLogs and missing projects.
 - Added AGENTS.md guidance to avoid read-only PowerShell pipelines that trigger repeated sandbox approvals.

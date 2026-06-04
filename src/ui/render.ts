@@ -227,8 +227,6 @@ function renderLedger(): void {
         <td class="ledger-progress-cell"><span class="progress-pill">${formatProgressPercent(todo.progress)}</span></td>
         <td class="ledger-priority-cell">${todo.priority ? `<span class="priority-badge">${todo.priority}</span>` : ""}</td>
         <td class="ledger-issue-cell">${todo.issueRisk ?? ""}</td>
-        <td class="ledger-worker-cell">${todo.workerComment ?? ""}</td>
-        <td class="ledger-manager-cell">${todo.managerComment ?? ""}</td>
       `;
     row.addEventListener("click", () => {
       selectProject(project.id);

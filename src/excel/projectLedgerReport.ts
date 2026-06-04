@@ -12,8 +12,6 @@ const LEDGER_HEADERS = [
   "주요 추진내용",
   "진행상태",
   "진척률",
-  "Comment 담당자",
-  "Comment 관리자",
 ];
 
 const TABLE_START_ROW = 2;
@@ -132,8 +130,6 @@ export function createProjectLedgerWorkbook(state: AppState): ExcelJS.Workbook {
     { width: 44 },
     { width: 9 },
     { width: 8 },
-    { width: 26 },
-    { width: 28 },
   ];
 
   const headerRow = worksheet.getRow(HEADER_ROW_NUMBER);
@@ -165,8 +161,6 @@ export function createProjectLedgerWorkbook(state: AppState): ExcelJS.Workbook {
       todo.title,
       todo.status,
       todo.progress,
-      todo.workerComment ?? "",
-      todo.managerComment ?? "",
     ].forEach((value, valueIndex) => {
       const columnNumber = TABLE_START_COLUMN + valueIndex;
       const cell = row.getCell(columnNumber);
@@ -186,7 +180,7 @@ export function createProjectLedgerWorkbook(state: AppState): ExcelJS.Workbook {
       };
     });
 
-    [8, 11, 12].forEach((columnNumber) => {
+    [8].forEach((columnNumber) => {
       worksheet.getCell(rowNumber, columnNumber).alignment = {
         horizontal: "left",
         vertical: "middle",
