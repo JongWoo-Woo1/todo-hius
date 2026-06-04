@@ -291,6 +291,7 @@ button {
 }
 
 .workspace {
+  min-width: 1180px;
   padding: 28px;
 }
 
@@ -746,9 +747,56 @@ button {
 
 .ledger-table {
   width: 100%;
-  min-width: 1320px;
+  min-width: 1620px;
   border-collapse: collapse;
+  table-layout: fixed;
   font-size: 13px;
+}
+
+.ledger-col-client {
+  width: 110px;
+}
+
+.ledger-col-project-number {
+  width: 105px;
+}
+
+.ledger-col-project {
+  width: 190px;
+}
+
+.ledger-col-period {
+  width: 130px;
+}
+
+.ledger-col-date {
+  width: 112px;
+}
+
+.ledger-col-estimate {
+  width: 72px;
+}
+
+.ledger-col-title {
+  width: 310px;
+}
+
+.ledger-col-status {
+  width: 92px;
+}
+
+.ledger-col-progress {
+  width: 82px;
+}
+
+.ledger-col-priority {
+  width: 96px;
+}
+
+.ledger-col-issue,
+.ledger-col-worker,
+.ledger-col-manager {
+  width: 160px;
 }
 
 .ledger-table th,
@@ -791,6 +839,28 @@ button {
 
 .ledger-table td {
   overflow-wrap: anywhere;
+}
+
+.ledger-date-cell,
+.ledger-estimate-cell,
+.ledger-status-cell,
+.ledger-progress-cell,
+.ledger-priority-cell {
+  text-align: center;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.ledger-status-cell .status-badge,
+.ledger-priority-cell .priority-badge {
+  margin-right: 0;
+}
+
+.ledger-status-cell .status-badge,
+.ledger-progress-cell .progress-pill,
+.ledger-priority-cell .priority-badge {
+  justify-content: center;
+  min-width: 54px;
 }
 
 .ledger-table .ledger-merged-cell {
@@ -1198,6 +1268,7 @@ button {
   }
 
   .workspace {
+    min-width: 0;
     padding: 20px 18px;
   }
 

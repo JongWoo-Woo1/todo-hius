@@ -207,23 +207,25 @@ function renderLedger(): void {
     row.tabIndex = 0;
 
     const groupedCells = [
-      isFirstClientRow ? `<td class="ledger-merged-cell" rowspan="${clientRowSpan}">${clientName}</td>` : "",
-      isFirstProjectRow ? `<td class="ledger-merged-cell" rowspan="${projectRowSpan}">${projectNumber}</td>` : "",
-      isFirstProjectRow ? `<td class="ledger-merged-cell" rowspan="${projectRowSpan}">${projectName}</td>` : "",
-      isFirstProjectRow ? `<td class="ledger-merged-cell" rowspan="${projectRowSpan}">${projectPeriod}</td>` : "",
+      isFirstClientRow ? `<td class="ledger-merged-cell ledger-client-cell" rowspan="${clientRowSpan}">${clientName}</td>` : "",
+      isFirstProjectRow
+        ? `<td class="ledger-merged-cell ledger-project-number-cell" rowspan="${projectRowSpan}">${projectNumber}</td>`
+        : "",
+      isFirstProjectRow ? `<td class="ledger-merged-cell ledger-project-cell" rowspan="${projectRowSpan}">${projectName}</td>` : "",
+      isFirstProjectRow ? `<td class="ledger-merged-cell ledger-period-cell" rowspan="${projectRowSpan}">${projectPeriod}</td>` : "",
     ].join("");
 
     row.innerHTML = `
         ${groupedCells}
-        <td>${todo.dueDate ?? ""}</td>
-        <td>${todo.estimate ?? ""}</td>
-        <td>${todo.title}</td>
-        <td><span class="status-badge" data-status="${todo.status}">${todo.status}</span></td>
-        <td><span class="progress-pill">${formatProgressPercent(todo.progress)}</span></td>
-        <td>${todo.priority ? `<span class="priority-badge">${todo.priority}</span>` : ""}</td>
-        <td>${todo.issueRisk ?? ""}</td>
-        <td>${todo.workerComment ?? ""}</td>
-        <td>${todo.managerComment ?? ""}</td>
+        <td class="ledger-date-cell">${todo.dueDate ?? ""}</td>
+        <td class="ledger-estimate-cell">${todo.estimate ?? ""}</td>
+        <td class="ledger-title-cell">${todo.title}</td>
+        <td class="ledger-status-cell"><span class="status-badge" data-status="${todo.status}">${todo.status}</span></td>
+        <td class="ledger-progress-cell"><span class="progress-pill">${formatProgressPercent(todo.progress)}</span></td>
+        <td class="ledger-priority-cell">${todo.priority ? `<span class="priority-badge">${todo.priority}</span>` : ""}</td>
+        <td class="ledger-issue-cell">${todo.issueRisk ?? ""}</td>
+        <td class="ledger-worker-cell">${todo.workerComment ?? ""}</td>
+        <td class="ledger-manager-cell">${todo.managerComment ?? ""}</td>
       `;
     row.addEventListener("click", () => {
       selectProject(project.id);
