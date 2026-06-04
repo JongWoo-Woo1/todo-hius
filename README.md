@@ -143,6 +143,17 @@ The `electron` branch adds a desktop shell around the existing Vite + TypeScript
 - `npm run dev:electron` runs Vite with hot reload and restarts Electron when the main process changes.
 - The app still uses the existing browser UI and localStorage workflow.
 
+## Todo Workspace Files
+
+The Electron branch can open and save `.todo` workspace files.
+
+- `hius-dt-jw-todo/hius-dt-jw.todo` is the workspace manifest.
+- Project data lives in separate files under `hius-dt-jw-todo/projects/`.
+- A project file can use a name such as `TMS HILs - APS HILs.todo`.
+- The `.todo` files use JSON with a `kind` and `version` field so the format can be migrated later.
+- Opening a workspace loads the project files into the app for viewing and editing.
+- Saving a workspace writes one `.todo` file per Project and keeps WorkLogs in the workspace manifest.
+
 ## Project History
 
 - See `HISTORY.md` for the chronological development history.

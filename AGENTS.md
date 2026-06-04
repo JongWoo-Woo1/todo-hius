@@ -52,7 +52,10 @@ Main files:
 - `src/ui/render.ts`: rendering, current view state, selected Todo state
 - `src/utils/`: shared helpers
 - `electron/main.ts`: Electron main process entry for the Electron branch
+- `electron/preload.ts`: restricted renderer bridge for Electron-only APIs
+- `electron/todoWorkspace.ts`: `.todo` workspace open/save IPC handlers
 - `tsconfig.electron.json`: Electron main process TypeScript build config
+- `hius-dt-jw-todo/`: example `.todo` workspace folder for the Electron branch
 
 Data is persisted in localStorage with this key:
 

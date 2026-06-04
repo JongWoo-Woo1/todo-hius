@@ -9,6 +9,7 @@ import {
   getActiveProject,
   getState,
   importStateFromJson,
+  replaceState,
   resetStateToSampleData,
   updateActiveProject,
   updateActiveProjectColor,
@@ -37,6 +38,7 @@ import {
   ledgerOverdueOnlyInput,
   ledgerStatusFilter,
   ledgerViewButton,
+  openTodoWorkspaceButton,
   projectClientNameInput,
   projectColorInput,
   projectInfoForm,
@@ -47,9 +49,12 @@ import {
   projectPeriodStartInput,
   projectPeriodTextInput,
   resetSampleDataButton,
+  saveTodoWorkspaceButton,
+  todoFileActions,
   todoDueDateInput,
   todoForm,
   todoTitleInput,
+  todoWorkspacePath,
   toggleAllProjectsButton,
   nextWeekButton,
   previousWeekButton,
@@ -79,6 +84,8 @@ import {
   updateCalendarRangePreferences,
 } from "./ui/render";
 
+let currentTodoWorkspacePath: string | undefined;
+
 function createUniqueProjectName(): string {
   const baseName = "new project";
   const projectNames = new Set(getState().projects.map((project) => project.name));
@@ -94,6 +101,16 @@ function createUniqueProjectName(): string {
   return `${baseName} ${count}`;
 }
 
+function getDisplayPath(filePath: string): string {
+  return filePath.split(/[\\/]/).slice(-2).join("/");
+}
+
+function updateTodoWorkspacePath(filePath: string | undefined): void {
+  currentTodoWorkspacePath = filePath;
+  todoWorkspacePath.textContent = filePath ? getDisplayPath(filePath) : "No .todo workspace selected";
+  todoWorkspacePath.title = filePath ?? "";
+}
+
 function downloadTextFile(content: string, fileName: string, type: string): void {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -106,6 +123,56 @@ function downloadTextFile(content: string, fileName: string, type: string): void
   link.remove();
   URL.revokeObjectURL(url);
 }
+
+if (window.hiusTodoFile) {
+  todoFileActions.hidden = false;
+  updateTodoWorkspacePath(undefined);
+}
+
+openTodoWorkspaceButton.addEventListener("click", async () => {
+  if (!window.hiusTodoFile) {
+    return;
+  }
+
+  try {
+    const result = await window.hiusTodoFile.openWorkspace();
+    if (result.canceled) {
+      return;
+    }
+
+    const imported = replaceState(result.state);
+    if (!imported) {
+      window.alert("Invalid .todo workspace. Please select a HIUS Todo workspace file.");
+      return;
+    }
+
+    updateTodoWorkspacePath(result.workspacePath);
+    clearSelectedTodo();
+    resetCalendarSelection();
+    render();
+  } catch (error) {
+    console.error(error);
+    window.alert("Failed to open the selected .todo workspace.");
+  }
+});
+
+saveTodoWorkspaceButton.addEventListener("click", async () => {
+  if (!window.hiusTodoFile) {
+    return;
+  }
+
+  try {
+    const result = await window.hiusTodoFile.saveWorkspace(getState(), currentTodoWorkspacePath);
+    if (result.canceled) {
+      return;
+    }
+
+    updateTodoWorkspacePath(result.workspacePath);
+  } catch (error) {
+    console.error(error);
+    window.alert("Failed to save the .todo workspace.");
+  }
+});
 
 addProjectButton.addEventListener("click", () => {
   const project: Project = {

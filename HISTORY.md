@@ -6,6 +6,9 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added Electron `.todo` workspace open/save support.
+- Added the `hius-dt-jw-todo` workspace folder with a `hius-dt-jw.todo` manifest and project-level `.todo` file example.
+- Added project-level `.todo` JSON file persistence under each workspace `projects/` folder.
 - Added an Electron development branch setup with Electron main process TypeScript build support.
 - Added `npm run dev:electron` for Vite hot reload plus Electron relaunch during desktop development.
 - Added separate Electron build scripts and ignored `dist-electron/` output.

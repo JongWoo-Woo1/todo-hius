@@ -1,6 +1,7 @@
 import { app, BrowserWindow, shell } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { registerTodoWorkspaceHandlers } from "./todoWorkspace.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const devServerUrl = process.env.VITE_DEV_SERVER_URL;
@@ -13,11 +14,14 @@ function createMainWindow(): void {
     minHeight: 760,
     show: false,
     webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      sandbox: false,
     },
   });
+
+  registerTodoWorkspaceHandlers(mainWindow);
 
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
