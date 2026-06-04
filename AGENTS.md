@@ -4,10 +4,10 @@
 
 This repository is a Vite + TypeScript + pure DOM project management Todo app.
 
-Codex should preserve this direction:
+Codex should preserve this direction on the main browser app unless the user explicitly changes direction:
 
 - Do not migrate the app to React.
-- Do not migrate the app to Electron.
+- Do not migrate the app to Electron unless the user explicitly requests Electron work or the current branch is the Electron branch.
 - Keep `src/` as the source of truth.
 - Keep the current browser/localStorage-based workflow unless the user explicitly changes direction.
 
@@ -51,6 +51,8 @@ Main files:
 - `src/ui/dom.ts`: DOM element references
 - `src/ui/render.ts`: rendering, current view state, selected Todo state
 - `src/utils/`: shared helpers
+- `electron/main.ts`: Electron main process entry for the Electron branch
+- `tsconfig.electron.json`: Electron main process TypeScript build config
 
 Data is persisted in localStorage with this key:
 
@@ -99,7 +101,8 @@ Standing rules in `AGENTS.md` apply automatically even when the user gives only 
 Standing rules that do not need to be repeated include:
 
 - Do not migrate the app to React.
-- Do not migrate the app to Electron.
+- Do not migrate the app to Electron unless the user explicitly requests Electron work or the current branch is the Electron branch.
+- Electron work is allowed only when the user explicitly asks for it or when continuing work on the Electron branch.
 - Keep the current Vite + TypeScript + pure DOM direction.
 - Keep the browser/localStorage-based workflow.
 - Respect `.gitignore`.

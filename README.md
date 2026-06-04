@@ -125,11 +125,23 @@ WorkLog는 Project와 선택적으로 Todo에 연결됩니다. Weekly 항목의 
 ## Scripts
 
 - `npm run dev`: start the Vite development server
-- `npm run build`: build production assets with Vite
+- `npm run dev:electron`: start Vite, watch the Electron main process, and relaunch Electron during development
+- `npm run build`: build the Vite web assets and Electron main process
+- `npm run build:web`: build only the Vite web assets
+- `npm run build:electron`: build only the Electron main process
 - `npm run preview`: preview the production build
 - `npm run typecheck`: check TypeScript without emitting files
 
 `src/` is the source of truth. Vite loads `src/main.ts` directly during development and emits optimized production files into `dist/` during build.
+
+## Electron Development
+
+The `electron` branch adds a desktop shell around the existing Vite + TypeScript + pure DOM app.
+
+- Electron main process source lives in `electron/main.ts`.
+- Electron build output is emitted to `dist-electron/`.
+- `npm run dev:electron` runs Vite with hot reload and restarts Electron when the main process changes.
+- The app still uses the existing browser UI and localStorage workflow.
 
 ## Project History
 

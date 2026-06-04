@@ -6,6 +6,9 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added an Electron development branch setup with Electron main process TypeScript build support.
+- Added `npm run dev:electron` for Vite hot reload plus Electron relaunch during desktop development.
+- Added separate Electron build scripts and ignored `dist-electron/` output.
 - Added recent/all toggles for Project and Task Weekly Logs, showing the last 7 days by default.
 - Added Project-level Weekly Logs summary in the Project workspace.
 - Added linked Weekly Log summaries inside expanded Todo cards.
@@ -72,6 +75,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Renamed the Ledger `이슈/리스크` column label to `비고`.
 - Removed the `Comment 담당자` and `Comment 관리자` columns from Ledger View and Project Ledger Excel Export.
 - Merged the duplicated UIPA/KSOE AI ship entries into one `AI 선박` project with client `UIPA`, and removed the HD현대그룹 NI 실습 세미나 sample project.
 - Rebuilt sample data from the May and June work diary files, adding project-mapped WorkLogs and missing projects.
