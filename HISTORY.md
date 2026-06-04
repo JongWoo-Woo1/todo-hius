@@ -71,6 +71,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Rebuilt sample data from the May and June work diary files, adding project-mapped WorkLogs and missing projects.
 - Added AGENTS.md guidance to avoid read-only PowerShell pipelines that trigger repeated sandbox approvals.
 - Removed task counts from sidebar Project buttons and moved client metadata below the Project name.
 - Added a desktop minimum workspace width and adjusted Ledger column sizing to prevent status, progress, and priority overflow.
