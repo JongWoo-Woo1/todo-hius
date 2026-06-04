@@ -308,12 +308,52 @@ button {
   color: var(--danger);
 }
 
-.project-info-card {
+.project-info-card,
+.project-work-log-card {
   margin-bottom: 18px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
   padding: 16px;
+}
+
+.project-work-log-list,
+.todo-work-log-list {
+  display: grid;
+  gap: 10px;
+}
+
+.work-log-entry {
+  display: grid;
+  gap: 8px;
+  border-left: 3px solid var(--project-color, #94a3b8);
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 10px 12px;
+}
+
+.work-log-entry.compact {
+  padding: 9px 10px;
+}
+
+.work-log-entry-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.work-log-entry-content {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.work-log-entry-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .section-header {
@@ -610,6 +650,15 @@ button {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.todo-work-log-summary {
+  margin-top: 16px;
+}
+
+.todo-work-log-summary h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
 }
 
 .todo-card-actions {
@@ -1085,6 +1134,19 @@ button {
 .weekly-item p {
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+.weekly-linked-task {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.weekly-item-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .delete-work-log-button {

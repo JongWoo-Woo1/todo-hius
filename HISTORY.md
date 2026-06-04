@@ -6,6 +6,9 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added Project-level Weekly Logs summary in the Project workspace.
+- Added linked Weekly Log summaries inside expanded Todo cards.
+- Added Weekly item navigation back to the related Project/Todo.
 - Added Calendar Todo detail popup with inline editing and Project navigation.
 - Added inline Project name editing from the Project workspace header.
 - Added a reset action to replace current localStorage data with the latest `sampleProjects.ts` data.

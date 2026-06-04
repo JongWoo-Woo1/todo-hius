@@ -13,7 +13,7 @@ import {
   toggleTodo,
   updateTodo,
 } from "../state/store";
-import type { Project, TaskPriority, TaskStatus, Todo } from "../types";
+import type { Project, TaskPriority, TaskStatus, Todo, WorkLog } from "../types";
 import { getMonthGridDates, toDateKey } from "../utils/calendar";
 import { formatDueDate } from "../utils/date";
 import { getLedgerRows } from "../utils/ledger";
@@ -58,6 +58,9 @@ import {
   projectPeriodEndInput,
   projectPeriodStartInput,
   projectPeriodTextInput,
+  projectWorkLogCard,
+  projectWorkLogEmpty,
+  projectWorkLogList,
   projectWorkspace,
   todoCount,
   todoForm,
@@ -85,7 +88,10 @@ type CalendarTodo = {
 
 type WeeklyItem = {
   id?: string;
+  projectId?: string;
+  todoId?: string;
   projectName: string;
+  todoTitle?: string;
   content: string;
   color: string;
   source: "todo" | "workLog";
@@ -288,6 +294,83 @@ function createWeeklyBuckets(): Map<string, Record<(typeof WEEKLY_SECTIONS)[numb
   return buckets;
 }
 
+function getProjectById(projectId: string): Project | undefined {
+  return getState().projects.find((project) => project.id === projectId);
+}
+
+function getTodoByProject(project: Project | undefined, todoId: string | undefined): Todo | undefined {
+  if (!project || !todoId) {
+    return undefined;
+  }
+
+  return project.todos.find((todo) => todo.id === todoId);
+}
+
+function getProjectWorkLogs(projectId: string): WorkLog[] {
+  return getState()
+    .workLogs.filter((workLog) => workLog.projectId === projectId)
+    .sort((left, right) => right.date.localeCompare(left.date));
+}
+
+function getTodoWorkLogs(todoId: string): WorkLog[] {
+  return getState()
+    .workLogs.filter((workLog) => workLog.todoId === todoId)
+    .sort((left, right) => right.date.localeCompare(left.date));
+}
+
+function createWorkLogEntry(workLog: WorkLog, options: { showProject?: boolean; compact?: boolean } = {}): HTMLElement {
+  const project = getProjectById(workLog.projectId);
+  const linkedTodo = getTodoByProject(project, workLog.todoId);
+  const entry = document.createElement("article");
+  entry.className = options.compact ? "work-log-entry compact" : "work-log-entry";
+  entry.style.setProperty("--project-color", project?.color ?? "#94a3b8");
+
+  const meta = document.createElement("p");
+  meta.className = "work-log-entry-meta";
+  const parts = [workLog.date, workLog.type];
+  if (options.showProject && project) {
+    parts.push(project.name);
+  }
+  if (linkedTodo) {
+    parts.push(linkedTodo.title);
+  }
+  meta.textContent = parts.join(" / ");
+
+  const content = document.createElement("p");
+  content.className = "work-log-entry-content";
+  content.textContent = workLog.content;
+
+  const actions = document.createElement("div");
+  actions.className = "work-log-entry-actions";
+
+  if (project) {
+    const openButton = document.createElement("button");
+    openButton.type = "button";
+    openButton.className = "quiet-button";
+    openButton.textContent = "Open task";
+    openButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      goToProjectTodo(project.id, linkedTodo?.id ?? null);
+      render();
+    });
+    actions.append(openButton);
+  }
+
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.className = "delete-work-log-button";
+  deleteButton.textContent = "Delete";
+  deleteButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    deleteWorkLog(workLog.id);
+    render();
+  });
+  actions.append(deleteButton);
+
+  entry.append(meta, content, actions);
+  return entry;
+}
+
 function renderWeeklyItem(item: WeeklyItem): HTMLElement {
   const wrapper = document.createElement("div");
   wrapper.className = "weekly-item";
@@ -300,7 +383,29 @@ function renderWeeklyItem(item: WeeklyItem): HTMLElement {
   copy.append(projectName, ` ${item.content}`);
   wrapper.append(copy);
 
+  if (item.todoTitle && item.source === "workLog") {
+    const linkedTask = document.createElement("span");
+    linkedTask.className = "weekly-linked-task";
+    linkedTask.textContent = `Linked task: ${item.todoTitle}`;
+    wrapper.append(linkedTask);
+  }
+
   if (item.source === "workLog" && item.id) {
+    const actions = document.createElement("div");
+    actions.className = "weekly-item-actions";
+
+    if (item.projectId) {
+      const openButton = document.createElement("button");
+      openButton.type = "button";
+      openButton.className = "quiet-button";
+      openButton.textContent = "Open task";
+      openButton.addEventListener("click", () => {
+        goToProjectTodo(item.projectId!, item.todoId ?? null);
+        render();
+      });
+      actions.append(openButton);
+    }
+
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className = "delete-work-log-button";
@@ -309,7 +414,8 @@ function renderWeeklyItem(item: WeeklyItem): HTMLElement {
       deleteWorkLog(item.id!);
       render();
     });
-    wrapper.append(deleteButton);
+    actions.append(deleteButton);
+    wrapper.append(actions);
   }
 
   return wrapper;
@@ -359,7 +465,10 @@ function renderWeekly(): void {
       }
 
       buckets.get(todo.dueDate)!.plan.push({
+        projectId: project.id,
+        todoId: todo.id,
         projectName: project.name,
+        todoTitle: todo.title,
         content: todo.title,
         color: project.color,
         source: "todo",
@@ -375,11 +484,15 @@ function renderWeekly(): void {
     }
 
     const project = getState().projects.find((item) => item.id === workLog.projectId);
+    const linkedTodo = getTodoByProject(project, workLog.todoId);
     const projectName = project?.name ?? "Unknown";
     const color = project?.color ?? "#94a3b8";
     const item: WeeklyItem = {
       id: workLog.id,
+      projectId: workLog.projectId,
+      todoId: workLog.todoId,
       projectName,
+      todoTitle: linkedTodo?.title,
       content: workLog.content,
       color,
       source: "workLog",
@@ -718,12 +831,18 @@ function closeCalendarDetailModal(): void {
   isCalendarTodoEditing = false;
 }
 
-function goToCalendarTodoProject(projectId: string, todoId: string): void {
+function goToProjectTodo(projectId: string, todoId: string | null): void {
   selectProject(projectId);
   selectedTodoId = todoId;
   editingTodoId = null;
+  isProjectInfoEditing = false;
+  isProjectNameEditing = false;
   closeCalendarDetailModal();
   currentView = "projects";
+}
+
+function goToCalendarTodoProject(projectId: string, todoId: string): void {
+  goToProjectTodo(projectId, todoId);
 }
 
 function renderCalendarTodoView(project: Project, todo: Todo): HTMLElement {
@@ -960,6 +1079,25 @@ function renderProjectInfoView(): void {
   );
 }
 
+function renderProjectWorkLogs(): void {
+  const activeProject = getActiveProject();
+  projectWorkLogList.innerHTML = "";
+
+  if (!activeProject) {
+    projectWorkLogCard.hidden = true;
+    projectWorkLogEmpty.hidden = true;
+    return;
+  }
+
+  const workLogs = getProjectWorkLogs(activeProject.id);
+  projectWorkLogCard.hidden = false;
+  projectWorkLogEmpty.hidden = workLogs.length > 0;
+
+  workLogs.slice(0, 8).forEach((workLog) => {
+    projectWorkLogList.append(createWorkLogEntry(workLog));
+  });
+}
+
 export function showProjectInfoEditMode(isEditing: boolean): void {
   isProjectInfoEditing = isEditing;
   projectInfoView.hidden = isEditing;
@@ -984,6 +1122,32 @@ export function showProjectNameEditMode(isEditing: boolean): void {
       projectNameInput.select();
     });
   }
+}
+
+function renderTodoWorkLogSummary(todoId: string): HTMLElement {
+  const section = document.createElement("section");
+  section.className = "todo-work-log-summary";
+
+  const heading = document.createElement("h4");
+  heading.textContent = "Linked Weekly Logs";
+  section.append(heading);
+
+  const workLogs = getTodoWorkLogs(todoId);
+  if (workLogs.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "No weekly logs linked to this task yet.";
+    section.append(empty);
+    return section;
+  }
+
+  const list = document.createElement("div");
+  list.className = "todo-work-log-list";
+  workLogs.forEach((workLog) => {
+    list.append(createWorkLogEntry(workLog, { compact: true }));
+  });
+  section.append(list);
+  return section;
 }
 
 function renderTodoDetailView(todo: Todo): HTMLElement {
@@ -1030,7 +1194,7 @@ function renderTodoDetailView(todo: Todo): HTMLElement {
   });
 
   actions.append(editButton, deleteButton);
-  detail.append(list, actions);
+  detail.append(list, renderTodoWorkLogSummary(todo.id), actions);
   return detail;
 }
 
@@ -1174,6 +1338,7 @@ function renderTodos(): void {
     isProjectInfoEditing = false;
     showProjectInfoEditMode(false);
     projectInfoView.hidden = true;
+    projectWorkLogCard.hidden = true;
     deleteProjectButton.hidden = true;
     selectedTodoId = null;
     editingTodoId = null;
@@ -1192,6 +1357,7 @@ function renderTodos(): void {
   projectPeriodEndInput.value = activeProject.periodEnd ?? "";
   renderProjectInfoView();
   showProjectInfoEditMode(isProjectInfoEditing);
+  renderProjectWorkLogs();
   todoCount.textContent = `${activeProject.todos.length} items`;
   emptyState.textContent = "선택된 프로젝트에 업무가 없습니다.";
   emptyState.hidden = activeProject.todos.length > 0;
