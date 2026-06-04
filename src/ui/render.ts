@@ -108,8 +108,11 @@ let selectedCalendarTodoId: string | null = null;
 let isCalendarTodoEditing = false;
 let draggedProjectId: string | null = null;
 let calendarRangePreferences = getDefaultCalendarRangePreferences();
+let expandedProjectWorkLogId: string | null = null;
+const expandedTodoWorkLogIds = new Set<string>();
 
 const RANGE_CALENDAR_YEAR = 2026;
+const RECENT_WORK_LOG_DAYS = 7;
 const MONTH_LABELS = Array.from({ length: 12 }, (_, index) => `${index + 1}`);
 const WEEKLY_SECTIONS = [
   { key: "plan", title: "업무 계획" },
@@ -318,6 +321,44 @@ function getTodoWorkLogs(todoId: string): WorkLog[] {
   return getState()
     .workLogs.filter((workLog) => workLog.todoId === todoId)
     .sort((left, right) => right.date.localeCompare(left.date));
+}
+
+function getRecentWorkLogCutoffKey(): string {
+  const today = new Date();
+  const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (RECENT_WORK_LOG_DAYS - 1));
+  return toDateKey(cutoff);
+}
+
+function getVisibleWorkLogs(workLogs: WorkLog[], showAll: boolean): WorkLog[] {
+  if (showAll) {
+    return workLogs;
+  }
+
+  const cutoffKey = getRecentWorkLogCutoffKey();
+  return workLogs.filter((workLog) => workLog.date >= cutoffKey);
+}
+
+function createWorkLogMoreButton({
+  visibleCount,
+  totalCount,
+  expanded,
+  onToggle,
+}: {
+  visibleCount: number;
+  totalCount: number;
+  expanded: boolean;
+  onToggle: () => void;
+}): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "quiet-button work-log-more-button";
+  button.textContent = expanded ? `접기 (${visibleCount}/${totalCount})` : `더보기 (${visibleCount}/${totalCount})`;
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    onToggle();
+    render();
+  });
+  return button;
 }
 
 function createWorkLogEntry(workLog: WorkLog, options: { showProject?: boolean; compact?: boolean } = {}): HTMLElement {
@@ -1093,12 +1134,38 @@ function renderProjectWorkLogs(): void {
   }
 
   const workLogs = getProjectWorkLogs(activeProject.id);
+  const showAll = expandedProjectWorkLogId === activeProject.id;
+  const visibleWorkLogs = getVisibleWorkLogs(workLogs, showAll);
   projectWorkLogCard.hidden = false;
   projectWorkLogEmpty.hidden = workLogs.length > 0;
 
-  workLogs.slice(0, 8).forEach((workLog) => {
+  visibleWorkLogs.forEach((workLog) => {
     projectWorkLogList.append(createWorkLogEntry(workLog));
   });
+
+  if (visibleWorkLogs.length !== workLogs.length) {
+    projectWorkLogList.append(
+      createWorkLogMoreButton({
+        visibleCount: visibleWorkLogs.length,
+        totalCount: workLogs.length,
+        expanded: showAll,
+        onToggle: () => {
+          expandedProjectWorkLogId = activeProject.id;
+        },
+      }),
+    );
+  } else if (showAll && workLogs.length > 0) {
+    projectWorkLogList.append(
+      createWorkLogMoreButton({
+        visibleCount: visibleWorkLogs.length,
+        totalCount: workLogs.length,
+        expanded: showAll,
+        onToggle: () => {
+          expandedProjectWorkLogId = null;
+        },
+      }),
+    );
+  }
 }
 
 export function showProjectInfoEditMode(isEditing: boolean): void {
@@ -1136,6 +1203,8 @@ function renderTodoWorkLogSummary(todoId: string): HTMLElement {
   section.append(heading);
 
   const workLogs = getTodoWorkLogs(todoId);
+  const showAll = expandedTodoWorkLogIds.has(todoId);
+  const visibleWorkLogs = getVisibleWorkLogs(workLogs, showAll);
   if (workLogs.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
@@ -1146,9 +1215,33 @@ function renderTodoWorkLogSummary(todoId: string): HTMLElement {
 
   const list = document.createElement("div");
   list.className = "todo-work-log-list";
-  workLogs.forEach((workLog) => {
+  visibleWorkLogs.forEach((workLog) => {
     list.append(createWorkLogEntry(workLog, { compact: true }));
   });
+
+  if (visibleWorkLogs.length !== workLogs.length) {
+    list.append(
+      createWorkLogMoreButton({
+        visibleCount: visibleWorkLogs.length,
+        totalCount: workLogs.length,
+        expanded: showAll,
+        onToggle: () => {
+          expandedTodoWorkLogIds.add(todoId);
+        },
+      }),
+    );
+  } else if (showAll && workLogs.length > 0) {
+    list.append(
+      createWorkLogMoreButton({
+        visibleCount: visibleWorkLogs.length,
+        totalCount: workLogs.length,
+        expanded: showAll,
+        onToggle: () => {
+          expandedTodoWorkLogIds.delete(todoId);
+        },
+      }),
+    );
+  }
   section.append(list);
   return section;
 }

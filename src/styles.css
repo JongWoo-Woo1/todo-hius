@@ -365,6 +365,12 @@ button {
   flex-wrap: wrap;
 }
 
+.work-log-more-button {
+  justify-self: end;
+  margin-top: 2px;
+  padding: 6px 0;
+}
+
 .section-header {
   display: flex;
   align-items: center;

@@ -6,6 +6,7 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added recent/all toggles for Project and Task Weekly Logs, showing the last 7 days by default.
 - Added Project-level Weekly Logs summary in the Project workspace.
 - Added linked Weekly Log summaries inside expanded Todo cards.
 - Added Weekly item navigation back to the related Project/Todo.
