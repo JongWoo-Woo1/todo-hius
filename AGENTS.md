@@ -59,7 +59,7 @@ Main files:
 On the Electron branch, data is persisted through `.todo` workspace files:
 
 - workspace manifest: `hius-dt-jw.todo`
-- project files: `projects/<project name>.todo`
+- project files: `projects/<project name>.json`
 - each project file stores its own `workLogs`
 
 ## Compatibility Rules

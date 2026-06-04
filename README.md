@@ -151,12 +151,12 @@ The Electron branch can open and save `.todo` workspace files.
 - Use `File > Save Project As` to choose a new workspace path.
 - If the app is closed with unsaved changes, it asks whether to save first.
 - `hius-dt-jw-todo/hius-dt-jw.todo` is the workspace manifest.
-- Project data lives in separate files under `hius-dt-jw-todo/projects/`.
-- A project file can use a name such as `TMS HILs - APS HILs.todo`.
+- Project data lives in separate `.json` files under `hius-dt-jw-todo/projects/`.
+- A project file can use a name such as `TMS HILs - APS HILs.json`.
 - The `.todo` files use JSON with a `kind` and `version` field so the format can be migrated later.
 - Opening a workspace loads the project files into the app for viewing and editing.
-- Saving a workspace writes one `.todo` file per Project.
-- Weekly plan/work entries are stored as `workLogs` inside the matching Project `.todo` file.
+- Saving a workspace writes one `.json` file per Project.
+- Weekly plan/work entries are stored as `workLogs` inside the matching Project `.json` file.
 
 ## Project History
 

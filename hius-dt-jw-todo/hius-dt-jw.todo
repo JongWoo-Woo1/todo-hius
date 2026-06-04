@@ -4,15 +4,15 @@
   "name": "hius-dt-jw",
   "activeProjectId": "project-katech-tms-aps-hils",
   "projectFiles": [
-    "projects/TMS HILs - APS HILs.todo",
-    "projects/Custom Device 개발 - (OPCUA, ModbusTCP, MQTT).todo",
-    "projects/KSOE SOFC - Simcenter Amesim 모델 개발.todo",
-    "projects/PCS HILs.todo",
-    "projects/잠수함 모델 개발.todo",
-    "projects/E-Shift HILs.todo",
-    "projects/water pump MILs.todo",
-    "projects/ADAS.todo",
-    "projects/AI 선박.todo",
-    "projects/KSOE PEMS.todo"
+    "projects/TMS HILs - APS HILs.json",
+    "projects/Custom Device 개발 - (OPCUA, ModbusTCP, MQTT).json",
+    "projects/KSOE SOFC - Simcenter Amesim 모델 개발.json",
+    "projects/PCS HILs.json",
+    "projects/잠수함 모델 개발.json",
+    "projects/E-Shift HILs.json",
+    "projects/water pump MILs.json",
+    "projects/ADAS.json",
+    "projects/AI 선박.json",
+    "projects/KSOE PEMS.json"
   ]
 }

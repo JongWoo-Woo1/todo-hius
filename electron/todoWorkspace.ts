@@ -155,10 +155,10 @@ async function saveWorkspaceFile(workspacePath: string, state: AppState): Promis
 
   for (const project of state.projects) {
     const baseFileName = sanitizeFileName(project.name);
-    let fileName = `${baseFileName}.todo`;
+    let fileName = `${baseFileName}.json`;
     let count = 1;
     while (usedFileNames.has(fileName.toLowerCase())) {
-      fileName = `${baseFileName} ${count}.todo`;
+      fileName = `${baseFileName} ${count}.json`;
       count += 1;
     }
     usedFileNames.add(fileName.toLowerCase());
