@@ -1095,6 +1095,31 @@ button {
   margin-top: 18px;
 }
 
+.ledger-project-detail-view .todo-detail-list {
+  margin-top: 18px;
+}
+
+.ledger-project-task-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.ledger-project-task-button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  text-align: left;
+}
+
+.ledger-project-task-button strong {
+  overflow-wrap: anywhere;
+}
+
 .calendar-detail-form {
   gap: 12px;
 }

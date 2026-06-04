@@ -6,6 +6,7 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added Ledger project detail popups when selecting merged project cells.
 - Added Ledger row task detail popups with the same view/edit flow used by Calendar tasks.
 - Added automatic loading of the development default workspace at `hius-dt-jw-todo/hius-dt-jw.todo`.
 - Added Electron File menu actions for Open, Save, and Save As.
