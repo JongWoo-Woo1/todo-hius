@@ -174,14 +174,14 @@ button {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: 54px;
+  min-height: 58px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(68px, auto);
-  justify-content: space-between;
-  align-items: stretch;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: center;
+  gap: 5px;
   overflow: hidden;
-  padding: 9px 12px;
+  padding: 9px 12px 8px;
   border-color: var(--line);
   background: #fff;
   color: var(--text);
@@ -231,25 +231,9 @@ button {
   background: var(--accent-soft);
 }
 
-.project-meta {
-  display: grid;
-  align-content: space-between;
-  justify-items: end;
-  min-width: 0;
-  max-width: 96px;
-  gap: 4px;
-}
-
-.project-count {
-  display: block;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1;
-  white-space: nowrap;
-}
-
 .project-client {
   display: block;
+  justify-self: end;
   max-width: 100%;
   overflow: hidden;
   color: #64748b;
