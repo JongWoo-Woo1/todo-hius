@@ -6,6 +6,7 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added automatic loading of the development default workspace at `hius-dt-jw-todo/hius-dt-jw.todo`.
 - Added Electron File menu actions for Open Project, Save Project, and Save Project As.
 - Added `Ctrl+S` Save Project support.
 - Added unsaved-change tracking and a save prompt when closing with pending changes.

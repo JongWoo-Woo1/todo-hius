@@ -75,9 +75,21 @@ type SaveWorkspaceResult = {
   workspacePath?: string;
 };
 
+type DefaultWorkspaceResult =
+  | {
+      found: false;
+      workspacePath: string;
+    }
+  | {
+      found: true;
+      workspacePath: string;
+      state: AppState;
+    };
+
 const WORKSPACE_KIND = "hius.todo.workspace";
 const PROJECT_KIND = "hius.todo.project";
 const DEFAULT_WORKSPACE_FILE_NAME = "hius-dt-jw.todo";
+const DEFAULT_WORKSPACE_PATH = path.resolve(process.cwd(), "hius-dt-jw-todo", DEFAULT_WORKSPACE_FILE_NAME);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -185,6 +197,22 @@ async function saveWorkspaceFile(workspacePath: string, state: AppState): Promis
 }
 
 export function registerTodoWorkspaceHandlers(mainWindow: BrowserWindow): void {
+  ipcMain.handle("todo-workspace:open-default", async (): Promise<DefaultWorkspaceResult> => {
+    try {
+      await fs.access(DEFAULT_WORKSPACE_PATH);
+      return {
+        found: true,
+        workspacePath: DEFAULT_WORKSPACE_PATH,
+        state: await openWorkspaceFile(DEFAULT_WORKSPACE_PATH),
+      };
+    } catch {
+      return {
+        found: false,
+        workspacePath: DEFAULT_WORKSPACE_PATH,
+      };
+    }
+  });
+
   ipcMain.handle("todo-workspace:open", async (): Promise<OpenWorkspaceResult> => {
     const result = await dialog.showOpenDialog(mainWindow, {
       title: "Open Project",

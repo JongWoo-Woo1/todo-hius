@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer } from "electron";
 type MenuCommand = "open-project" | "save-project" | "save-project-as";
 
 contextBridge.exposeInMainWorld("hiusTodoFile", {
+  openDefaultWorkspace: () => ipcRenderer.invoke("todo-workspace:open-default"),
   openWorkspace: () => ipcRenderer.invoke("todo-workspace:open"),
   saveWorkspace: (state: unknown, workspacePath?: string) =>
     ipcRenderer.invoke("todo-workspace:save", state, workspacePath),

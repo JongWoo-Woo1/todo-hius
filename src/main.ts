@@ -112,6 +112,36 @@ function markDirty(): void {
   setDirty(true);
 }
 
+async function openDefaultProject(): Promise<void> {
+  if (!window.hiusTodoFile) {
+    return;
+  }
+
+  try {
+    const result = await window.hiusTodoFile.openDefaultWorkspace();
+    if (!result.found) {
+      updateTodoWorkspacePath(result.workspacePath);
+      setDirty(false);
+      return;
+    }
+
+    const imported = replaceState(result.state);
+    if (!imported) {
+      window.alert("Failed to load the default HIUS Todo project.");
+      return;
+    }
+
+    updateTodoWorkspacePath(result.workspacePath);
+    setDirty(false);
+    clearSelectedTodo();
+    resetCalendarSelection();
+    render();
+  } catch (error) {
+    console.error(error);
+    window.alert("Failed to load the default HIUS Todo project.");
+  }
+}
+
 function downloadTextFile(content: string, fileName: string, type: string): void {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -177,8 +207,6 @@ async function saveProject({ saveAs = false }: { saveAs?: boolean } = {}): Promi
     return false;
   }
 }
-
-setStateChangeListener(markDirty);
 
 window.hiusTodoFile?.onMenuCommand((command) => {
   if (command === "open-project") {
@@ -460,3 +488,7 @@ toggleAllProjectsButton.addEventListener("click", () => {
 });
 
 render();
+
+void openDefaultProject().finally(() => {
+  setStateChangeListener(markDirty);
+});
