@@ -68,6 +68,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Updated sample project task data from the 2026-06-04 work summary sheet.
 - Limited Calendar range control widths so Start, End, and Columns stop stretching on wide screens.
 - Improved Calendar weekday header readability with larger, bolder labels.
 - Changed Calendar range settings to persist only during the current app session and reset to the current month plus two months on restart.
