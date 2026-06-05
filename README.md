@@ -45,7 +45,7 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
   - 월 범위와 column 설정은 앱을 사용하는 동안 유지되고, 새로 시작하면 현재 월 기준 기본값으로 초기화
 - Weekly View:
   - 월요일~금요일 기준 주간업무 리포트 확인
-  - 월~금 업무 계획/업무 일지 영역은 같은 placeholder 크기로 표시
+  - 월~금 업무 계획/업무 일지를 하나의 표로 압축해서 표시
   - Todo due date 기준 업무 계획 자동 표시
   - WorkLog를 Project/Todo와 연결해서 Project 화면과 함께 확인
   - 이전 주 / 다음 주 이동
@@ -78,7 +78,7 @@ Project 화면에서는 해당 Project에 연결된 Weekly Logs를 함께 확인
 
 주간업무 리포트 화면입니다.
 
-월요일~금요일 기준으로 업무 계획과 업무 일지를 확인합니다. Todo의 due date는 업무 계획에 자동으로 표시되고, 저장된 WorkLog 계획/수행 기록도 함께 표시됩니다.
+월요일~금요일 기준으로 업무 계획과 업무 일지를 하나의 표에서 확인합니다. Todo의 due date는 업무 계획에 자동으로 표시되고, 저장된 WorkLog 계획/수행 기록도 함께 표시됩니다.
 
 현재 보고 있는 주차 기준으로 주간업무 리포트 Excel 파일을 다운로드할 수 있습니다. Weekly Report Export는 `public/templates/weekly-report-template.xlsx` 서식을 불러와 값만 채우고, sheet 이름을 `5월 4주차` 같은 월/주차 형식으로 설정합니다.
 

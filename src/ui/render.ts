@@ -421,33 +421,22 @@ function renderWeeklyItem(item: WeeklyItem): HTMLElement {
   return wrapper;
 }
 
-function renderWeeklySection(sectionKey: (typeof WEEKLY_SECTIONS)[number]["key"], title: string, items: WeeklyItem[]): HTMLElement {
-  const section = document.createElement("section");
-  section.className = "weekly-section";
-  section.dataset.weeklySection = sectionKey;
-
-  const heading = document.createElement("h4");
-  heading.textContent = title;
-  section.append(heading);
-
+function renderWeeklyItems(items: WeeklyItem[]): HTMLElement {
   const body = document.createElement("div");
-  body.className = "weekly-section-body";
-
+  body.className = "weekly-table-cell-body";
   if (items.length === 0) {
     const empty = document.createElement("p");
     empty.className = "weekly-empty";
     empty.textContent = "No items yet.";
     body.append(empty);
-    section.append(body);
-    return section;
+    return body;
   }
 
   items.forEach((item) => {
     body.append(renderWeeklyItem(item));
   });
 
-  section.append(body);
-  return section;
+  return body;
 }
 
 function renderWeekly(): void {
@@ -507,27 +496,53 @@ function renderWeekly(): void {
     weeklyItemCount += 1;
   });
 
-  getWeekdays(visibleWeekDate).forEach((date) => {
+  const weekdays = getWeekdays(visibleWeekDate);
+  const table = document.createElement("table");
+  table.className = "weekly-table";
+
+  const thead = document.createElement("thead");
+  const headerRow = document.createElement("tr");
+  const sectionHeader = document.createElement("th");
+  sectionHeader.scope = "col";
+  sectionHeader.textContent = "구분";
+  headerRow.append(sectionHeader);
+
+  weekdays.forEach((date) => {
     const dateKey = toDateKey(date);
-    const dayBuckets = buckets.get(dateKey)!;
-    const dayCard = document.createElement("article");
-    dayCard.className = "weekly-day-card";
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.innerHTML = `
+      <span>${date.toLocaleDateString("en-US", { weekday: "short" })}</span>
+      <strong>${dateKey}</strong>
+    `;
+    headerRow.append(th);
+  });
 
-    const dayTitle = document.createElement("div");
-    dayTitle.className = "weekly-day-title";
-    const dayName = document.createElement("span");
-    dayName.textContent = date.toLocaleDateString("en-US", { weekday: "short" });
-    const dayDate = document.createElement("strong");
-    dayDate.textContent = dateKey;
-    dayTitle.append(dayName, dayDate);
-    dayCard.append(dayTitle);
+  thead.append(headerRow);
+  table.append(thead);
 
-    WEEKLY_SECTIONS.forEach((section) => {
-      dayCard.append(renderWeeklySection(section.key, section.title, dayBuckets[section.key]));
+  const tbody = document.createElement("tbody");
+  WEEKLY_SECTIONS.forEach((section) => {
+    const row = document.createElement("tr");
+    row.dataset.weeklySection = section.key;
+
+    const rowHeader = document.createElement("th");
+    rowHeader.scope = "row";
+    rowHeader.textContent = section.title;
+    row.append(rowHeader);
+
+    weekdays.forEach((date) => {
+      const dateKey = toDateKey(date);
+      const dayBuckets = buckets.get(dateKey)!;
+      const cell = document.createElement("td");
+      cell.append(renderWeeklyItems(dayBuckets[section.key]));
+      row.append(cell);
     });
 
-    weeklyGrid.append(dayCard);
+    tbody.append(row);
   });
+  table.append(tbody);
+  weeklyGrid.append(table);
 
   weeklyEmptyState.hidden = weeklyItemCount > 0;
 }

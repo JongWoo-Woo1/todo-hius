@@ -1124,78 +1124,85 @@ button {
 }
 
 .weekly-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 14px;
-  align-items: stretch;
-}
-
-.weekly-day-card {
-  min-width: 0;
-  display: grid;
-  grid-template-rows: auto auto auto;
-  align-content: start;
+  overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
-  padding: 14px;
 }
 
-.weekly-day-title {
-  display: grid;
-  gap: 4px;
-  margin-bottom: 14px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--line);
+.weekly-table {
+  width: 100%;
+  min-width: 1040px;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 
-.weekly-day-title span {
-  color: var(--muted);
+.weekly-table th,
+.weekly-table td {
+  border: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.weekly-table thead th {
+  background: #e8edf3;
+  color: var(--ink);
+  padding: 10px 12px;
+  text-align: center;
   font-size: 13px;
-  font-weight: 700;
+}
+
+.weekly-table thead th:first-child,
+.weekly-table tbody th {
+  width: 96px;
+}
+
+.weekly-table thead span {
+  display: block;
+  color: var(--muted);
+  font-weight: 800;
   text-transform: uppercase;
 }
 
-.weekly-day-title strong {
-  font-size: 15px;
+.weekly-table thead strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 14px;
 }
 
-.weekly-section {
-  display: grid;
-  gap: 8px;
-  margin-top: 14px;
+.weekly-table tbody th {
+  background: #f8fafc;
+  padding: 12px 10px;
+  text-align: center;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
-.weekly-section h4 {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
+.weekly-table td {
+  padding: 8px;
+  background: #ffffff;
 }
 
-.weekly-section-body {
+.weekly-table tr[data-weekly-section="plan"] td {
+  height: 170px;
+}
+
+.weekly-table tr[data-weekly-section="done"] td {
+  height: 260px;
+}
+
+.weekly-table-cell-body {
   display: grid;
   align-content: start;
-  gap: 8px;
-  border: 1px dashed #d7dee8;
-  border-radius: 8px;
-  background: #fbfcfe;
-  padding: 8px;
-}
-
-.weekly-section[data-weekly-section="plan"] .weekly-section-body {
-  min-height: 180px;
-}
-
-.weekly-section[data-weekly-section="done"] .weekly-section-body {
-  min-height: 260px;
+  gap: 7px;
+  min-height: 100%;
 }
 
 .weekly-item {
   display: grid;
-  gap: 8px;
+  gap: 5px;
   border-left: 3px solid var(--project-color);
   background: color-mix(in srgb, var(--project-color) 10%, white);
-  padding: 9px 10px;
+  padding: 7px 8px;
   font-size: 13px;
 }
 
@@ -1294,7 +1301,9 @@ button {
   }
 
   .weekly-grid {
-    grid-template-columns: 1fr;
+    margin-right: -16px;
+    border-right: 0;
+    border-radius: 8px 0 0 8px;
   }
 
   .calendar-range-grid {

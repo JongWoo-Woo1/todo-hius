@@ -86,6 +86,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Weekly View from separate weekday cards to a compact Monday-Friday table layout.
 - Changed project-level workspace files from `.todo` to `.json` while keeping the top-level workspace manifest as `.todo`.
 - Removed runtime localStorage persistence on the Electron branch; state now stays in memory until saved to `.todo`.
 - Renamed the Ledger `이슈/리스크` column label to `비고`.
