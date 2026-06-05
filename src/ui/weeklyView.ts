@@ -1,5 +1,5 @@
 import { getProjectById, getTodoByProject } from "../state/selectors";
-import type { AppState } from "../types";
+import type { AppState, WorkLogType } from "../types";
 import { toDateKey } from "../utils/calendar";
 import { getWeekRangeLabel, getWeekdays } from "../utils/week";
 import { weeklyEmptyState, weeklyGrid, weeklyRangeLabel } from "./dom";
@@ -16,9 +16,14 @@ type WeeklyItem = {
   source: "todo" | "workLog";
 };
 
+type WeeklyViewOptions = {
+  onSelectWorkLog: (workLogId: string) => void;
+  onAddWorkLog: (date: string, type: WorkLogType) => void;
+};
+
 const WEEKLY_SECTIONS = [
-  { key: "plan", title: "업무 계획" },
-  { key: "done", title: "업무 일지" },
+  { key: "plan", title: "업무 계획", workLogType: "계획" },
+  { key: "done", title: "업무 일지", workLogType: "수행" },
 ] as const;
 
 function createWeeklyBuckets(visibleWeekDate: Date): Map<string, Record<(typeof WEEKLY_SECTIONS)[number]["key"], WeeklyItem[]>> {
@@ -34,11 +39,25 @@ function createWeeklyBuckets(visibleWeekDate: Date): Map<string, Record<(typeof 
   return buckets;
 }
 
-function renderWeeklyItem(item: WeeklyItem): HTMLElement {
+function renderWeeklyItem(item: WeeklyItem, options: WeeklyViewOptions): HTMLElement {
   const wrapper = document.createElement("div");
   wrapper.className = "weekly-item";
   wrapper.classList.toggle("todo-source", item.source === "todo");
   wrapper.style.setProperty("--project-color", item.color);
+
+  if (item.source === "workLog" && item.id) {
+    const workLogId = item.id;
+    wrapper.classList.add("clickable");
+    wrapper.setAttribute("role", "button");
+    wrapper.tabIndex = 0;
+    wrapper.addEventListener("click", () => options.onSelectWorkLog(workLogId));
+    wrapper.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        options.onSelectWorkLog(workLogId);
+      }
+    });
+  }
 
   const header = document.createElement("div");
   header.className = "weekly-item-header";
@@ -70,7 +89,7 @@ function renderWeeklyItem(item: WeeklyItem): HTMLElement {
   return wrapper;
 }
 
-function renderWeeklyItems(items: WeeklyItem[]): HTMLElement {
+function renderWeeklyItems(items: WeeklyItem[], options: WeeklyViewOptions): HTMLElement {
   const body = document.createElement("div");
   body.className = "weekly-table-cell-body";
   if (items.length === 0) {
@@ -82,13 +101,13 @@ function renderWeeklyItems(items: WeeklyItem[]): HTMLElement {
   }
 
   items.forEach((item) => {
-    body.append(renderWeeklyItem(item));
+    body.append(renderWeeklyItem(item, options));
   });
 
   return body;
 }
 
-export function renderWeeklyView(state: AppState, visibleWeekDate: Date): void {
+export function renderWeeklyView(state: AppState, visibleWeekDate: Date, options: WeeklyViewOptions): void {
   weeklyRangeLabel.textContent = getWeekRangeLabel(visibleWeekDate);
   weeklyGrid.innerHTML = "";
 
@@ -187,7 +206,17 @@ export function renderWeeklyView(state: AppState, visibleWeekDate: Date): void {
       const dateKey = toDateKey(date);
       const dayBuckets = buckets.get(dateKey)!;
       const cell = document.createElement("td");
-      cell.append(renderWeeklyItems(dayBuckets[section.key]));
+      const body = renderWeeklyItems(dayBuckets[section.key], options);
+
+      const addButton = document.createElement("button");
+      addButton.type = "button";
+      addButton.className = "weekly-cell-add";
+      addButton.textContent = "+";
+      addButton.setAttribute("aria-label", "기록 추가");
+      addButton.addEventListener("click", () => options.onAddWorkLog(dateKey, section.workLogType));
+      body.append(addButton);
+
+      cell.append(body);
       row.append(cell);
     });
 

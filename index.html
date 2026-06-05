@@ -247,6 +247,22 @@
           <div id="calendar-detail-content"></div>
         </section>
       </div>
+
+      <div id="work-log-detail-modal" class="modal-backdrop" hidden>
+        <section class="modal-card work-log-detail-card" role="dialog" aria-modal="true" aria-labelledby="work-log-detail-title">
+          <div id="work-log-detail-content"></div>
+        </section>
+      </div>
+
+      <div id="confirm-dialog" class="modal-backdrop" hidden>
+        <section class="modal-card confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-message">
+          <p id="confirm-dialog-message" class="confirm-dialog-message"></p>
+          <div class="modal-actions">
+            <button id="confirm-dialog-cancel" class="quiet-button" type="button">취소</button>
+            <button id="confirm-dialog-accept" class="danger-button" type="button">삭제</button>
+          </div>
+        </section>
+      </div>
     </main>
 
     <script type="module" src="/src/main.ts"></script>

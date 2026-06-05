@@ -17,6 +17,36 @@ export function getTodoByProject(project: Project | undefined, todoId: string | 
   return project.todos.find((todo) => todo.id === todoId);
 }
 
+export function getSortedTodosByDueDate(project: Project | undefined): Todo[] {
+  if (!project) {
+    return [];
+  }
+
+  return [...project.todos].sort((left, right) => {
+    if (!left.dueDate && !right.dueDate) {
+      return left.title.localeCompare(right.title);
+    }
+
+    if (!left.dueDate) {
+      return 1;
+    }
+
+    if (!right.dueDate) {
+      return -1;
+    }
+
+    return left.dueDate.localeCompare(right.dueDate);
+  });
+}
+
+export function getWorkLogById(state: AppState, workLogId: string | null): WorkLog | undefined {
+  if (!workLogId) {
+    return undefined;
+  }
+
+  return state.workLogs.find((workLog) => workLog.id === workLogId);
+}
+
 export function getProjectWorkLogs(state: AppState, projectId: string): WorkLog[] {
   return state.workLogs
     .filter((workLog) => workLog.projectId === projectId)

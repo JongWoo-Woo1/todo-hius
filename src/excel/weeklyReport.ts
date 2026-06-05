@@ -6,14 +6,18 @@ import { getWeekdays } from "../utils/week";
 type WeeklySectionKey = "plan" | "done";
 
 type WeeklyItem = {
+  clientName: string;
   projectName: string;
+  taskTitle: string;
   content: string;
 };
 
 const TEMPLATE_URL = "/templates/weekly-report-template.xlsx";
-const TEMPLATE_SHEET_NAME = "3주차";
-const PLAN_CELLS = ["C7", "I7", "O7", "U7", "AA7"] as const;
-const DONE_CELLS = ["C19", "I19", "O19", "U19", "AA19"] as const;
+const TEMPLATE_SHEET_NAME = "주차";
+const TITLE_CELL = "B2";
+const REPORT_DATE_CELL = "AE5";
+const PLAN_CELLS = ["C10", "I10", "O10", "U10", "AA10"] as const;
+const DONE_CELLS = ["C24", "I24", "O24", "U24", "AA24"] as const;
 
 function createWeeklyBuckets(date: Date): Map<string, Record<WeeklySectionKey, WeeklyItem[]>> {
   const buckets = new Map<string, Record<WeeklySectionKey, WeeklyItem[]>>();
@@ -35,18 +39,49 @@ function getWeekOfMonthLabel(date: Date): string {
   return `${monday.getMonth() + 1}월 ${weekNumber}주차`;
 }
 
-function formatGroupedItems(items: WeeklyItem[]): string {
-  const groupedItems = new Map<string, string[]>();
+function formatGroupHeader(item: WeeklyItem): string {
+  return item.clientName ? `${item.clientName}_${item.projectName}` : item.projectName;
+}
+
+function formatGroupedItems(items: WeeklyItem[]): ExcelJS.CellValue {
+  const projectGroups = new Map<string, { header: string; tasks: Map<string, string[]> }>();
 
   items.forEach((item) => {
-    const projectItems = groupedItems.get(item.projectName) ?? [];
-    projectItems.push(item.content);
-    groupedItems.set(item.projectName, projectItems);
+    const header = formatGroupHeader(item);
+    let group = projectGroups.get(header);
+    if (!group) {
+      group = { header, tasks: new Map() };
+      projectGroups.set(header, group);
+    }
+
+    const contents = group.tasks.get(item.taskTitle) ?? [];
+    if (item.content) {
+      contents.push(item.content);
+    }
+    group.tasks.set(item.taskTitle, contents);
   });
 
-  return Array.from(groupedItems.entries())
-    .map(([projectName, contents]) => `${projectName}\n${contents.map((content) => `- ${content}`).join("\n")}`)
-    .join("\n\n");
+  if (projectGroups.size === 0) {
+    return "";
+  }
+
+  const richText: ExcelJS.RichText[] = [];
+
+  Array.from(projectGroups.values()).forEach((group, index) => {
+    const separator = index === 0 ? "" : "\n\n";
+    richText.push({ font: { bold: true }, text: `${separator}${group.header}\n` });
+
+    const lines: string[] = [];
+    group.tasks.forEach((contents, taskTitle) => {
+      if (taskTitle) {
+        lines.push(taskTitle);
+      }
+      contents.forEach((content) => lines.push(`- ${content}`));
+    });
+    richText.push({ text: lines.join("\n") });
+  });
+
+  return { richText };
 }
 
 async function loadWeeklyReportTemplate(): Promise<ExcelJS.Workbook> {
@@ -80,8 +115,10 @@ function fillWeeklyBuckets(state: AppState, date: Date): Map<string, Record<Week
       }
 
       buckets.get(todo.dueDate)!.plan.push({
+        clientName: project.clientName,
         projectName: project.name,
-        content: todo.title,
+        taskTitle: todo.title,
+        content: "",
       });
     });
   });
@@ -93,8 +130,11 @@ function fillWeeklyBuckets(state: AppState, date: Date): Map<string, Record<Week
     }
 
     const project = state.projects.find((item) => item.id === workLog.projectId);
+    const linkedTodo = workLog.todoId ? project?.todos.find((todo) => todo.id === workLog.todoId) : undefined;
     const item: WeeklyItem = {
+      clientName: project?.clientName ?? "",
       projectName: project?.name ?? "Unknown",
+      taskTitle: linkedTodo?.title ?? "",
       content: workLog.content,
     };
 
@@ -110,7 +150,7 @@ function fillWeeklyBuckets(state: AppState, date: Date): Map<string, Record<Week
   return buckets;
 }
 
-function setCellValue(worksheet: ExcelJS.Worksheet, address: string, value: string): void {
+function setCellValue(worksheet: ExcelJS.Worksheet, address: string, value: ExcelJS.CellValue): void {
   worksheet.getCell(address).value = value;
 }
 
@@ -127,11 +167,8 @@ export async function createWeeklyReportWorkbook(state: AppState, date: Date): P
 
   worksheet.name = weekLabel;
 
-  setCellValue(worksheet, "B2", `${weekLabel} 주간업무 리포트`);
-  setCellValue(worksheet, "B5", "업무 계획");
-  setCellValue(worksheet, "B7", "업무 내용");
-  setCellValue(worksheet, "B17", "업무 일지");
-  setCellValue(worksheet, "B19", "업무 내용");
+  setCellValue(worksheet, TITLE_CELL, `${weekLabel} 주간업무 리포트`);
+  setCellValue(worksheet, REPORT_DATE_CELL, toDateKey(new Date()));
 
   weekdays.forEach((weekday, index) => {
     const dateKey = toDateKey(weekday);

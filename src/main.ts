@@ -76,6 +76,7 @@ import {
   toggleAllCalendarProjects,
   updateCalendarRangePreferences,
 } from "./ui/render";
+import { confirmDelete } from "./ui/confirmDialog";
 
 let currentTodoWorkspacePath: string | undefined;
 let isDirty = false;
@@ -298,7 +299,19 @@ todoForm.addEventListener("submit", (event) => {
   render();
 });
 
-deleteProjectButton.addEventListener("click", () => {
+deleteProjectButton.addEventListener("click", async () => {
+  const activeProject = getActiveProject();
+  if (!activeProject) {
+    return;
+  }
+
+  const confirmed = await confirmDelete(
+    `"${activeProject.name}" 프로젝트를 삭제하시겠습니까?\n프로젝트에 속한 모든 업무와 주간 업무 기록이 함께 삭제됩니다.`,
+  );
+  if (!confirmed) {
+    return;
+  }
+
   deleteActiveProject();
   clearSelectedTodo();
   render();

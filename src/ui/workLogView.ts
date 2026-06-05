@@ -5,8 +5,7 @@ export type WorkLogEntryOptions = {
   linkedTodo?: Todo;
   showProject?: boolean;
   compact?: boolean;
-  onOpen?: () => void;
-  onDelete: () => void;
+  onSelect: () => void;
 };
 
 export type WorkLogMoreButtonOptions = {
@@ -35,8 +34,10 @@ export function createWorkLogMoreButton({
 
 export function createWorkLogEntry(workLog: WorkLog, options: WorkLogEntryOptions): HTMLElement {
   const entry = document.createElement("article");
-  entry.className = options.compact ? "work-log-entry compact" : "work-log-entry";
+  entry.className = options.compact ? "work-log-entry compact clickable" : "work-log-entry clickable";
   entry.style.setProperty("--project-color", options.project?.color ?? "#94a3b8");
+  entry.setAttribute("role", "button");
+  entry.tabIndex = 0;
 
   const meta = document.createElement("p");
   meta.className = "work-log-entry-meta";
@@ -53,31 +54,14 @@ export function createWorkLogEntry(workLog: WorkLog, options: WorkLogEntryOption
   content.className = "work-log-entry-content";
   content.textContent = workLog.content;
 
-  const actions = document.createElement("div");
-  actions.className = "work-log-entry-actions";
-
-  if (options.project && options.onOpen) {
-    const openButton = document.createElement("button");
-    openButton.type = "button";
-    openButton.className = "quiet-button";
-    openButton.textContent = "Open task";
-    openButton.addEventListener("click", (event) => {
-      event.stopPropagation();
-      options.onOpen?.();
-    });
-    actions.append(openButton);
-  }
-
-  const deleteButton = document.createElement("button");
-  deleteButton.type = "button";
-  deleteButton.className = "delete-work-log-button";
-  deleteButton.textContent = "Delete";
-  deleteButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    options.onDelete();
+  entry.addEventListener("click", () => options.onSelect());
+  entry.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      options.onSelect();
+    }
   });
-  actions.append(deleteButton);
 
-  entry.append(meta, content, actions);
+  entry.append(meta, content);
   return entry;
 }

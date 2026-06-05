@@ -336,6 +336,37 @@ button {
   padding: 9px 10px;
 }
 
+.work-log-entry.clickable {
+  cursor: pointer;
+  transition: background 0.12s ease, box-shadow 0.12s ease;
+}
+
+.work-log-entry.clickable:hover,
+.work-log-entry.clickable:focus-visible {
+  background: #eef2f7;
+  box-shadow: 0 1px 6px rgb(15 23 42 / 10%);
+  outline: none;
+}
+
+.work-log-detail-card {
+  width: min(560px, 100%);
+}
+
+.work-log-detail-subtitle {
+  margin: 18px 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.work-log-detail-content {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+  color: var(--text);
+}
+
 .work-log-entry-meta {
   margin: 0;
   color: var(--muted);
@@ -1005,6 +1036,10 @@ button {
   color: var(--muted);
 }
 
+.calendar-cell.today {
+  background: color-mix(in srgb, #2563eb 14%, white);
+}
+
 .calendar-date {
   margin: 0;
   font-weight: 600;
@@ -1029,13 +1064,28 @@ button {
   color: var(--muted);
 }
 
+.calendar-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.calendar-client-chip {
+  flex: 0 0 auto;
+  font-weight: 700;
+}
+
+.calendar-project-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .calendar-item.completed {
   border-left-color: #94a3b8;
   background: #f8fafc;
-}
-
-.calendar-item.overdue:not(.completed) {
-  background: #fff7ed;
 }
 
 .calendar-item.completed strong {
@@ -1086,6 +1136,18 @@ button {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+}
+
+.confirm-card {
+  width: min(420px, 100%);
+}
+
+.confirm-dialog-message {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: pre-line;
+  color: var(--text);
 }
 
 .calendar-detail-card .todo-detail-list {
@@ -1217,6 +1279,38 @@ button {
 .weekly-item:hover {
   border-color: color-mix(in srgb, var(--project-color) 32%, #cbd5e1);
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.weekly-cell-add {
+  width: 100%;
+  min-height: 34px;
+  border: 1px dashed transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: transparent;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.weekly-cell-add:hover,
+.weekly-cell-add:focus-visible {
+  border-color: var(--line);
+  background: #fff;
+  color: var(--text);
+}
+
+.weekly-item.clickable {
+  cursor: pointer;
+}
+
+.weekly-item.clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .weekly-item p {

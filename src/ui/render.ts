@@ -4,6 +4,7 @@ import {
 } from "../state/calendarPreferences";
 import { uiState } from "../app/uiState";
 import {
+  addWorkLog,
   deleteTodo,
   deleteWorkLog,
   getActiveProject,
@@ -12,39 +13,23 @@ import {
   selectProject,
   toggleTodo,
   updateTodo,
+  updateWorkLog,
 } from "../state/store";
+import { createId } from "../utils/id";
+import { toDateKey } from "../utils/calendar";
 import {
   findTodoWithProject,
   getProjectById,
-  getProjectWorkLogs,
+  getSortedTodosByDueDate,
   getTodoByProject,
-  getTodoWorkLogs,
+  getWorkLogById,
 } from "../state/selectors";
-import type { Project, Todo, WorkLog } from "../types";
-import { toDateKey } from "../utils/calendar";
-import {
-  calendarViewButton,
-  calendarWorkspace,
-  deleteProjectButton,
-  emptyState,
-  ledgerViewButton,
-  ledgerWorkspace,
-  projectWorkLogCard,
-  projectWorkLogEmpty,
-  projectWorkLogList,
-  projectWorkspace,
-  todoCount,
-  todoForm,
-  todoList,
-  weeklyViewButton,
-  weeklyWorkspace,
-} from "./dom";
+import type { Project, Todo, WorkLogType } from "../types";
 import { renderCalendarView } from "./calendarView";
 import { renderLedgerView } from "./ledgerView";
 import { renderCalendarDetailModalView } from "./modalView";
 import { renderProjectList } from "./projectListView";
 import {
-  renderEmptyProjectHeader,
   renderProjectHeader,
   renderProjectInfoView as renderProjectInfo,
   setProjectInfoEditMode,
@@ -53,15 +38,17 @@ import {
 import {
   createTodoDetailView,
   createTodoEditForm,
-  createTodoListItem,
 } from "./todoView";
 import {
-  createWorkLogEntry as createWorkLogEntryElement,
-  createWorkLogMoreButton,
-} from "./workLogView";
+  renderProjectWorkLogSection,
+  renderTodoWorkLogSummary as renderTodoWorkLogSummarySection,
+} from "./workLogSectionView";
 import { renderWeeklyView } from "./weeklyView";
-
-const RECENT_WORK_LOG_DAYS = 7;
+import { confirmDelete } from "./confirmDialog";
+import { renderEmptyProjectDetail, renderProjectDetailShell } from "./projectDetailView";
+import { clearTodoList, renderTodoList } from "./todoListView";
+import { renderViewVisibility } from "./navView";
+import { renderWorkLogDetailModalView } from "./workLogDetailView";
 
 // Shared helpers
 
@@ -74,29 +61,6 @@ function ensureCalendarSelection(): void {
 
   const existingSelection = uiState.selectedCalendarProjectIds;
   uiState.selectedCalendarProjectIds = new Set(projectIds.filter((projectId) => existingSelection.has(projectId)));
-}
-
-function sortTodosByDueDate(): void {
-  const activeProject = getActiveProject();
-  if (!activeProject) {
-    return;
-  }
-
-  activeProject.todos.sort((left, right) => {
-    if (!left.dueDate && !right.dueDate) {
-      return left.title.localeCompare(right.title);
-    }
-
-    if (!left.dueDate) {
-      return 1;
-    }
-
-    if (!right.dueDate) {
-      return -1;
-    }
-
-    return left.dueDate.localeCompare(right.dueDate);
-  });
 }
 
 function renderLedger(): void {
@@ -118,37 +82,37 @@ function renderLedger(): void {
 
 // WorkLog
 
-function getRecentWorkLogCutoffKey(): string {
-  const today = new Date();
-  const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (RECENT_WORK_LOG_DAYS - 1));
-  return toDateKey(cutoff);
+function renderProjectWorkLogs(): void {
+  renderProjectWorkLogSection({
+    state: getState(),
+    activeProject: getActiveProject() ?? null,
+    expandedProjectWorkLogId: uiState.expandedProjectWorkLogId,
+    onSelectWorkLog: (workLogId) => {
+      openWorkLogDetail(workLogId);
+      render();
+    },
+    onToggleExpand: (nextExpandedId) => {
+      uiState.expandedProjectWorkLogId = nextExpandedId;
+      render();
+    },
+  });
 }
 
-function getVisibleWorkLogs(workLogs: WorkLog[], showAll: boolean): WorkLog[] {
-  if (showAll) {
-    return workLogs;
-  }
-
-  const cutoffKey = getRecentWorkLogCutoffKey();
-  return workLogs.filter((workLog) => workLog.date >= cutoffKey);
-}
-
-function createWorkLogEntry(workLog: WorkLog, options: { showProject?: boolean; compact?: boolean } = {}): HTMLElement {
-  const project = getProjectById(getState(), workLog.projectId);
-  const linkedTodo = getTodoByProject(project, workLog.todoId);
-
-  return createWorkLogEntryElement(workLog, {
-    ...options,
-    project,
-    linkedTodo,
-    onOpen: project
-      ? () => {
-          goToProjectTodo(project.id, linkedTodo?.id ?? null);
-          render();
-        }
-      : undefined,
-    onDelete: () => {
-      deleteWorkLog(workLog.id);
+function renderTodoWorkLogSummary(todoId: string): HTMLElement {
+  return renderTodoWorkLogSummarySection({
+    state: getState(),
+    todoId,
+    showAll: uiState.expandedTodoWorkLogIds.has(todoId),
+    onSelectWorkLog: (workLogId) => {
+      openWorkLogDetail(workLogId);
+      render();
+    },
+    onToggleExpand: (id, expand) => {
+      if (expand) {
+        uiState.expandedTodoWorkLogIds.add(id);
+      } else {
+        uiState.expandedTodoWorkLogIds.delete(id);
+      }
       render();
     },
   });
@@ -236,54 +200,102 @@ function renderCalendarDetailModal(): void {
   });
 }
 
-// Project detail
+// Work log detail modal
 
-function renderProjectWorkLogs(): void {
-  const activeProject = getActiveProject();
-  projectWorkLogList.innerHTML = "";
-
-  if (!activeProject) {
-    projectWorkLogCard.hidden = true;
-    projectWorkLogEmpty.hidden = true;
-    return;
-  }
-
-  const workLogs = getProjectWorkLogs(getState(), activeProject.id);
-  const showAll = uiState.expandedProjectWorkLogId === activeProject.id;
-  const visibleWorkLogs = getVisibleWorkLogs(workLogs, showAll);
-  projectWorkLogCard.hidden = false;
-  projectWorkLogEmpty.hidden = workLogs.length > 0;
-
-  visibleWorkLogs.forEach((workLog) => {
-    projectWorkLogList.append(createWorkLogEntry(workLog));
-  });
-
-  if (visibleWorkLogs.length !== workLogs.length) {
-    projectWorkLogList.append(
-      createWorkLogMoreButton({
-        visibleCount: visibleWorkLogs.length,
-        totalCount: workLogs.length,
-        expanded: showAll,
-        onToggle: () => {
-          uiState.expandedProjectWorkLogId = activeProject.id;
-          render();
-        },
-      }),
-    );
-  } else if (showAll && workLogs.length > 0) {
-    projectWorkLogList.append(
-      createWorkLogMoreButton({
-        visibleCount: visibleWorkLogs.length,
-        totalCount: workLogs.length,
-        expanded: showAll,
-        onToggle: () => {
-          uiState.expandedProjectWorkLogId = null;
-          render();
-        },
-      }),
-    );
-  }
+function openWorkLogDetail(workLogId: string): void {
+  uiState.selectedWorkLogId = workLogId;
+  uiState.isWorkLogEditing = false;
+  uiState.isWorkLogCreating = false;
 }
+
+function closeWorkLogDetail(): void {
+  uiState.selectedWorkLogId = null;
+  uiState.isWorkLogEditing = false;
+  uiState.isWorkLogCreating = false;
+  uiState.workLogCreateDate = null;
+  uiState.workLogCreateType = null;
+}
+
+function openWorkLogCreate(date: string, type: WorkLogType): void {
+  uiState.isWorkLogCreating = true;
+  uiState.selectedWorkLogId = null;
+  uiState.isWorkLogEditing = false;
+  uiState.workLogCreateDate = date;
+  uiState.workLogCreateType = type;
+}
+
+function renderWorkLogDetailModal(): void {
+  const state = getState();
+  const canShowWorkLogDetail = uiState.currentView === "projects" || uiState.currentView === "weekly";
+  const isCreating = canShowWorkLogDetail && uiState.isWorkLogCreating;
+  const workLog = canShowWorkLogDetail ? getWorkLogById(state, uiState.selectedWorkLogId) : undefined;
+  const project = workLog ? getProjectById(state, workLog.projectId) : undefined;
+  const linkedTodo = getTodoByProject(project, workLog?.todoId);
+
+  renderWorkLogDetailModalView({
+    workLog: workLog ?? null,
+    project,
+    linkedTodo,
+    projectTodos: project?.todos ?? [],
+    isEditing: uiState.isWorkLogEditing,
+    isCreating,
+    projects: state.projects,
+    defaultDate: uiState.workLogCreateDate ?? toDateKey(uiState.visibleWeekDate),
+    defaultType: uiState.workLogCreateType ?? "수행",
+    onClose: () => {
+      closeWorkLogDetail();
+      render();
+    },
+    onEdit: () => {
+      uiState.isWorkLogEditing = true;
+      render();
+    },
+    onCancelEdit: () => {
+      uiState.isWorkLogEditing = false;
+      render();
+    },
+    onOpenTask: () => {
+      if (project && linkedTodo) {
+        goToProjectTodo(project.id, linkedTodo.id);
+      }
+      closeWorkLogDetail();
+      render();
+    },
+    onUpdate: (updates) => {
+      if (!workLog) {
+        return;
+      }
+
+      updateWorkLog(workLog.id, updates);
+      uiState.isWorkLogEditing = false;
+      render();
+    },
+    onDelete: async () => {
+      if (!workLog) {
+        return;
+      }
+
+      if (!(await confirmDelete("선택한 주간 업무 기록을 삭제하시겠습니까?"))) {
+        return;
+      }
+
+      deleteWorkLog(workLog.id);
+      closeWorkLogDetail();
+      render();
+    },
+    onCreate: ({ projectId, date, type, todoId, content }) => {
+      if (!projectId || !content) {
+        return;
+      }
+
+      addWorkLog({ id: createId(), projectId, date, type, todoId, content });
+      closeWorkLogDetail();
+      render();
+    },
+  });
+}
+
+// Project detail
 
 export function showProjectInfoEditMode(isEditing: boolean): void {
   uiState.isProjectInfoEditing = isEditing;
@@ -298,60 +310,6 @@ export function showProjectNameEditMode(isEditing: boolean): void {
 
 // Todo detail
 
-function renderTodoWorkLogSummary(todoId: string): HTMLElement {
-  const section = document.createElement("section");
-  section.className = "todo-work-log-summary";
-
-  const heading = document.createElement("h4");
-  heading.textContent = "Linked Weekly Logs";
-  section.append(heading);
-
-  const workLogs = getTodoWorkLogs(getState(), todoId);
-  const showAll = uiState.expandedTodoWorkLogIds.has(todoId);
-  const visibleWorkLogs = getVisibleWorkLogs(workLogs, showAll);
-  if (workLogs.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "empty-state";
-    empty.textContent = "No weekly logs linked to this task yet.";
-    section.append(empty);
-    return section;
-  }
-
-  const list = document.createElement("div");
-  list.className = "todo-work-log-list";
-  visibleWorkLogs.forEach((workLog) => {
-    list.append(createWorkLogEntry(workLog, { compact: true }));
-  });
-
-  if (visibleWorkLogs.length !== workLogs.length) {
-    list.append(
-      createWorkLogMoreButton({
-        visibleCount: visibleWorkLogs.length,
-        totalCount: workLogs.length,
-        expanded: showAll,
-        onToggle: () => {
-          uiState.expandedTodoWorkLogIds.add(todoId);
-          render();
-        },
-      }),
-    );
-  } else if (showAll && workLogs.length > 0) {
-    list.append(
-      createWorkLogMoreButton({
-        visibleCount: visibleWorkLogs.length,
-        totalCount: workLogs.length,
-        expanded: showAll,
-        onToggle: () => {
-          uiState.expandedTodoWorkLogIds.delete(todoId);
-          render();
-        },
-      }),
-    );
-  }
-  section.append(list);
-  return section;
-}
-
 function renderTodoDetailView(todo: Todo): HTMLElement {
   return createTodoDetailView(todo, {
     workLogSummary: renderTodoWorkLogSummary(todo.id),
@@ -359,7 +317,11 @@ function renderTodoDetailView(todo: Todo): HTMLElement {
       uiState.editingTodoId = todo.id;
       render();
     },
-    onDelete: () => {
+    onDelete: async () => {
+      if (!(await confirmDelete(`"${todo.title}" 업무를 삭제하시겠습니까?\n연결된 주간 업무 기록도 함께 삭제됩니다.`))) {
+        return;
+      }
+
       deleteTodo(todo.id);
       uiState.selectedTodoId = null;
       uiState.editingTodoId = null;
@@ -379,7 +341,11 @@ function renderTodoEditForm(todo: Todo): HTMLElement {
       uiState.editingTodoId = null;
       render();
     },
-    onDelete: () => {
+    onDelete: async () => {
+      if (!(await confirmDelete(`"${todo.title}" 업무를 삭제하시겠습니까?\n연결된 주간 업무 기록도 함께 삭제됩니다.`))) {
+        return;
+      }
+
       deleteTodo(todo.id);
       uiState.selectedTodoId = null;
       uiState.editingTodoId = null;
@@ -390,63 +356,51 @@ function renderTodoEditForm(todo: Todo): HTMLElement {
 
 function renderTodos(): void {
   const activeProject = getActiveProject();
-  todoList.innerHTML = "";
 
   if (!activeProject) {
-    renderEmptyProjectHeader();
+    clearTodoList();
+    renderEmptyProjectDetail();
     uiState.isProjectNameEditing = false;
     showProjectNameEditMode(false);
-    todoCount.textContent = "0 items";
-    emptyState.textContent = "Create a project first.";
-    emptyState.hidden = false;
-    todoForm.hidden = true;
     uiState.isProjectInfoEditing = false;
     showProjectInfoEditMode(false);
-    projectWorkLogCard.hidden = true;
-    deleteProjectButton.hidden = true;
     uiState.selectedTodoId = null;
     uiState.editingTodoId = null;
     return;
   }
 
-  sortTodosByDueDate();
+  const sortedTodos = getSortedTodosByDueDate(activeProject);
   renderProjectHeader(activeProject);
   showProjectNameEditMode(uiState.isProjectNameEditing);
   renderProjectInfo(activeProject);
   showProjectInfoEditMode(uiState.isProjectInfoEditing);
   renderProjectWorkLogs();
-  todoCount.textContent = `${activeProject.todos.length} items`;
-  emptyState.textContent = "선택된 프로젝트에 업무가 없습니다.";
-  emptyState.hidden = activeProject.todos.length > 0;
-  todoForm.hidden = false;
-  deleteProjectButton.hidden = false;
+  renderProjectDetailShell(sortedTodos.length);
 
-  activeProject.todos.forEach((todo) => {
-    const isSelected = todo.id === uiState.selectedTodoId;
-    const detail = isSelected ? (uiState.editingTodoId === todo.id ? renderTodoEditForm(todo) : renderTodoDetailView(todo)) : null;
-    const item = createTodoListItem(todo, {
-      selected: isSelected,
-      detail,
-      onToggle: (completed) => {
-        toggleTodo(todo.id, completed);
+  renderTodoList({
+    todos: sortedTodos,
+    selectedTodoId: uiState.selectedTodoId,
+    editingTodoId: uiState.editingTodoId,
+    renderDetailView: renderTodoDetailView,
+    renderEditForm: renderTodoEditForm,
+    onToggle: (todoId, completed) => {
+      toggleTodo(todoId, completed);
+      render();
+    },
+    onSelect: (todoId) => {
+      if (uiState.selectedTodoId === todoId) {
+        uiState.selectedTodoId = null;
+        uiState.editingTodoId = null;
         render();
-      },
-      onSelect: () => {
-        if (uiState.selectedTodoId === todo.id) {
-          uiState.selectedTodoId = null;
-          uiState.editingTodoId = null;
-          render();
-          return;
-        }
+        return;
+      }
 
-        uiState.selectedTodoId = todo.id;
-        if (uiState.editingTodoId && uiState.editingTodoId !== todo.id) {
-          uiState.editingTodoId = null;
-        }
-        render();
-      },
-    });
-    todoList.append(item);
+      uiState.selectedTodoId = todoId;
+      if (uiState.editingTodoId && uiState.editingTodoId !== todoId) {
+        uiState.editingTodoId = null;
+      }
+      render();
+    },
   });
 }
 
@@ -517,14 +471,18 @@ export function render(): void {
   renderProjectList({ onSelectProject: selectProject, onReorderProjects: reorderProjects, onRender: render });
   renderTodos();
   renderLedger();
-  renderWeeklyView(getState(), uiState.visibleWeekDate);
+  renderWeeklyView(getState(), uiState.visibleWeekDate, {
+    onSelectWorkLog: (workLogId) => {
+      openWorkLogDetail(workLogId);
+      render();
+    },
+    onAddWorkLog: (date, type) => {
+      openWorkLogCreate(date, type);
+      render();
+    },
+  });
   renderCalendar();
   renderCalendarDetailModal();
-  projectWorkspace.hidden = uiState.currentView !== "projects";
-  ledgerWorkspace.hidden = uiState.currentView !== "ledger";
-  weeklyWorkspace.hidden = uiState.currentView !== "weekly";
-  calendarWorkspace.hidden = uiState.currentView !== "calendar";
-  ledgerViewButton.classList.toggle("active", uiState.currentView === "ledger");
-  weeklyViewButton.classList.toggle("active", uiState.currentView === "weekly");
-  calendarViewButton.classList.toggle("active", uiState.currentView === "calendar");
+  renderWorkLogDetailModal();
+  renderViewVisibility(uiState.currentView);
 }

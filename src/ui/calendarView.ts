@@ -2,7 +2,6 @@ import type { CalendarRangePreferences } from "../state/calendarPreferences";
 import { normalizeCalendarRangePreferences } from "../state/calendarPreferences";
 import type { AppState } from "../types";
 import { getMonthGridDates, toDateKey } from "../utils/calendar";
-import { isTodoOverdue } from "../utils/task";
 import {
   calendarColumnSelect,
   calendarEmptyState,
@@ -18,10 +17,10 @@ import {
 type CalendarTodo = {
   projectId: string;
   todoId: string;
+  clientName: string;
   projectName: string;
   title: string;
   completed: boolean;
-  overdue: boolean;
   color: string;
 };
 
@@ -53,10 +52,10 @@ function getDueTodosByDate(state: AppState, selectedProjectIds: Set<string>): Ma
       items.push({
         projectId: project.id,
         todoId: todo.id,
+        clientName: project.clientName,
         projectName: project.name,
         title: todo.title,
         completed: todo.completed,
-        overdue: isTodoOverdue(todo),
         color: project.color,
       });
       dueTodosByDate.set(todo.dueDate, items);
@@ -78,12 +77,15 @@ function appendMonthGrid({
   onTodoSelect: (todo: CalendarTodo) => void;
 }): number {
   let itemCount = 0;
+  const todayKey = toDateKey(new Date());
 
   getMonthGridDates(monthDate).forEach((date) => {
     const dateKey = toDateKey(date);
+    const isOutsideMonth = date.getMonth() !== monthDate.getMonth();
     const cell = document.createElement("section");
     cell.className = "calendar-cell";
-    cell.classList.toggle("outside-month", date.getMonth() !== monthDate.getMonth());
+    cell.classList.toggle("outside-month", isOutsideMonth);
+    cell.classList.toggle("today", dateKey === todayKey && !isOutsideMonth);
 
     const dateLabel = document.createElement("p");
     dateLabel.className = "calendar-date";
@@ -95,13 +97,21 @@ function appendMonthGrid({
       const item = document.createElement("div");
       item.className = "calendar-item";
       item.classList.toggle("completed", todo.completed);
-      item.classList.toggle("overdue", todo.overdue);
       item.style.setProperty("--project-color", todo.color);
       const title = document.createElement("strong");
       title.textContent = todo.title;
+
+      const meta = document.createElement("div");
+      meta.className = "calendar-item-meta";
+      const client = document.createElement("span");
+      client.className = "calendar-client-chip";
+      client.textContent = todo.clientName || "No client";
       const projectName = document.createElement("span");
-      projectName.textContent = `${todo.projectName}${todo.overdue ? " · Overdue" : ""}`;
-      item.append(title, projectName);
+      projectName.className = "calendar-project-name";
+      projectName.textContent = todo.projectName;
+      meta.append(client, projectName);
+
+      item.append(title, meta);
       item.addEventListener("click", () => {
         onTodoSelect(todo);
       });
