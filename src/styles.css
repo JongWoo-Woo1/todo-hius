@@ -799,16 +799,17 @@ button {
   cursor: pointer;
 }
 
-.ledger-table tbody tr:hover {
-  background: #f8fafc;
-}
-
 .ledger-table tr.completed td:not(.ledger-merged-cell) {
   color: var(--muted);
 }
 
 .ledger-table tr.priority-high:not(.completed) {
   background: #fff7ed;
+}
+
+.ledger-table tr.ledger-task-hover > td:not(.ledger-merged-cell),
+.ledger-table .ledger-hover {
+  background: #eef6ff;
 }
 
 .ledger-table td {
@@ -846,11 +847,6 @@ button {
 .ledger-table .ledger-project-cell,
 .ledger-table .ledger-period-cell {
   cursor: pointer;
-}
-
-.ledger-table .ledger-project-cell:hover,
-.ledger-table .ledger-period-cell:hover {
-  background: #f8fafc;
 }
 
 .ledger-table .ledger-project-cell:active,

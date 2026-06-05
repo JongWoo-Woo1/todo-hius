@@ -205,12 +205,21 @@ function renderLedger(): void {
     const row = document.createElement("tr");
     row.classList.toggle("completed", todo.completed);
     row.classList.toggle("priority-high", todo.priority === "높음");
+    row.dataset.ledgerClient = clientName;
+    row.dataset.ledgerProjectId = project.id;
+    row.dataset.ledgerTodoId = todo.id;
     row.tabIndex = 0;
 
     const groupedCells = [
-      isFirstClientRow ? `<td class="ledger-merged-cell ledger-client-cell" rowspan="${clientRowSpan}">${clientName}</td>` : "",
-      isFirstProjectRow ? `<td class="ledger-merged-cell ledger-project-cell" rowspan="${projectRowSpan}">${projectName}</td>` : "",
-      isFirstProjectRow ? `<td class="ledger-merged-cell ledger-period-cell" rowspan="${projectRowSpan}">${projectPeriod}</td>` : "",
+      isFirstClientRow
+        ? `<td class="ledger-merged-cell ledger-client-cell" data-ledger-client="${clientName}" rowspan="${clientRowSpan}">${clientName}</td>`
+        : "",
+      isFirstProjectRow
+        ? `<td class="ledger-merged-cell ledger-project-cell" data-ledger-project-id="${project.id}" rowspan="${projectRowSpan}">${projectName}</td>`
+        : "",
+      isFirstProjectRow
+        ? `<td class="ledger-merged-cell ledger-period-cell" data-ledger-project-id="${project.id}" rowspan="${projectRowSpan}">${projectPeriod}</td>`
+        : "",
     ].join("");
 
     row.innerHTML = `
@@ -223,8 +232,36 @@ function renderLedger(): void {
         <td class="ledger-priority-cell">${todo.priority ? `<span class="priority-badge">${todo.priority}</span>` : ""}</td>
         <td class="ledger-issue-cell">${todo.issueRisk ?? ""}</td>
       `;
+    const clearLedgerHover = () => {
+      ledgerTableBody.querySelectorAll<HTMLElement>(".ledger-hover").forEach((cell) => {
+        cell.classList.remove("ledger-hover");
+      });
+      ledgerTableBody.querySelectorAll<HTMLElement>(".ledger-task-hover").forEach((hoveredRow) => {
+        hoveredRow.classList.remove("ledger-task-hover");
+      });
+    };
+
+    const setLedgerProjectHover = () => {
+      clearLedgerHover();
+      ledgerTableBody.querySelectorAll<HTMLElement>(".ledger-client-cell").forEach((cell) => {
+        cell.classList.toggle("ledger-hover", cell.dataset.ledgerClient === clientName);
+      });
+      ledgerTableBody.querySelectorAll<HTMLElement>(".ledger-project-cell, .ledger-period-cell").forEach((cell) => {
+        cell.classList.toggle("ledger-hover", cell.dataset.ledgerProjectId === project.id);
+      });
+    };
+
+    const setLedgerTaskHover = () => {
+      setLedgerProjectHover();
+      row.classList.add("ledger-task-hover");
+    };
+
     row.querySelectorAll<HTMLElement>(".ledger-project-cell, .ledger-period-cell").forEach((cell) => {
       cell.tabIndex = 0;
+      cell.addEventListener("mouseenter", setLedgerProjectHover);
+      cell.addEventListener("mouseleave", clearLedgerHover);
+      cell.addEventListener("focus", setLedgerProjectHover);
+      cell.addEventListener("blur", clearLedgerHover);
       cell.addEventListener("click", (event) => {
         event.stopPropagation();
         selectedModalProjectId = project.id;
@@ -245,6 +282,12 @@ function renderLedger(): void {
         render();
       });
     });
+    row.querySelectorAll<HTMLElement>("td:not(.ledger-merged-cell)").forEach((cell) => {
+      cell.addEventListener("mouseenter", setLedgerTaskHover);
+      cell.addEventListener("mouseleave", clearLedgerHover);
+    });
+    row.addEventListener("focus", setLedgerTaskHover);
+    row.addEventListener("blur", clearLedgerHover);
     row.addEventListener("click", () => {
       selectedModalProjectId = null;
       selectedModalTodoId = todo.id;
