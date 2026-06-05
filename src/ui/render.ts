@@ -443,10 +443,27 @@ function renderWeeklyItem(item: WeeklyItem): HTMLElement {
   wrapper.classList.toggle("todo-source", item.source === "todo");
   wrapper.style.setProperty("--project-color", item.color);
 
-  const header = document.createElement("p");
+  const header = document.createElement("div");
   header.className = "weekly-item-header";
-  const linkedTaskText = item.todoTitle ? ` ${item.todoTitle}` : "";
-  header.textContent = `[${item.clientName || "No client"}][${item.projectName}]${linkedTaskText}`;
+
+  const meta = document.createElement("div");
+  meta.className = "weekly-item-meta";
+  const client = document.createElement("span");
+  client.className = "weekly-client-chip";
+  client.textContent = item.clientName || "No client";
+  const projectName = document.createElement("span");
+  projectName.className = "weekly-project-name";
+  projectName.textContent = item.projectName;
+  meta.append(client, projectName);
+
+  if (item.todoTitle) {
+    const linkedTask = document.createElement("p");
+    linkedTask.className = "weekly-linked-title";
+    linkedTask.textContent = item.todoTitle;
+    header.append(meta, linkedTask);
+  } else {
+    header.append(meta);
+  }
 
   const content = document.createElement("p");
   content.className = "weekly-item-content";
