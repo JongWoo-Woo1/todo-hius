@@ -803,9 +803,8 @@ button {
   background: #f8fafc;
 }
 
-.ledger-table tr.completed {
+.ledger-table tr.completed td:not(.ledger-merged-cell) {
   color: var(--muted);
-  opacity: 0.72;
 }
 
 .ledger-table tr.priority-high:not(.completed) {

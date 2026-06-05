@@ -157,6 +157,7 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- Fixed Ledger merged client/project/period cells so completed task rows no longer make them look inconsistently muted.
 - Fixed Ledger project cells so merged project fields show hover and pressed feedback.
 - Fixed stale Calendar default range caches so the multi-month view advances to the current month.
 - Fixed Project Ledger Excel Export row heights so long 주요 추진내용 values remain visible.
