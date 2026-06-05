@@ -87,6 +87,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Ledger hover highlighting to leave customer cells unshaded while highlighting project, period, and task cells.
 - Changed Ledger View to label the client column as `고객사` and removed the visible `프로젝트 번호` column.
 - Changed Ledger row red shading to represent `높음` priority instead of overdue status.
 - Changed Weekly View from separate weekday cards to a compact Monday-Friday table layout.

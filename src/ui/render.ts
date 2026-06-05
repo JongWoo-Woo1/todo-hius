@@ -243,9 +243,6 @@ function renderLedger(): void {
 
     const setLedgerProjectHover = () => {
       clearLedgerHover();
-      ledgerTableBody.querySelectorAll<HTMLElement>(".ledger-client-cell").forEach((cell) => {
-        cell.classList.toggle("ledger-hover", cell.dataset.ledgerClient === clientName);
-      });
       ledgerTableBody.querySelectorAll<HTMLElement>(".ledger-project-cell, .ledger-period-cell").forEach((cell) => {
         cell.classList.toggle("ledger-hover", cell.dataset.ledgerProjectId === project.id);
       });
