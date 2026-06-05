@@ -155,6 +155,7 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- Fixed Ledger project cells so merged project fields show hover and pressed feedback.
 - Fixed stale Calendar default range caches so the multi-month view advances to the current month.
 - Fixed Project Ledger Excel Export row heights so long 주요 추진내용 values remain visible.
 - Fixed sidebar project labels so long names truncate inside the sidebar instead of overflowing into the main panel.

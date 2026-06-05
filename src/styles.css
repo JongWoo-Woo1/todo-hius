@@ -848,6 +848,24 @@ button {
   vertical-align: middle;
 }
 
+.ledger-table .ledger-project-number-cell,
+.ledger-table .ledger-project-cell,
+.ledger-table .ledger-period-cell {
+  cursor: pointer;
+}
+
+.ledger-table .ledger-project-number-cell:hover,
+.ledger-table .ledger-project-cell:hover,
+.ledger-table .ledger-period-cell:hover {
+  background: #f8fafc;
+}
+
+.ledger-table .ledger-project-number-cell:active,
+.ledger-table .ledger-project-cell:active,
+.ledger-table .ledger-period-cell:active {
+  background: #e2e8f0;
+}
+
 .calendar-controls {
   display: flex;
   align-items: center;
