@@ -164,6 +164,7 @@ All notable changes to this project are documented here.
 
 ### Removed
 
+- Removed sidebar Export JSON, Import JSON, and Reset sample data controls from the Electron branch.
 - Removed `VERSIONING.md`; its rules now live in `AGENTS.md`.
 - Removed `HANDOFF.md`; next-context guidance now lives in `AGENTS.md`.
 

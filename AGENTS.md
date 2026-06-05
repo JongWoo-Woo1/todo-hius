@@ -64,7 +64,7 @@ On the Electron branch, data is persisted through `.todo` workspace files:
 
 ## Compatibility Rules
 
-Legacy JSON imports should continue to load through migration.
+Legacy `.todo` and project `.json` workspace data should continue to load through migration.
 
 Project and Todo migration lives in `src/state/store.ts`.
 

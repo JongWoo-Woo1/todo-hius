@@ -265,15 +265,6 @@ button {
   color: var(--text);
 }
 
-.backup-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
-}
-
 .workspace {
   min-width: 1180px;
   padding: 28px;

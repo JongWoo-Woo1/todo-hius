@@ -11,9 +11,6 @@ Vite + TypeScript + pure DOM 기반의 회사 프로젝트 Todo 관리 앱입니
   - 개별 Project 화면에서 프로젝트 이름 클릭 후 수정
 - 프로젝트 색상 변경
 - 왼쪽 Nav에서 프로젝트 drag and drop 순서 변경
-- JSON 백업 파일 Export
-- JSON 백업 파일 Import / Restore
-- 현재 `sampleProjects.ts` 데이터로 초기화
 - Todo 생성, 삭제, 완료 체크
 - 지연 업무 표시
 - Todo 상세 정보 수정:

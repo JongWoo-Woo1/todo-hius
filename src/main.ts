@@ -5,12 +5,9 @@ import {
   addTodo,
   addWorkLog,
   deleteActiveProject,
-  exportStateJson,
   getActiveProject,
   getState,
-  importStateFromJson,
   replaceState,
-  resetStateToSampleData,
   setStateChangeListener,
   updateActiveProject,
   updateActiveProjectColor,
@@ -30,9 +27,6 @@ import {
   cancelProjectNameButton,
   deleteProjectButton,
   editProjectInfoButton,
-  exportJsonButton,
-  importJsonButton,
-  importJsonFileInput,
   ledgerClientFilter,
   ledgerExportButton,
   ledgerHideCompletedInput,
@@ -48,7 +42,6 @@ import {
   projectPeriodEndInput,
   projectPeriodStartInput,
   projectPeriodTextInput,
-  resetSampleDataButton,
   todoDueDateInput,
   todoForm,
   todoTitleInput,
@@ -142,19 +135,6 @@ async function openDefaultProject(): Promise<void> {
   }
 }
 
-function downloadTextFile(content: string, fileName: string, type: string): void {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = fileName;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
-
 async function openProject(): Promise<boolean> {
   if (!window.hiusTodoFile) {
     return false;
@@ -241,54 +221,6 @@ addProjectButton.addEventListener("click", () => {
 
   addProject(project);
   showProjectView();
-  render();
-});
-
-exportJsonButton.addEventListener("click", () => {
-  downloadTextFile(exportStateJson(), `project-todo-backup-${toDateKey(new Date())}.json`, "application/json");
-});
-
-importJsonButton.addEventListener("click", () => {
-  importJsonFileInput.click();
-});
-
-importJsonFileInput.addEventListener("change", async () => {
-  const file = importJsonFileInput.files?.[0];
-  if (!file) {
-    return;
-  }
-
-  const shouldImport = window.confirm("Importing this JSON file will overwrite the current local data. Continue?");
-  if (!shouldImport) {
-    importJsonFileInput.value = "";
-    return;
-  }
-
-  const json = await file.text();
-  const imported = importStateFromJson(json);
-  importJsonFileInput.value = "";
-
-  if (!imported) {
-    window.alert("Invalid backup file. Please select a JSON file exported from this app.");
-    return;
-  }
-
-  clearSelectedTodo();
-  resetCalendarSelection();
-  render();
-});
-
-resetSampleDataButton.addEventListener("click", () => {
-  const shouldReset = window.confirm(
-    "현재 작업 중인 데이터를 sampleProjects 데이터로 교체합니다. 필요한 경우 먼저 Save 또는 Export JSON으로 백업하세요. 계속할까요?",
-  );
-  if (!shouldReset) {
-    return;
-  }
-
-  resetStateToSampleData();
-  clearSelectedTodo();
-  resetCalendarSelection();
   render();
 });
 

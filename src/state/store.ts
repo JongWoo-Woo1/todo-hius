@@ -385,10 +385,6 @@ export function deleteWorkLog(workLogId: string): void {
   saveState();
 }
 
-export function exportStateJson(): string {
-  return JSON.stringify(state, null, 2);
-}
-
 export function replaceState(rawState: unknown): boolean {
   if (!isImportableState(rawState)) {
     return false;
@@ -397,17 +393,4 @@ export function replaceState(rawState: unknown): boolean {
   state = migrateState(rawState);
   saveState();
   return true;
-}
-
-export function resetStateToSampleData(): void {
-  state = createSampleState();
-  saveState();
-}
-
-export function importStateFromJson(json: string): boolean {
-  try {
-    return replaceState(JSON.parse(json));
-  } catch {
-    return false;
-  }
 }

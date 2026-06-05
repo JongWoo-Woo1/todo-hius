@@ -1,9 +1,5 @@
 export const projectList = document.querySelector<HTMLElement>("#project-list")!;
 export const addProjectButton = document.querySelector<HTMLButtonElement>("#add-project-button")!;
-export const exportJsonButton = document.querySelector<HTMLButtonElement>("#export-json-button")!;
-export const importJsonButton = document.querySelector<HTMLButtonElement>("#import-json-button")!;
-export const resetSampleDataButton = document.querySelector<HTMLButtonElement>("#reset-sample-data-button")!;
-export const importJsonFileInput = document.querySelector<HTMLInputElement>("#import-json-file")!;
 export const activeProjectName = document.querySelector<HTMLElement>("#active-project-name")!;
 export const activeProjectNameButton = document.querySelector<HTMLButtonElement>("#active-project-name-button")!;
 export const projectNameForm = document.querySelector<HTMLFormElement>("#project-name-form")!;
