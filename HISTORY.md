@@ -158,6 +158,7 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- Fixed Ledger project hover highlighting so merged project cells visibly receive the grouped hover background.
 - Fixed Electron dev saves so writing the `.todo` workspace no longer triggers a Vite full-page reload back to Calendar.
 - Fixed Ledger merged client/project/period cells so completed task rows no longer make them look inconsistently muted.
 - Fixed Ledger project cells so merged project fields show hover and pressed feedback.

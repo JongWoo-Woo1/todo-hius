@@ -808,7 +808,7 @@ button {
 }
 
 .ledger-table tr.ledger-task-hover > td:not(.ledger-merged-cell),
-.ledger-table .ledger-hover {
+.ledger-table .ledger-merged-cell.ledger-hover {
   background: #eef6ff;
 }
 
