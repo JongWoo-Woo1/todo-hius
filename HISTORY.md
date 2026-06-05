@@ -86,6 +86,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Ledger View to label the client column as `고객사` and removed the visible `프로젝트 번호` column.
 - Changed Weekly View from separate weekday cards to a compact Monday-Friday table layout.
 - Changed project-level workspace files from `.todo` to `.json` while keeping the top-level workspace manifest as `.todo`.
 - Removed runtime localStorage persistence on the Electron branch; state now stays in memory until saved to `.todo`.
@@ -166,6 +167,7 @@ All notable changes to this project are documented here.
 
 ### Removed
 
+- Removed Comment and issue/risk fields from Project Todo card detail and edit UI.
 - Removed the Work Log input form from Weekly View.
 - Removed Open task and Delete action buttons from Weekly plan/work report items.
 - Removed sidebar Export JSON, Import JSON, and Reset sample data controls from the Electron branch.

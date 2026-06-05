@@ -728,7 +728,7 @@ button {
 
 .ledger-table {
   width: 100%;
-  min-width: 1300px;
+  min-width: 1190px;
   border-collapse: collapse;
   table-layout: fixed;
   font-size: 13px;
@@ -736,10 +736,6 @@ button {
 
 .ledger-col-client {
   width: 110px;
-}
-
-.ledger-col-project-number {
-  width: 105px;
 }
 
 .ledger-col-project {
@@ -848,19 +844,16 @@ button {
   vertical-align: middle;
 }
 
-.ledger-table .ledger-project-number-cell,
 .ledger-table .ledger-project-cell,
 .ledger-table .ledger-period-cell {
   cursor: pointer;
 }
 
-.ledger-table .ledger-project-number-cell:hover,
 .ledger-table .ledger-project-cell:hover,
 .ledger-table .ledger-period-cell:hover {
   background: #f8fafc;
 }
 
-.ledger-table .ledger-project-number-cell:active,
 .ledger-table .ledger-project-cell:active,
 .ledger-table .ledger-period-cell:active {
   background: #e2e8f0;

@@ -197,7 +197,7 @@ function renderLedger(): void {
     return true;
   });
 
-  rows.forEach(({ project, todo, clientName, projectNumber, projectName, projectPeriod }, index) => {
+  rows.forEach(({ project, todo, clientName, projectName, projectPeriod }, index) => {
     const clientRowSpan = rows.filter((row) => row.clientName === clientName).length;
     const projectRowSpan = rows.filter((row) => row.project.id === project.id).length;
     const isFirstClientRow = rows.findIndex((row) => row.clientName === clientName) === index;
@@ -209,9 +209,6 @@ function renderLedger(): void {
 
     const groupedCells = [
       isFirstClientRow ? `<td class="ledger-merged-cell ledger-client-cell" rowspan="${clientRowSpan}">${clientName}</td>` : "",
-      isFirstProjectRow
-        ? `<td class="ledger-merged-cell ledger-project-number-cell" rowspan="${projectRowSpan}">${projectNumber}</td>`
-        : "",
       isFirstProjectRow ? `<td class="ledger-merged-cell ledger-project-cell" rowspan="${projectRowSpan}">${projectName}</td>` : "",
       isFirstProjectRow ? `<td class="ledger-merged-cell ledger-period-cell" rowspan="${projectRowSpan}">${projectPeriod}</td>` : "",
     ].join("");
@@ -226,7 +223,7 @@ function renderLedger(): void {
         <td class="ledger-priority-cell">${todo.priority ? `<span class="priority-badge">${todo.priority}</span>` : ""}</td>
         <td class="ledger-issue-cell">${todo.issueRisk ?? ""}</td>
       `;
-    row.querySelectorAll<HTMLElement>(".ledger-project-number-cell, .ledger-project-cell, .ledger-period-cell").forEach((cell) => {
+    row.querySelectorAll<HTMLElement>(".ledger-project-cell, .ledger-period-cell").forEach((cell) => {
       cell.tabIndex = 0;
       cell.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -893,9 +890,6 @@ function renderCalendarTodoView(project: Project, todo: Todo): HTMLElement {
     createDetailRow("진행상태", todo.status),
     createDetailRow("진척률", formatProgressPercent(todo.progress)),
     createDetailRow("우선순위", getDetailValue(todo.priority)),
-    createDetailRow("Comment 담당자", getDetailValue(todo.workerComment)),
-    createDetailRow("Comment 관리자", getDetailValue(todo.managerComment)),
-    createDetailRow("이슈/리스크", getDetailValue(todo.issueRisk)),
     createDetailRow("메모", getDetailValue(todo.memo)),
   );
 
@@ -1049,18 +1043,6 @@ function renderCalendarTodoEditForm(project: Project, todo: Todo): HTMLElement {
       </select>
     </label>
     <label class="full-field">
-      Worker Comment
-      <textarea name="workerComment" rows="3"></textarea>
-    </label>
-    <label class="full-field">
-      Manager Comment
-      <textarea name="managerComment" rows="3"></textarea>
-    </label>
-    <label class="full-field">
-      Issue / Risk
-      <textarea name="issueRisk" rows="3"></textarea>
-    </label>
-    <label class="full-field">
       Memo
       <textarea name="memo" rows="4"></textarea>
     </label>
@@ -1077,9 +1059,6 @@ function renderCalendarTodoEditForm(project: Project, todo: Todo): HTMLElement {
   const statusSelect = form.querySelector<HTMLSelectElement>('[name="status"]')!;
   const progressInput = form.querySelector<HTMLInputElement>('[name="progress"]')!;
   const prioritySelect = form.querySelector<HTMLSelectElement>('[name="priority"]')!;
-  const workerCommentInput = form.querySelector<HTMLTextAreaElement>('[name="workerComment"]')!;
-  const managerCommentInput = form.querySelector<HTMLTextAreaElement>('[name="managerComment"]')!;
-  const issueRiskInput = form.querySelector<HTMLTextAreaElement>('[name="issueRisk"]')!;
   const memoInput = form.querySelector<HTMLTextAreaElement>('[name="memo"]')!;
 
   titleInput.value = todo.title;
@@ -1088,9 +1067,6 @@ function renderCalendarTodoEditForm(project: Project, todo: Todo): HTMLElement {
   statusSelect.value = todo.status;
   progressInput.value = String(Math.round(todo.progress * 100));
   prioritySelect.value = todo.priority ?? "보통";
-  workerCommentInput.value = todo.workerComment ?? "";
-  managerCommentInput.value = todo.managerComment ?? "";
-  issueRiskInput.value = todo.issueRisk ?? "";
   memoInput.value = todo.memo;
 
   form.querySelector<HTMLButtonElement>('[data-action="close"]')!.addEventListener("click", () => {
@@ -1120,9 +1096,6 @@ function renderCalendarTodoEditForm(project: Project, todo: Todo): HTMLElement {
       progress,
       completed: status === "완료",
       priority: prioritySelect.value as TaskPriority,
-      workerComment: workerCommentInput.value.trim(),
-      managerComment: managerCommentInput.value.trim(),
-      issueRisk: issueRiskInput.value.trim(),
       memo: memoInput.value.trim(),
     });
     isModalTodoEditing = false;
@@ -1323,9 +1296,6 @@ function renderTodoDetailView(todo: Todo): HTMLElement {
     createDetailRow("진행상태", todo.status),
     createDetailRow("진척률", formatProgressPercent(todo.progress)),
     createDetailRow("우선순위", getDetailValue(todo.priority)),
-    createDetailRow("Comment 담당자", getDetailValue(todo.workerComment)),
-    createDetailRow("Comment 관리자", getDetailValue(todo.managerComment)),
-    createDetailRow("이슈/리스크", getDetailValue(todo.issueRisk)),
     createDetailRow("메모", getDetailValue(todo.memo)),
   );
 
@@ -1399,18 +1369,6 @@ function renderTodoEditForm(todo: Todo): HTMLElement {
       </select>
     </label>
     <label class="full-field">
-      Worker Comment
-      <textarea name="workerComment" rows="3" placeholder="Comment from owner"></textarea>
-    </label>
-    <label class="full-field">
-      Manager Comment
-      <textarea name="managerComment" rows="3" placeholder="Comment from manager"></textarea>
-    </label>
-    <label class="full-field">
-      Issue / Risk
-      <textarea name="issueRisk" rows="3" placeholder="Known issue or risk"></textarea>
-    </label>
-    <label class="full-field">
       Memo
       <textarea name="memo" rows="5" placeholder="Add notes for this task"></textarea>
     </label>
@@ -1427,9 +1385,6 @@ function renderTodoEditForm(todo: Todo): HTMLElement {
   const statusSelect = form.querySelector<HTMLSelectElement>('[name="status"]')!;
   const progressInput = form.querySelector<HTMLInputElement>('[name="progress"]')!;
   const prioritySelect = form.querySelector<HTMLSelectElement>('[name="priority"]')!;
-  const workerCommentInput = form.querySelector<HTMLTextAreaElement>('[name="workerComment"]')!;
-  const managerCommentInput = form.querySelector<HTMLTextAreaElement>('[name="managerComment"]')!;
-  const issueRiskInput = form.querySelector<HTMLTextAreaElement>('[name="issueRisk"]')!;
   const memoInput = form.querySelector<HTMLTextAreaElement>('[name="memo"]')!;
 
   titleInput.value = todo.title;
@@ -1438,9 +1393,6 @@ function renderTodoEditForm(todo: Todo): HTMLElement {
   statusSelect.value = todo.status;
   progressInput.value = String(Math.round(todo.progress * 100));
   prioritySelect.value = todo.priority ?? "보통";
-  workerCommentInput.value = todo.workerComment ?? "";
-  managerCommentInput.value = todo.managerComment ?? "";
-  issueRiskInput.value = todo.issueRisk ?? "";
   memoInput.value = todo.memo;
 
   form.addEventListener("click", (event) => {
@@ -1460,9 +1412,6 @@ function renderTodoEditForm(todo: Todo): HTMLElement {
       progress,
       completed: status === "완료",
       priority: prioritySelect.value as TaskPriority,
-      workerComment: workerCommentInput.value.trim(),
-      managerComment: managerCommentInput.value.trim(),
-      issueRisk: issueRiskInput.value.trim(),
       memo: memoInput.value.trim(),
     });
     editingTodoId = null;
