@@ -3,12 +3,12 @@
   "version": 1,
   "project": {
     "id": "project-ksoe-pems",
+    "name": "KSOE PEMS",
     "clientName": "KSOE",
     "projectNumber": "",
-    "name": "KSOE PEMS",
-    "periodText": "26.05 ~",
     "periodStart": "2026-05-01",
     "periodEnd": null,
+    "periodText": "26.05 ~",
     "color": "#64748b",
     "todos": [
       {

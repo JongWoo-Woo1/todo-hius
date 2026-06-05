@@ -1,6 +1,16 @@
 import "./styles.css";
 
 import {
+  isTodoFileClientAvailable,
+  onTodoFileMenuCommand,
+  onTodoFileSaveRequest,
+  openDefaultTodoWorkspace,
+  openTodoWorkspace,
+  saveTodoWorkspace,
+  saveTodoWorkspaceAs,
+  setTodoFileDirty,
+} from "./platform/todoFileClient";
+import {
   addProject,
   addTodo,
   deleteActiveProject,
@@ -91,7 +101,7 @@ function updateTodoWorkspacePath(filePath: string | undefined): void {
 
 function setDirty(value: boolean): void {
   isDirty = value;
-  window.hiusTodoFile?.setDirty(value);
+  setTodoFileDirty(value);
 }
 
 function markDirty(): void {
@@ -99,12 +109,12 @@ function markDirty(): void {
 }
 
 async function openDefaultProject(): Promise<void> {
-  if (!window.hiusTodoFile) {
+  if (!isTodoFileClientAvailable()) {
     return;
   }
 
   try {
-    const result = await window.hiusTodoFile.openDefaultWorkspace();
+    const result = await openDefaultTodoWorkspace();
     if (!result.found) {
       updateTodoWorkspacePath(result.workspacePath);
       setDirty(false);
@@ -129,12 +139,12 @@ async function openDefaultProject(): Promise<void> {
 }
 
 async function openProject(): Promise<boolean> {
-  if (!window.hiusTodoFile) {
+  if (!isTodoFileClientAvailable()) {
     return false;
   }
 
   try {
-    const result = await window.hiusTodoFile.openWorkspace();
+    const result = await openTodoWorkspace();
     if (result.canceled) {
       return false;
     }
@@ -159,14 +169,14 @@ async function openProject(): Promise<boolean> {
 }
 
 async function saveProject({ saveAs = false }: { saveAs?: boolean } = {}): Promise<boolean> {
-  if (!window.hiusTodoFile) {
+  if (!isTodoFileClientAvailable()) {
     return false;
   }
 
   try {
     const result = saveAs
-      ? await window.hiusTodoFile.saveWorkspaceAs(getState())
-      : await window.hiusTodoFile.saveWorkspace(getState(), currentTodoWorkspacePath);
+      ? await saveTodoWorkspaceAs(getState())
+      : await saveTodoWorkspace(getState(), currentTodoWorkspacePath);
     if (result.canceled) {
       return false;
     }
@@ -181,7 +191,7 @@ async function saveProject({ saveAs = false }: { saveAs?: boolean } = {}): Promi
   }
 }
 
-window.hiusTodoFile?.onMenuCommand((command) => {
+onTodoFileMenuCommand((command) => {
   if (command === "open-project") {
     void openProject();
     return;
@@ -197,7 +207,7 @@ window.hiusTodoFile?.onMenuCommand((command) => {
   }
 });
 
-window.hiusTodoFile?.onSaveRequest(async (_requestId, saveAs) => saveProject({ saveAs }));
+onTodoFileSaveRequest(async (_requestId, saveAs) => saveProject({ saveAs }));
 
 addProjectButton.addEventListener("click", () => {
   const project: Project = {

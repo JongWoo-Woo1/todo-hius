@@ -3,12 +3,12 @@
   "version": 1,
   "project": {
     "id": "project-kyungchang-e-shift-hils",
+    "name": "E-Shift HILs",
     "clientName": "경창산업",
     "projectNumber": "",
-    "name": "E-Shift HILs",
-    "periodText": "26.04 ~ 26.07",
     "periodStart": "2026-04-01",
     "periodEnd": "2026-07-31",
+    "periodText": "26.04 ~ 26.07",
     "color": "#f97316",
     "todos": [
       {
@@ -21,7 +21,7 @@
         "workerComment": "준비 완료",
         "managerComment": "",
         "issueRisk": "",
-        "priority": "보통",
+        "priority": "높음",
         "memo": "",
         "completed": false
       },

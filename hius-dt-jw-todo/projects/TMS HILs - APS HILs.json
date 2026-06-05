@@ -3,14 +3,28 @@
   "version": 1,
   "project": {
     "id": "project-katech-tms-aps-hils",
+    "name": "TMS HILs - APS HILs",
     "clientName": "KATECH",
     "projectNumber": "",
-    "name": "TMS HILs - APS HILs",
-    "periodText": "26.06 ~",
     "periodStart": "2026-06-01",
     "periodEnd": null,
+    "periodText": "26.06 ~",
     "color": "#2563eb",
     "todos": [
+      {
+        "id": "todo-katech-aps-hils-link",
+        "title": "APS HILs 개발 및 연동",
+        "dueDate": null,
+        "estimate": "1W",
+        "status": "대기",
+        "progress": 0,
+        "workerComment": "일정 대기중",
+        "managerComment": "",
+        "issueRisk": "",
+        "priority": "보통",
+        "memo": "",
+        "completed": false
+      },
       {
         "id": "todo-katech-ui-dev",
         "title": "APS, TMS UI 개발",
@@ -28,20 +42,6 @@
       {
         "id": "todo-katech-tms-hils-link",
         "title": "TMS HILs 개발 및 연동",
-        "dueDate": null,
-        "estimate": "1W",
-        "status": "대기",
-        "progress": 0,
-        "workerComment": "일정 대기중",
-        "managerComment": "",
-        "issueRisk": "",
-        "priority": "보통",
-        "memo": "",
-        "completed": false
-      },
-      {
-        "id": "todo-katech-aps-hils-link",
-        "title": "APS HILs 개발 및 연동",
         "dueDate": null,
         "estimate": "1W",
         "status": "대기",

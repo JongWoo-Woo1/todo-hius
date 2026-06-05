@@ -3,12 +3,12 @@
   "version": 1,
   "project": {
     "id": "project-ksoe-submarine-model",
+    "name": "잠수함 모델 개발",
     "clientName": "KSOE",
     "projectNumber": "",
-    "name": "잠수함 모델 개발",
-    "periodText": "미확정",
     "periodStart": null,
     "periodEnd": null,
+    "periodText": "미확정",
     "color": "#0891b2",
     "todos": [
       {

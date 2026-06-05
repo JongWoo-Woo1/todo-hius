@@ -3,12 +3,12 @@
   "version": 1,
   "project": {
     "id": "project-ksoe-pcs-hils",
+    "name": "PCS HILs",
     "clientName": "KSOE",
     "projectNumber": "",
-    "name": "PCS HILs",
-    "periodText": "26.01 ~",
     "periodStart": "2026-01-01",
     "periodEnd": null,
+    "periodText": "26.01 ~",
     "color": "#7c3aed",
     "todos": [
       {

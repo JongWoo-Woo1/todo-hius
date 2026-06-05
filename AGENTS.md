@@ -38,16 +38,21 @@ On Windows/PowerShell, avoid read-only pipelines such as `Get-Content ... | Sele
 Use this map before broad searching:
 
 - App entry and event wiring: `src/main.ts`
+- Temporary renderer UI state: `src/app/uiState.ts`
 - App data state and mutations: `src/state/store.ts`
+- AppState-derived lookups/selectors: `src/state/selectors.ts`
 - Calendar range preferences: `src/state/calendarPreferences.ts`
 - Shared app types: `src/types.ts`
 - DOM references: `src/ui/dom.ts`
-- Current rendering and UI state: `src/ui/render.ts`
-- Calendar UI: search `renderCalendar` in `src/ui/render.ts`
-- Weekly UI: search `renderWeekly` in `src/ui/render.ts`
-- Ledger UI: search `renderLedger` in `src/ui/render.ts`
-- Project/Todo UI: search `renderProjects`, `renderTodo`, or Todo-related helpers in `src/ui/render.ts`
-- WorkLog UI: search `WorkLog`, `workLog`, or `createWorkLogEntry` in `src/ui/render.ts`
+- Render orchestration and remaining Project/Todo list flow: `src/ui/render.ts`
+- Project header/info UI: `src/ui/projectView.ts`
+- Project list/Todo card UI: search `renderProjects`, `renderTodos`, `renderTodoDetailView`, or `renderTodoEditForm` in `src/ui/render.ts`
+- Calendar UI: `src/ui/calendarView.ts`; state bridge in `renderCalendar` in `src/ui/render.ts`
+- Weekly UI: `src/ui/weeklyView.ts`
+- Ledger UI: `src/ui/ledgerView.ts`; Ledger project popup uses `src/ui/modalView.ts`
+- Modal/popup UI: `src/ui/modalView.ts`; state bridge in `renderCalendarDetailModal` in `src/ui/render.ts`
+- WorkLog DOM UI: `src/ui/workLogView.ts`; WorkLog state/delete flow in `src/ui/render.ts`
+- Renderer file API wrapper: `src/platform/todoFileClient.ts`
 - Excel export: `src/excel/`
 - Date/week helpers: `src/utils/calendar.ts`, `src/utils/week.ts`, `src/utils/date.ts`
 - Electron app shell/menu: `electron/main.ts`
@@ -91,7 +96,7 @@ When refactoring UI code, move toward this structure gradually:
 - `src/app/uiState.ts`: temporary UI state such as current view, selected Todo, modal state, and visible week.
 - `src/app/renderApp.ts`: top-level render orchestration.
 - `src/state/selectors.ts`: AppState-derived queries.
-- `src/ui/projectView.ts`: Project and Todo screen rendering.
+- `src/ui/projectView.ts`: Project header and project info rendering; Todo list/card rendering still lives in `src/ui/render.ts`.
 - `src/ui/ledgerView.ts`: Ledger filters, table, and popups.
 - `src/ui/weeklyView.ts`: Weekly report view.
 - `src/ui/calendarView.ts`: Calendar grid and controls.

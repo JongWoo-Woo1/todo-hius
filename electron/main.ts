@@ -5,8 +5,20 @@ import { registerTodoWorkspaceHandlers } from "./todoWorkspace.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const devServerUrl = process.env.VITE_DEV_SERVER_URL;
+const DEFAULT_WORKSPACE_FILE_NAME = "hius-dt-jw.todo";
+const DEVELOPMENT_WORKSPACE_DIRECTORY_NAME = "hius-dt-jw-todo";
+const PACKAGED_WORKSPACE_DIRECTORY_NAME = "HIUS Todo";
 let isProjectDirty = false;
 let saveRequestCount = 0;
+
+function getDefaultWorkspacePath(): string {
+  if (!app.isPackaged) {
+    return path.resolve(app.getAppPath(), DEVELOPMENT_WORKSPACE_DIRECTORY_NAME, DEFAULT_WORKSPACE_FILE_NAME);
+  }
+
+  const documentsPath = app.getPath("documents") || app.getPath("userData");
+  return path.join(documentsPath, PACKAGED_WORKSPACE_DIRECTORY_NAME, DEFAULT_WORKSPACE_FILE_NAME);
+}
 
 function requestRendererSave(mainWindow: BrowserWindow, saveAs: boolean): Promise<boolean> {
   const requestId = `save-${Date.now()}-${saveRequestCount}`;
@@ -133,7 +145,9 @@ function createMainWindow(): void {
     },
   });
 
-  registerTodoWorkspaceHandlers(mainWindow);
+  registerTodoWorkspaceHandlers(mainWindow, {
+    defaultWorkspacePath: getDefaultWorkspacePath(),
+  });
   Menu.setApplicationMenu(createAppMenu(mainWindow));
 
   mainWindow.once("ready-to-show", () => {

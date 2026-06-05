@@ -86,10 +86,13 @@ type DefaultWorkspaceResult =
       state: AppState;
     };
 
+type TodoWorkspacePaths = {
+  defaultWorkspacePath: string;
+};
+
 const WORKSPACE_KIND = "hius.todo.workspace";
 const PROJECT_KIND = "hius.todo.project";
 const DEFAULT_WORKSPACE_FILE_NAME = "hius-dt-jw.todo";
-const DEFAULT_WORKSPACE_PATH = path.resolve(process.cwd(), "hius-dt-jw-todo", DEFAULT_WORKSPACE_FILE_NAME);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -125,6 +128,15 @@ async function writeJsonFile(filePath: string, value: unknown): Promise<void> {
   await fs.writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
+async function pathExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function openWorkspaceFile(workspacePath: string): Promise<AppState> {
   const manifest = await readJsonFile(workspacePath);
   assertWorkspaceManifest(manifest);
@@ -152,6 +164,12 @@ async function openWorkspaceFile(workspacePath: string): Promise<AppState> {
 async function saveWorkspaceFile(workspacePath: string, state: AppState): Promise<void> {
   const workspaceDirectory = path.dirname(workspacePath);
   const projectsDirectory = path.join(workspaceDirectory, "projects");
+  const workspaceBaseName = path.basename(workspacePath);
+  const saveId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const temporaryWorkspaceDirectory = path.join(workspaceDirectory, `.todo-save-${saveId}`);
+  const temporaryProjectsDirectory = path.join(temporaryWorkspaceDirectory, "projects");
+  const temporaryWorkspacePath = path.join(temporaryWorkspaceDirectory, workspaceBaseName);
+  const backupProjectsDirectory = path.join(workspaceDirectory, `.projects-backup-${saveId}`);
   const usedFileNames = new Set<string>();
   const projectFiles: string[] = [];
   const workLogsByProjectId = new Map<string, WorkLog[]>();
@@ -162,8 +180,8 @@ async function saveWorkspaceFile(workspacePath: string, state: AppState): Promis
     workLogsByProjectId.set(workLog.projectId, projectWorkLogs);
   });
 
-  await fs.rm(projectsDirectory, { recursive: true, force: true });
-  await fs.mkdir(projectsDirectory, { recursive: true });
+  await fs.rm(temporaryWorkspaceDirectory, { recursive: true, force: true });
+  await fs.mkdir(temporaryProjectsDirectory, { recursive: true });
 
   for (const project of state.projects) {
     const baseFileName = sanitizeFileName(project.name);
@@ -177,7 +195,7 @@ async function saveWorkspaceFile(workspacePath: string, state: AppState): Promis
 
     const projectFile = path.join("projects", fileName);
     projectFiles.push(projectFile.replace(/\\/g, "/"));
-    await writeJsonFile(path.join(workspaceDirectory, projectFile), {
+    await writeJsonFile(path.join(temporaryWorkspaceDirectory, projectFile), {
       kind: PROJECT_KIND,
       version: 1,
       project,
@@ -193,22 +211,46 @@ async function saveWorkspaceFile(workspacePath: string, state: AppState): Promis
     projectFiles,
   };
 
-  await writeJsonFile(workspacePath, manifest);
+  await writeJsonFile(temporaryWorkspacePath, manifest);
+
+  const hadProjectsDirectory = await pathExists(projectsDirectory);
+
+  try {
+    if (hadProjectsDirectory) {
+      await fs.rm(backupProjectsDirectory, { recursive: true, force: true });
+      await fs.rename(projectsDirectory, backupProjectsDirectory);
+    }
+
+    await fs.rename(temporaryProjectsDirectory, projectsDirectory);
+    await fs.copyFile(temporaryWorkspacePath, workspacePath);
+
+    if (hadProjectsDirectory) {
+      await fs.rm(backupProjectsDirectory, { recursive: true, force: true });
+    }
+  } catch (error) {
+    await fs.rm(projectsDirectory, { recursive: true, force: true });
+    if (hadProjectsDirectory && (await pathExists(backupProjectsDirectory))) {
+      await fs.rename(backupProjectsDirectory, projectsDirectory);
+    }
+    throw error;
+  } finally {
+    await fs.rm(temporaryWorkspaceDirectory, { recursive: true, force: true });
+  }
 }
 
-export function registerTodoWorkspaceHandlers(mainWindow: BrowserWindow): void {
+export function registerTodoWorkspaceHandlers(mainWindow: BrowserWindow, paths: TodoWorkspacePaths): void {
   ipcMain.handle("todo-workspace:open-default", async (): Promise<DefaultWorkspaceResult> => {
     try {
-      await fs.access(DEFAULT_WORKSPACE_PATH);
+      await fs.access(paths.defaultWorkspacePath);
       return {
         found: true,
-        workspacePath: DEFAULT_WORKSPACE_PATH,
-        state: await openWorkspaceFile(DEFAULT_WORKSPACE_PATH),
+        workspacePath: paths.defaultWorkspacePath,
+        state: await openWorkspaceFile(paths.defaultWorkspacePath),
       };
     } catch {
       return {
         found: false,
-        workspacePath: DEFAULT_WORKSPACE_PATH,
+        workspacePath: paths.defaultWorkspacePath,
       };
     }
   });
@@ -240,7 +282,7 @@ export function registerTodoWorkspaceHandlers(mainWindow: BrowserWindow): void {
       if (!workspacePath) {
         const result = await dialog.showSaveDialog(mainWindow, {
           title: "Save As",
-          defaultPath: DEFAULT_WORKSPACE_FILE_NAME,
+          defaultPath: requestedWorkspacePath ?? paths.defaultWorkspacePath,
           filters: [{ name: "HIUS Todo Workspace", extensions: ["todo"] }],
         });
 

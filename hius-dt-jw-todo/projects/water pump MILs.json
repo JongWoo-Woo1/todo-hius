@@ -3,12 +3,12 @@
   "version": 1,
   "project": {
     "id": "project-gmb-water-pump-mils",
+    "name": "water pump MILs",
     "clientName": "GMB",
     "projectNumber": "",
-    "name": "water pump MILs",
-    "periodText": "25.08 ~ 26.06",
     "periodStart": "2025-08-01",
     "periodEnd": "2026-06-30",
+    "periodText": "25.08 ~ 26.06",
     "color": "#9333ea",
     "todos": [
       {

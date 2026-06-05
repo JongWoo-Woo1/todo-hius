@@ -3,12 +3,12 @@
   "version": 1,
   "project": {
     "id": "project-hdx-adas",
+    "name": "ADAS",
     "clientName": "HDX",
     "projectNumber": "",
-    "name": "ADAS",
-    "periodText": "25.08 ~ 26.06",
     "periodStart": "2025-08-01",
     "periodEnd": "2026-06-30",
+    "periodText": "25.08 ~ 26.06",
     "color": "#dc2626",
     "todos": [
       {
@@ -91,7 +91,7 @@
         "workerComment": "",
         "managerComment": "",
         "issueRisk": "",
-        "priority": "보통",
+        "priority": "높음",
         "memo": "",
         "completed": false
       }

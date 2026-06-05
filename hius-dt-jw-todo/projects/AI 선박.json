@@ -3,12 +3,12 @@
   "version": 1,
   "project": {
     "id": "project-uipa-ai-ship",
+    "name": "AI 선박",
     "clientName": "UIPA",
     "projectNumber": "",
-    "name": "AI 선박",
-    "periodText": "26.05 ~",
     "periodStart": "2026-05-01",
     "periodEnd": null,
+    "periodText": "26.05 ~",
     "color": "#14b8a6",
     "todos": [
       {
