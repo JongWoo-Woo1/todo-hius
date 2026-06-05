@@ -1,163 +1,166 @@
 # AGENTS.md
 
-## Project Role
+## Project
 
-This repository is a Vite + TypeScript + pure DOM project management Todo app.
+HIUS Todo is a Vite + TypeScript + pure DOM project management Todo app.
 
-Codex should preserve this direction on the main browser app unless the user explicitly changes direction:
+The `electron` branch wraps the app in Electron and persists data with `.todo` workspace files. Do not migrate the app to React unless the user explicitly asks. Do not reintroduce localStorage persistence on the Electron branch.
 
-- Do not migrate the app to React.
-- Do not migrate the app to Electron unless the user explicitly requests Electron work or the current branch is the Electron branch.
-- Keep `src/` as the source of truth.
-- On the Electron branch, use `.todo` workspace files instead of localStorage for persistence.
+## Efficient Context Rules
+
+Read `AGENTS.md` first.
+
+`README.md` and `HISTORY.md` are passive documentation by default. Do not automatically read them at the start of every task.
+
+Read `README.md` only when the task needs user-facing behavior, feature descriptions, scripts, or documentation context.
+
+Read `HISTORY.md` only when continuing prior work, updating history, preparing a release note, or answering questions about past changes.
+
+Prefer focused search over broad file reading. Inspect the smallest relevant file set first.
+
+Do not scan the whole repository by default. For button or event changes, search the visible label, DOM id, and TypeScript variable name first.
 
 ## File Access Rules
 
 Respect `.gitignore`.
 
-Do not inspect or edit ignored folders or generated output, including:
+Do not inspect or edit generated, dependency, or build-output folders unless explicitly requested:
 
 - `node_modules/`
 - `dist/`
+- `dist-electron/`
 - `build/`
 
-Do not read ignored environment or log files unless the user explicitly asks for them.
+Do not read ignored environment or log files unless explicitly requested.
 
-### Read Command Guidance
+On Windows/PowerShell, avoid read-only pipelines such as `Get-Content ... | Select-Object ...` if they trigger repeated approvals. Prefer `rg`, `Select-String`, or focused file reads.
 
-Avoid read-only pipelines such as `Get-Content ... | Select-Object ...` when inspecting files. The Windows sandbox often treats the pipeline segments separately and may require repeated approval.
+## Task Routing
 
-Prefer these safer read patterns:
+Use this map before broad searching:
 
-- Use `Select-String -Path <file> -Pattern <pattern> -Context <before>,<after>` for focused code inspection.
-- Use `Get-Content -Path <file>` for full small files.
-- Use `rg` / `rg --files` when available for searching files and text.
-- If line-window reads are needed, prefer a single non-pipelined command or an already approved exact command pattern.
+- App entry and event wiring: `src/main.ts`
+- App data state and mutations: `src/state/store.ts`
+- Calendar range preferences: `src/state/calendarPreferences.ts`
+- Shared app types: `src/types.ts`
+- DOM references: `src/ui/dom.ts`
+- Current rendering and UI state: `src/ui/render.ts`
+- Calendar UI: search `renderCalendar` in `src/ui/render.ts`
+- Weekly UI: search `renderWeekly` in `src/ui/render.ts`
+- Ledger UI: search `renderLedger` in `src/ui/render.ts`
+- Project/Todo UI: search `renderProjects`, `renderTodo`, or Todo-related helpers in `src/ui/render.ts`
+- WorkLog UI: search `WorkLog`, `workLog`, or `createWorkLogEntry` in `src/ui/render.ts`
+- Excel export: `src/excel/`
+- Date/week helpers: `src/utils/calendar.ts`, `src/utils/week.ts`, `src/utils/date.ts`
+- Electron app shell/menu: `electron/main.ts`
+- Renderer bridge: `electron/preload.ts`
+- Workspace open/save: `electron/todoWorkspace.ts`
+- Sample/default data: `src/data/sampleProjects.ts`
+- User-facing docs: `README.md` only when needed
+- Change history: `HISTORY.md` only when needed
 
-## Core Architecture
+## Button and Event Search Strategy
 
-Main files:
+For a specific button, menu, form, or event request:
 
-- `index.html`: DOM layout for Project, Ledger, and Calendar workspaces
-- `src/styles.css`: app styling loaded by Vite
-- `src/main.ts`: event wiring and form handling
-- `src/types.ts`: shared TypeScript types
-- `src/vite-env.d.ts`: Vite client type declarations for CSS and asset imports
-- `src/state/store.ts`: state mutation, migration, persistence, active project handling
-- `src/state/calendarPreferences.ts`: in-session calendar range preference defaults and normalization
-- `src/data/sampleProjects.ts`: initial sample data for empty browser state
-- `src/excel/`: Excel workbook creation and browser download helpers
-- `src/ui/dom.ts`: DOM element references
-- `src/ui/render.ts`: rendering, current view state, selected Todo state
-- `src/utils/`: shared helpers
-- `electron/main.ts`: Electron main process entry for the Electron branch
-- `electron/preload.ts`: restricted renderer bridge for Electron-only APIs
-- `electron/todoWorkspace.ts`: `.todo` workspace open/save IPC handlers
-- `tsconfig.electron.json`: Electron main process TypeScript build config
-- `hius-dt-jw-todo/`: example `.todo` workspace folder for the Electron branch
+1. Search the visible UI label, DOM id, and TypeScript variable name.
+2. Check `src/ui/dom.ts` for the DOM reference.
+3. Check `src/main.ts` or the relevant view/controller file for event listeners.
+4. Follow the event path to state, rendering, Excel, or Electron modules only as needed.
+5. Avoid unrelated broad reads.
 
-On the Electron branch, data is persisted through `.todo` workspace files:
+## Architecture Rules
 
-- workspace manifest: `hius-dt-jw.todo`
-- project files: `projects/<project name>.json`
-- each project file stores its own `workLogs`
+Keep responsibilities separate:
 
-## Compatibility Rules
+- `electron/` owns Electron main process, preload bridge, and filesystem access.
+- `src/state/` owns AppState migration and mutation.
+- `src/ui/` owns DOM references and rendering.
+- `src/excel/` owns workbook creation and download helpers.
+- `src/utils/` owns reusable date/task/week helpers.
 
-Legacy `.todo` and project `.json` workspace data should continue to load through migration.
+View/rendering code should not call Electron IPC directly. Use the preload-exposed API through existing renderer wiring.
 
-Project and Todo migration lives in `src/state/store.ts`.
+State mutation should stay in `src/state/store.ts`. Avoid mutating AppState directly inside unrelated view helpers.
+
+On the Electron branch, persist with `.todo` workspace files, not localStorage.
+
+## Future Refactor Direction
+
+Prefer pure TypeScript with a clear feature-oriented structure rather than a React migration.
+
+When refactoring UI code, move toward this structure gradually:
+
+- `src/app/uiState.ts`: temporary UI state such as current view, selected Todo, modal state, and visible week.
+- `src/app/renderApp.ts`: top-level render orchestration.
+- `src/state/selectors.ts`: AppState-derived queries.
+- `src/ui/projectView.ts`: Project and Todo screen rendering.
+- `src/ui/ledgerView.ts`: Ledger filters, table, and popups.
+- `src/ui/weeklyView.ts`: Weekly report view.
+- `src/ui/calendarView.ts`: Calendar grid and controls.
+- `src/ui/workLogView.ts`: WorkLog display and actions.
+- `src/ui/modalView.ts`: shared modal rendering.
+- `src/platform/todoFileClient.ts`: renderer wrapper around `window.hiusTodoFile`.
+
+Do not perform a large architecture rewrite unless explicitly requested. Prefer small, focused refactors with typecheck after each meaningful step.
+
+## Data Compatibility
+
+Legacy project and Todo data should continue to load through migration in `src/state/store.ts`.
 
 Todo completion fields must stay synchronized:
 
 - `status === "완료"` means `completed = true`
-- `progress === 1` can be treated as completed and status `"완료"`
+- `progress === 1` means completed and status `"완료"`
 - non-complete statuses should keep `completed = false`
 
 ## Validation
 
-Run these after meaningful code changes:
-
-```bash
-npm run typecheck
-npm run build
-```
-
-On this Windows/PowerShell setup, use `npm.cmd` if needed:
+For small TypeScript changes, run:
 
 ```powershell
 npm.cmd run typecheck
+```
+
+Run build only after feature-level changes, Electron workspace/file I/O changes, Excel export changes, or before a final commit:
+
+```powershell
 npm.cmd run build
 ```
 
-## Prompt Efficiency Rule
+For documentation-only changes, no build is required.
 
-The user should not need to repeat the full project instructions in every request.
+## Documentation Updates
 
-At the start of each task, Codex should read `AGENTS.md`, `README.md`, and `HISTORY.md` to confirm the current project state and standing rules.
+Update `README.md` only for implemented user-facing behavior, usage changes, scripts, or project structure changes.
 
-Standing rules in `AGENTS.md` apply automatically even when the user gives only a short instruction. Treat short user instructions as task-specific instructions layered on top of these standing rules.
+Update `HISTORY.md` only for:
 
-Standing rules that do not need to be repeated include:
+- user-facing features
+- user-visible bug fixes
+- data model or workspace format changes
+- Electron file workflow changes
+- significant architecture changes
 
-- Do not migrate the app to React.
-- Do not migrate the app to Electron unless the user explicitly requests Electron work or the current branch is the Electron branch.
-- Electron work is allowed only when the user explicitly asks for it or when continuing work on the Electron branch.
-- Keep the current Vite + TypeScript + pure DOM direction.
-- On the Electron branch, keep the `.todo` workspace file workflow.
-- Respect `.gitignore`.
-- Do not inspect or edit `node_modules/`, `dist/`, or `build/`.
-- Run typecheck and build after meaningful code changes.
-- Keep the document roles clear:
-  - `README.md` is for implemented user-facing program features.
-  - `HISTORY.md` is for actual chronological changes.
-  - `AGENTS.md` is for Codex working rules, architecture rules, validation, and version control rules.
-- Update `HISTORY.md` when a meaningful change is made.
-- Follow the commit and push workflow.
+Do not update `HISTORY.md` for small refactors, CSS-only tweaks, comments, or internal cleanup that does not affect behavior.
 
-Ideas, review comments, or long-term possibilities mentioned in conversation are not implementation requirements until the user explicitly asks to implement them.
+Keep document roles clear:
 
-Only document actually implemented user features in `README.md`.
-
-Only record actual changes in `HISTORY.md`.
-
-Keep `AGENTS.md` limited to Codex working rules, architecture rules, validation rules, and version control rules.
-
-Even when the user gives a short instruction, Codex should inspect the current code and documents before making changes.
-
-When the user says something like "continue the next phase", Codex should use `HISTORY.md` and `README.md` to identify the current implementation state before continuing.
-
-When uncertain, do not invent new feature requirements. Work within the safe scope supported by the current code and documents.
+- `README.md`: user-facing overview, features, scripts, project structure
+- `HISTORY.md`: chronological implemented changes
+- `AGENTS.md`: Codex rules, architecture rules, validation, workflow
 
 ## Version Control
 
-Use Git history actively.
+Make focused changes.
 
-Commit focused changes with concise conventional-style messages:
+Use concise conventional-style commits when committing:
 
-- `feat:` for new features
-- `fix:` for bug fixes
-- `refactor:` for internal restructuring
-- `style:` for visual-only CSS/UI polish
-- `docs:` for documentation-only changes
-- `chore:` for tooling, dependency, or repository maintenance
+- `feat:`
+- `fix:`
+- `refactor:`
+- `style:`
+- `docs:`
+- `chore:`
 
-Update `HISTORY.md` for user-facing features, fixes, data model changes, and important workflow/documentation changes.
-
-Recommended workflow:
-
-1. Make a focused change.
-2. Run typecheck and build.
-3. Update `HISTORY.md`.
-4. Commit with a clear message.
-5. Push committed work to `origin/main` unless the user explicitly asks to keep it local.
-
-When code changes require documentation updates, update the relevant Markdown file in the same commit. Keep `README.md` user-facing, `HISTORY.md` chronological, and `AGENTS.md` focused on Codex working rules.
-
-## Documentation Layout
-
-Keep Markdown documentation intentionally small:
-
-- `README.md`: program overview, user-facing feature guide, scripts, and project structure
-- `HISTORY.md`: chronological change history
-- `AGENTS.md`: Codex working rules, architecture notes, validation, and version control rules
+Commit and push only when the user asks, when a task is clearly complete, or when preserving a meaningful checkpoint. Do not commit after every tiny edit unless requested.
