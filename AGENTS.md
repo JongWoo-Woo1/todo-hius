@@ -10,11 +10,9 @@ The `electron` branch wraps the app in Electron and persists data with `.todo` w
 
 Read `AGENTS.md` first.
 
-`README.md` and `HISTORY.md` are passive documentation by default. Do not automatically read them at the start of every task.
+`README.md` is passive project documentation by default. Do not automatically read it at the start of every task.
 
-Read `README.md` only when the task needs user-facing behavior, feature descriptions, scripts, or documentation context.
-
-Read `HISTORY.md` only when continuing prior work, updating history, preparing a release note, or answering questions about past changes.
+Read `README.md` only when the task needs project structure, scripts, user-facing behavior, or documentation context.
 
 Prefer focused search over broad file reading. Inspect the smallest relevant file set first.
 
@@ -56,8 +54,7 @@ Use this map before broad searching:
 - Renderer bridge: `electron/preload.ts`
 - Workspace open/save: `electron/todoWorkspace.ts`
 - Sample/default data: `src/data/sampleProjects.ts`
-- User-facing docs: `README.md` only when needed
-- Change history: `HISTORY.md` only when needed
+- Project map and scripts: `README.md` only when needed
 
 ## Button and Event Search Strategy
 
@@ -132,23 +129,9 @@ For documentation-only changes, no build is required.
 
 ## Documentation Updates
 
-Update `README.md` only for implemented user-facing behavior, usage changes, scripts, or project structure changes.
+Update `README.md` only for project structure changes, scripts, user-facing behavior, or usage changes.
 
-Update `HISTORY.md` only for:
-
-- user-facing features
-- user-visible bug fixes
-- data model or workspace format changes
-- Electron file workflow changes
-- significant architecture changes
-
-Do not update `HISTORY.md` for small refactors, CSS-only tweaks, comments, or internal cleanup that does not affect behavior.
-
-Keep document roles clear:
-
-- `README.md`: user-facing overview, features, scripts, project structure
-- `HISTORY.md`: chronological implemented changes
-- `AGENTS.md`: Codex rules, architecture rules, validation, workflow
+Do not create or update a change-history document unless the user explicitly asks for release notes or a changelog.
 
 ## Version Control
 
