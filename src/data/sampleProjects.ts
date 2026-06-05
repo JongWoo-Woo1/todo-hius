@@ -120,6 +120,7 @@ export function createSampleState(): AppState {
           estimate: "1W",
           status: "진행중",
           progress: 0.5,
+          priority: "높음",
           workerComment: "Windows certstore 기반 create/delete/download/upload 구현 완료, 공유 진행",
         }),
         createTodo({
@@ -271,6 +272,7 @@ export function createSampleState(): AppState {
           estimate: "1W",
           status: "진행중",
           progress: 0,
+          priority: "높음",
           workerComment: "준비 완료",
         }),
         createTodo({
@@ -377,6 +379,7 @@ export function createSampleState(): AppState {
           dueDate: "2026-06-01",
           estimate: "3D",
           status: "진행중",
+          priority: "높음",
         }),
       ],
     },

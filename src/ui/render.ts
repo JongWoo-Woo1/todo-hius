@@ -204,7 +204,7 @@ function renderLedger(): void {
     const isFirstProjectRow = rows.findIndex((row) => row.project.id === project.id) === index;
     const row = document.createElement("tr");
     row.classList.toggle("completed", todo.completed);
-    row.classList.toggle("overdue", isTodoOverdue(todo));
+    row.classList.toggle("priority-high", todo.priority === "높음");
     row.tabIndex = 0;
 
     const groupedCells = [

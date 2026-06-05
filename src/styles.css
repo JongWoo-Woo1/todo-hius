@@ -808,7 +808,7 @@ button {
   opacity: 0.72;
 }
 
-.ledger-table tr.overdue:not(.completed) {
+.ledger-table tr.priority-high:not(.completed) {
   background: #fff7ed;
 }
 
