@@ -104,23 +104,6 @@ hius-dt-jw-todo/
 - Unsaved changes trigger a save prompt on close.
 - During development, `hius-dt-jw-todo/hius-dt-jw.todo` opens automatically as the default workspace.
 
-## Current Refactor Direction
+## Development Notes
 
-The app currently uses pure TypeScript and direct DOM rendering. Keep that direction unless a React migration is explicitly requested.
-
-Near-term structure goals:
-
-```txt
-src/app/uiState.ts          # temporary UI state
-src/app/renderApp.ts        # top-level render orchestration
-src/state/selectors.ts      # derived AppState queries
-src/ui/projectView.ts       # Project/Todo rendering
-src/ui/ledgerView.ts        # Ledger rendering
-src/ui/weeklyView.ts        # Weekly rendering
-src/ui/calendarView.ts      # Calendar rendering
-src/ui/workLogView.ts       # WorkLog rendering
-src/ui/modalView.ts         # shared modal rendering
-src/platform/todoFileClient.ts
-```
-
-Refactor gradually with small, typecheckable steps.
+This project currently uses pure TypeScript and direct DOM rendering. Codex-specific workflow, search strategy, validation rules, and refactor guidance live in `AGENTS.md`.
