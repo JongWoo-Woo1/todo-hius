@@ -87,6 +87,7 @@ type WeeklyItem = {
   id?: string;
   projectId?: string;
   todoId?: string;
+  clientName: string;
   projectName: string;
   todoTitle?: string;
   content: string;
@@ -442,18 +443,24 @@ function renderWeeklyItem(item: WeeklyItem): HTMLElement {
   wrapper.classList.toggle("todo-source", item.source === "todo");
   wrapper.style.setProperty("--project-color", item.color);
 
-  const copy = document.createElement("p");
+  const header = document.createElement("p");
+  header.className = "weekly-item-header";
+  const client = document.createElement("strong");
+  client.textContent = `[${item.clientName || "No client"}]`;
   const projectName = document.createElement("strong");
   projectName.textContent = `[${item.projectName}]`;
-  copy.append(projectName, ` ${item.content}`);
-  wrapper.append(copy);
-
-  if (item.todoTitle && item.source === "workLog") {
+  header.append(client, projectName);
+  if (item.todoTitle) {
     const linkedTask = document.createElement("span");
     linkedTask.className = "weekly-linked-task";
-    linkedTask.textContent = `Linked task: ${item.todoTitle}`;
-    wrapper.append(linkedTask);
+    linkedTask.textContent = item.todoTitle;
+    header.append(linkedTask);
   }
+
+  const content = document.createElement("p");
+  content.className = "weekly-item-content";
+  content.textContent = item.content;
+  wrapper.append(header, content);
 
   return wrapper;
 }
@@ -492,6 +499,7 @@ function renderWeekly(): void {
       buckets.get(todo.dueDate)!.plan.push({
         projectId: project.id,
         todoId: todo.id,
+        clientName: project.clientName,
         projectName: project.name,
         todoTitle: todo.title,
         content: todo.title,
@@ -510,12 +518,14 @@ function renderWeekly(): void {
 
     const project = getState().projects.find((item) => item.id === workLog.projectId);
     const linkedTodo = getTodoByProject(project, workLog.todoId);
+    const clientName = project?.clientName ?? "";
     const projectName = project?.name ?? "Unknown";
     const color = project?.color ?? "#94a3b8";
     const item: WeeklyItem = {
       id: workLog.id,
       projectId: workLog.projectId,
       todoId: workLog.todoId,
+      clientName,
       projectName,
       todoTitle: linkedTodo?.title,
       content: workLog.content,

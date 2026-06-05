@@ -87,6 +87,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Changed Weekly item cards to show `[고객사][프로젝트명] Linked Task` in the header and removed the duplicate linked task footer.
 - Changed Ledger hover highlighting to leave customer cells unshaded while highlighting project, period, and task cells.
 - Changed Ledger View to label the client column as `고객사` and removed the visible `프로젝트 번호` column.
 - Changed Ledger row red shading to represent `높음` priority instead of overdue status.

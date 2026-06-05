@@ -1221,10 +1221,21 @@ button {
   overflow-wrap: anywhere;
 }
 
+.weekly-item-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
 .weekly-linked-task {
-  color: var(--muted);
+  color: var(--text);
   font-size: 12px;
   font-weight: 600;
+}
+
+.weekly-item-content {
+  color: var(--text);
 }
 
 .delete-work-log-button {
