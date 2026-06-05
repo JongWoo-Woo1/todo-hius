@@ -1,6 +1,7 @@
 import type { Project, TaskPriority, TaskStatus, Todo } from "../types";
 import { formatProgressPercent } from "../utils/task";
 import { calendarDetailContent, calendarDetailModal } from "./dom";
+import { createDetailRow, getDetailValue } from "./detailView";
 
 type TodoSelection = {
   project: Project;
@@ -22,23 +23,6 @@ type ModalViewOptions = {
   onUpdateTodo: (todoId: string, updates: TodoUpdates) => void;
 };
 
-function getDetailValue(value: string | null | undefined): string {
-  return value && value.trim() ? value : "-";
-}
-
-function createDetailRow(label: string, value: string): HTMLElement {
-  const row = document.createElement("div");
-  row.className = "todo-detail-row";
-
-  const term = document.createElement("dt");
-  term.textContent = label;
-  const description = document.createElement("dd");
-  description.textContent = value;
-
-  row.append(term, description);
-  return row;
-}
-
 function getTodoProgressFromPercentValue(value: string): number {
   const progressPercent = Number(value);
   if (Number.isNaN(progressPercent)) {
@@ -54,19 +38,21 @@ function renderCalendarTodoView(project: Project, todo: Todo, options: ModalView
 
   const header = document.createElement("div");
   header.className = "modal-header";
-  header.innerHTML = `
-    <div>
-      <p class="eyebrow">${project.name}</p>
-      <h3 id="calendar-detail-title">${todo.title}</h3>
-    </div>
-  `;
+  const title = document.createElement("div");
+  const eyebrow = document.createElement("p");
+  eyebrow.className = "eyebrow";
+  eyebrow.textContent = project.name;
+  const heading = document.createElement("h3");
+  heading.id = "calendar-detail-title";
+  heading.textContent = todo.title;
+  title.append(eyebrow, heading);
 
   const closeButton = document.createElement("button");
   closeButton.type = "button";
   closeButton.className = "quiet-button";
   closeButton.textContent = "닫기";
   closeButton.addEventListener("click", options.onClose);
-  header.append(closeButton);
+  header.append(title, closeButton);
 
   const list = document.createElement("dl");
   list.className = "todo-detail-list calendar-detail-list";
@@ -144,11 +130,20 @@ function renderLedgerProjectView(project: Project, options: ModalViewOptions): H
       const item = document.createElement("button");
       item.type = "button";
       item.className = "ledger-project-task-button";
-      item.innerHTML = `
-        <span class="status-badge" data-status="${todo.status}">${todo.status}</span>
-        <strong>${todo.title}</strong>
-        <span class="progress-pill">${formatProgressPercent(todo.progress)}</span>
-      `;
+
+      const status = document.createElement("span");
+      status.className = "status-badge";
+      status.dataset.status = todo.status;
+      status.textContent = todo.status;
+
+      const title = document.createElement("strong");
+      title.textContent = todo.title;
+
+      const progress = document.createElement("span");
+      progress.className = "progress-pill";
+      progress.textContent = formatProgressPercent(todo.progress);
+
+      item.append(status, title, progress);
       item.addEventListener("click", () => {
         options.onSelectTodoFromProject(todo.id);
       });

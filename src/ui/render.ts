@@ -20,10 +20,8 @@ import {
   getTodoByProject,
   getTodoWorkLogs,
 } from "../state/selectors";
-import type { Project, TaskPriority, TaskStatus, Todo, WorkLog } from "../types";
+import type { Project, Todo, WorkLog } from "../types";
 import { toDateKey } from "../utils/calendar";
-import { formatDueDate } from "../utils/date";
-import { formatProgressPercent, isTodoOverdue } from "../utils/task";
 import {
   calendarViewButton,
   calendarWorkspace,
@@ -31,7 +29,6 @@ import {
   emptyState,
   ledgerViewButton,
   ledgerWorkspace,
-  projectList,
   projectWorkLogCard,
   projectWorkLogEmpty,
   projectWorkLogList,
@@ -45,6 +42,7 @@ import {
 import { renderCalendarView } from "./calendarView";
 import { renderLedgerView } from "./ledgerView";
 import { renderCalendarDetailModalView } from "./modalView";
+import { renderProjectList } from "./projectListView";
 import {
   renderEmptyProjectHeader,
   renderProjectHeader,
@@ -52,6 +50,11 @@ import {
   setProjectInfoEditMode,
   setProjectNameEditMode,
 } from "./projectView";
+import {
+  createTodoDetailView,
+  createTodoEditForm,
+  createTodoListItem,
+} from "./todoView";
 import {
   createWorkLogEntry as createWorkLogEntryElement,
   createWorkLogMoreButton,
@@ -61,10 +64,6 @@ import { renderWeeklyView } from "./weeklyView";
 const RECENT_WORK_LOG_DAYS = 7;
 
 // Shared helpers
-
-function toSingleLineText(value: string): string {
-  return value.replace(/\s+/g, " ").trim();
-}
 
 function ensureCalendarSelection(): void {
   const projectIds = getState().projects.map((project) => project.id);
@@ -155,82 +154,6 @@ function createWorkLogEntry(workLog: WorkLog, options: { showProject?: boolean; 
   });
 }
 
-// Project list
-
-function renderProjects(): void {
-  projectList.innerHTML = "";
-
-  getState().projects.forEach((project) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "project-button";
-    button.draggable = true;
-    button.dataset.projectId = project.id;
-    button.classList.toggle("active", uiState.currentView === "projects" && project.id === getState().activeProjectId);
-
-    const name = document.createElement("span");
-    name.className = "project-name";
-    name.title = project.name;
-
-    const swatch = document.createElement("span");
-    swatch.className = "project-swatch";
-    swatch.style.setProperty("--project-color", project.color);
-
-    const label = document.createElement("span");
-    label.className = "project-label";
-    label.textContent = toSingleLineText(project.name);
-    name.append(swatch, label);
-
-    const client = document.createElement("span");
-    client.className = "project-client";
-    client.textContent = toSingleLineText(project.clientName) || "No client";
-    client.title = project.clientName || "No client";
-
-    button.append(name, client);
-    button.addEventListener("click", () => {
-      selectProject(project.id);
-      uiState.isProjectInfoEditing = false;
-      uiState.isProjectNameEditing = false;
-      uiState.currentView = "projects";
-      render();
-    });
-    button.addEventListener("dragstart", (event) => {
-      uiState.draggedProjectId = project.id;
-      button.classList.add("dragging");
-      event.dataTransfer?.setData("text/plain", project.id);
-      event.dataTransfer?.setDragImage(button, 12, 20);
-    });
-    button.addEventListener("dragend", () => {
-      uiState.draggedProjectId = null;
-      button.classList.remove("dragging");
-    });
-    button.addEventListener("dragover", (event) => {
-      if (!uiState.draggedProjectId || uiState.draggedProjectId === project.id) {
-        return;
-      }
-
-      event.preventDefault();
-      button.classList.add("drag-over");
-    });
-    button.addEventListener("dragleave", () => {
-      button.classList.remove("drag-over");
-    });
-    button.addEventListener("drop", (event) => {
-      event.preventDefault();
-      button.classList.remove("drag-over");
-      const sourceProjectId = uiState.draggedProjectId ?? event.dataTransfer?.getData("text/plain");
-      if (!sourceProjectId) {
-        return;
-      }
-
-      reorderProjects(sourceProjectId, project.id);
-      uiState.draggedProjectId = null;
-      render();
-    });
-    projectList.append(button);
-  });
-}
-
 // Calendar
 
 function renderCalendar(): void {
@@ -254,33 +177,7 @@ function renderCalendar(): void {
   });
 }
 
-// Modal shared helpers
-
-function getProgressFromInput(input: HTMLInputElement): number {
-  const progressPercent = Number(input.value);
-  if (Number.isNaN(progressPercent)) {
-    return 0;
-  }
-
-  return Math.min(1, Math.max(0, progressPercent / 100));
-}
-
-function getDetailValue(value: string | null | undefined): string {
-  return value && value.trim() ? value : "-";
-}
-
-function createDetailRow(label: string, value: string): HTMLElement {
-  const row = document.createElement("div");
-  row.className = "todo-detail-row";
-
-  const term = document.createElement("dt");
-  term.textContent = label;
-  const description = document.createElement("dd");
-  description.textContent = value;
-
-  row.append(term, description);
-  return row;
-}
+// Modal
 
 function closeCalendarDetailModal(): void {
   uiState.selectedModalProjectId = null;
@@ -456,151 +353,39 @@ function renderTodoWorkLogSummary(todoId: string): HTMLElement {
 }
 
 function renderTodoDetailView(todo: Todo): HTMLElement {
-  const detail = document.createElement("div");
-  detail.className = "todo-inline-detail";
-
-  const list = document.createElement("dl");
-  list.className = "todo-detail-list";
-  list.append(
-    createDetailRow("내부 목표 완료일", getDetailValue(todo.dueDate)),
-    createDetailRow("공수", getDetailValue(todo.estimate)),
-    createDetailRow("진행상태", todo.status),
-    createDetailRow("진척률", formatProgressPercent(todo.progress)),
-    createDetailRow("우선순위", getDetailValue(todo.priority)),
-    createDetailRow("메모", getDetailValue(todo.memo)),
-  );
-
-  const actions = document.createElement("div");
-  actions.className = "todo-card-actions";
-
-  const editButton = document.createElement("button");
-  editButton.type = "button";
-  editButton.className = "quiet-button";
-  editButton.textContent = "수정";
-  editButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    uiState.editingTodoId = todo.id;
-    render();
+  return createTodoDetailView(todo, {
+    workLogSummary: renderTodoWorkLogSummary(todo.id),
+    onEdit: () => {
+      uiState.editingTodoId = todo.id;
+      render();
+    },
+    onDelete: () => {
+      deleteTodo(todo.id);
+      uiState.selectedTodoId = null;
+      uiState.editingTodoId = null;
+      render();
+    },
   });
-
-  const deleteButton = document.createElement("button");
-  deleteButton.type = "button";
-  deleteButton.className = "delete-todo-button";
-  deleteButton.textContent = "삭제";
-  deleteButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    deleteTodo(todo.id);
-    uiState.selectedTodoId = null;
-    uiState.editingTodoId = null;
-    render();
-  });
-
-  actions.append(editButton, deleteButton);
-  detail.append(list, renderTodoWorkLogSummary(todo.id), actions);
-  return detail;
 }
 
 function renderTodoEditForm(todo: Todo): HTMLElement {
-  const form = document.createElement("form");
-  form.className = "detail-form todo-inline-form";
-  form.innerHTML = `
-    <label>
-      Task
-      <input name="title" type="text" required />
-    </label>
-    <label>
-      Target date
-      <input name="dueDate" type="date" />
-    </label>
-    <label>
-      Estimate
-      <input name="estimate" type="text" placeholder="Example: 2d" />
-    </label>
-    <label>
-      Status
-      <select name="status">
-        <option value="대기">대기</option>
-        <option value="진행중">진행중</option>
-        <option value="미완">미완</option>
-        <option value="완료">완료</option>
-        <option value="보류">보류</option>
-      </select>
-    </label>
-    <label>
-      Progress (%)
-      <input name="progress" type="number" min="0" max="100" step="1" />
-    </label>
-    <label>
-      Priority
-      <select name="priority">
-        <option value="낮음">낮음</option>
-        <option value="보통">보통</option>
-        <option value="높음">높음</option>
-        <option value="최우선">최우선</option>
-      </select>
-    </label>
-    <label class="full-field">
-      Memo
-      <textarea name="memo" rows="5" placeholder="Add notes for this task"></textarea>
-    </label>
-    <div class="todo-card-actions full-field">
-      <button type="submit">저장</button>
-      <button class="quiet-button" type="button" data-action="cancel">취소</button>
-      <button class="delete-todo-button" type="button" data-action="delete">삭제</button>
-    </div>
-  `;
-
-  const titleInput = form.querySelector<HTMLInputElement>('[name="title"]')!;
-  const dueDateInput = form.querySelector<HTMLInputElement>('[name="dueDate"]')!;
-  const estimateInput = form.querySelector<HTMLInputElement>('[name="estimate"]')!;
-  const statusSelect = form.querySelector<HTMLSelectElement>('[name="status"]')!;
-  const progressInput = form.querySelector<HTMLInputElement>('[name="progress"]')!;
-  const prioritySelect = form.querySelector<HTMLSelectElement>('[name="priority"]')!;
-  const memoInput = form.querySelector<HTMLTextAreaElement>('[name="memo"]')!;
-
-  titleInput.value = todo.title;
-  dueDateInput.value = todo.dueDate ?? "";
-  estimateInput.value = todo.estimate ?? "";
-  statusSelect.value = todo.status;
-  progressInput.value = String(Math.round(todo.progress * 100));
-  prioritySelect.value = todo.priority ?? "보통";
-  memoInput.value = todo.memo;
-
-  form.addEventListener("click", (event) => {
-    event.stopPropagation();
+  return createTodoEditForm(todo, {
+    onUpdate: (updates) => {
+      updateTodo(todo.id, updates);
+      uiState.editingTodoId = null;
+      render();
+    },
+    onCancel: () => {
+      uiState.editingTodoId = null;
+      render();
+    },
+    onDelete: () => {
+      deleteTodo(todo.id);
+      uiState.selectedTodoId = null;
+      uiState.editingTodoId = null;
+      render();
+    },
   });
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const progress = getProgressFromInput(progressInput);
-    const selectedStatus = statusSelect.value as TaskStatus;
-    const status: TaskStatus = progress >= 1 ? "완료" : selectedStatus;
-
-    updateTodo(todo.id, {
-      title: titleInput.value.trim(),
-      dueDate: dueDateInput.value || null,
-      estimate: estimateInput.value.trim(),
-      status,
-      progress,
-      completed: status === "완료",
-      priority: prioritySelect.value as TaskPriority,
-      memo: memoInput.value.trim(),
-    });
-    uiState.editingTodoId = null;
-    render();
-  });
-
-  form.querySelector<HTMLButtonElement>('[data-action="cancel"]')!.addEventListener("click", () => {
-    uiState.editingTodoId = null;
-    render();
-  });
-  form.querySelector<HTMLButtonElement>('[data-action="delete"]')!.addEventListener("click", () => {
-    deleteTodo(todo.id);
-    uiState.selectedTodoId = null;
-    uiState.editingTodoId = null;
-    render();
-  });
-
-  return form;
 }
 
 function renderTodos(): void {
@@ -637,61 +422,30 @@ function renderTodos(): void {
   deleteProjectButton.hidden = false;
 
   activeProject.todos.forEach((todo) => {
-    const item = document.createElement("li");
-    item.className = "todo-item";
-    item.classList.toggle("completed", todo.completed);
-    item.classList.toggle("selected", todo.id === uiState.selectedTodoId);
-    item.classList.toggle("expanded", todo.id === uiState.selectedTodoId);
-    item.classList.toggle("overdue", isTodoOverdue(todo));
-
-    const checkbox = document.createElement("input");
-    checkbox.className = "todo-checkbox";
-    checkbox.type = "checkbox";
-    checkbox.checked = todo.completed;
-    checkbox.addEventListener("change", () => {
-      toggleTodo(todo.id, checkbox.checked);
-      render();
-    });
-    checkbox.addEventListener("click", (event) => {
-      event.stopPropagation();
-    });
-
-    const copy = document.createElement("div");
-    copy.className = "todo-copy";
-    const overdue = isTodoOverdue(todo);
-    copy.innerHTML = `
-      <p class="todo-title">
-        <span class="status-badge" data-status="${todo.status}">${todo.status}</span>
-        ${todo.priority ? `<span class="priority-badge">${todo.priority}</span>` : ""}
-        ${overdue ? `<span class="overdue-badge">Overdue</span>` : ""}
-        ${todo.title}
-      </p>
-      <p class="todo-meta">
-        <span class="progress-pill">${formatProgressPercent(todo.progress)}</span>
-        <span>${formatDueDate(todo.dueDate)}</span>
-      </p>
-    `;
-
-    item.addEventListener("click", () => {
-      if (uiState.selectedTodoId === todo.id) {
-        uiState.selectedTodoId = null;
-        uiState.editingTodoId = null;
+    const isSelected = todo.id === uiState.selectedTodoId;
+    const detail = isSelected ? (uiState.editingTodoId === todo.id ? renderTodoEditForm(todo) : renderTodoDetailView(todo)) : null;
+    const item = createTodoListItem(todo, {
+      selected: isSelected,
+      detail,
+      onToggle: (completed) => {
+        toggleTodo(todo.id, completed);
         render();
-        return;
-      }
+      },
+      onSelect: () => {
+        if (uiState.selectedTodoId === todo.id) {
+          uiState.selectedTodoId = null;
+          uiState.editingTodoId = null;
+          render();
+          return;
+        }
 
-      uiState.selectedTodoId = todo.id;
-      if (uiState.editingTodoId && uiState.editingTodoId !== todo.id) {
-        uiState.editingTodoId = null;
-      }
-      render();
+        uiState.selectedTodoId = todo.id;
+        if (uiState.editingTodoId && uiState.editingTodoId !== todo.id) {
+          uiState.editingTodoId = null;
+        }
+        render();
+      },
     });
-
-    item.append(checkbox, copy);
-    if (todo.id === uiState.selectedTodoId) {
-      const detail = uiState.editingTodoId === todo.id ? renderTodoEditForm(todo) : renderTodoDetailView(todo);
-      item.append(detail);
-    }
     todoList.append(item);
   });
 }
@@ -760,7 +514,7 @@ export function updateCalendarRangePreferences(updates: Partial<CalendarRangePre
 }
 
 export function render(): void {
-  renderProjects();
+  renderProjectList({ onSelectProject: selectProject, onReorderProjects: reorderProjects, onRender: render });
   renderTodos();
   renderLedger();
   renderWeeklyView(getState(), uiState.visibleWeekDate);

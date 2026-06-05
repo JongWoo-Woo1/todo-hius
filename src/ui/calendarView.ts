@@ -97,10 +97,11 @@ function appendMonthGrid({
       item.classList.toggle("completed", todo.completed);
       item.classList.toggle("overdue", todo.overdue);
       item.style.setProperty("--project-color", todo.color);
-      item.innerHTML = `
-        <strong>${todo.title}</strong>
-        <span>${todo.projectName}${todo.overdue ? " 쨌 Overdue" : ""}</span>
-      `;
+      const title = document.createElement("strong");
+      title.textContent = todo.title;
+      const projectName = document.createElement("span");
+      projectName.textContent = `${todo.projectName}${todo.overdue ? " · Overdue" : ""}`;
+      item.append(title, projectName);
       item.addEventListener("click", () => {
         onTodoSelect(todo);
       });

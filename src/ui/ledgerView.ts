@@ -15,6 +15,79 @@ type LedgerViewOptions = {
   onTodoSelect: (todo: Todo) => void;
 };
 
+function createLedgerCell(className: string, text: string): HTMLTableCellElement {
+  const cell = document.createElement("td");
+  cell.className = className;
+  cell.textContent = text;
+  return cell;
+}
+
+function createLedgerMergedCell({
+  className,
+  text,
+  rowSpan,
+  projectId,
+  clientName,
+}: {
+  className: string;
+  text: string;
+  rowSpan: number;
+  projectId?: string;
+  clientName?: string;
+}): HTMLTableCellElement {
+  const cell = createLedgerCell(`ledger-merged-cell ${className}`, text);
+  cell.rowSpan = rowSpan;
+
+  if (projectId !== undefined) {
+    cell.dataset.ledgerProjectId = projectId;
+  }
+
+  if (clientName !== undefined) {
+    cell.dataset.ledgerClient = clientName;
+  }
+
+  return cell;
+}
+
+function createStatusCell(status: Todo["status"]): HTMLTableCellElement {
+  const cell = document.createElement("td");
+  cell.className = "ledger-status-cell";
+
+  const badge = document.createElement("span");
+  badge.className = "status-badge";
+  badge.dataset.status = status;
+  badge.textContent = status;
+  cell.append(badge);
+
+  return cell;
+}
+
+function createProgressCell(progress: Todo["progress"]): HTMLTableCellElement {
+  const cell = document.createElement("td");
+  cell.className = "ledger-progress-cell";
+
+  const pill = document.createElement("span");
+  pill.className = "progress-pill";
+  pill.textContent = formatProgressPercent(progress);
+  cell.append(pill);
+
+  return cell;
+}
+
+function createPriorityCell(priority: Todo["priority"]): HTMLTableCellElement {
+  const cell = document.createElement("td");
+  cell.className = "ledger-priority-cell";
+
+  if (priority) {
+    const badge = document.createElement("span");
+    badge.className = "priority-badge";
+    badge.textContent = priority;
+    cell.append(badge);
+  }
+
+  return cell;
+}
+
 function renderLedgerClientOptions(state: AppState): void {
   const currentValue = ledgerClientFilter.value || "전체";
   const clients = Array.from(new Set(state.projects.map((project) => project.clientName).filter(Boolean))).sort();
@@ -70,28 +143,43 @@ export function renderLedgerView(state: AppState, { onProjectSelect, onTodoSelec
     row.dataset.ledgerTodoId = todo.id;
     row.tabIndex = 0;
 
-    const groupedCells = [
-      isFirstClientRow
-        ? `<td class="ledger-merged-cell ledger-client-cell" data-ledger-client="${clientName}" rowspan="${clientRowSpan}">${clientName}</td>`
-        : "",
-      isFirstProjectRow
-        ? `<td class="ledger-merged-cell ledger-project-cell" data-ledger-project-id="${project.id}" rowspan="${projectRowSpan}">${projectName}</td>`
-        : "",
-      isFirstProjectRow
-        ? `<td class="ledger-merged-cell ledger-period-cell" data-ledger-project-id="${project.id}" rowspan="${projectRowSpan}">${projectPeriod}</td>`
-        : "",
-    ].join("");
+    if (isFirstClientRow) {
+      row.append(
+        createLedgerMergedCell({
+          className: "ledger-client-cell",
+          text: clientName,
+          rowSpan: clientRowSpan,
+          clientName,
+        }),
+      );
+    }
 
-    row.innerHTML = `
-        ${groupedCells}
-        <td class="ledger-date-cell">${todo.dueDate ?? ""}</td>
-        <td class="ledger-estimate-cell">${todo.estimate ?? ""}</td>
-        <td class="ledger-title-cell">${todo.title}</td>
-        <td class="ledger-status-cell"><span class="status-badge" data-status="${todo.status}">${todo.status}</span></td>
-        <td class="ledger-progress-cell"><span class="progress-pill">${formatProgressPercent(todo.progress)}</span></td>
-        <td class="ledger-priority-cell">${todo.priority ? `<span class="priority-badge">${todo.priority}</span>` : ""}</td>
-        <td class="ledger-issue-cell">${todo.issueRisk ?? ""}</td>
-      `;
+    if (isFirstProjectRow) {
+      row.append(
+        createLedgerMergedCell({
+          className: "ledger-project-cell",
+          text: projectName,
+          rowSpan: projectRowSpan,
+          projectId: project.id,
+        }),
+        createLedgerMergedCell({
+          className: "ledger-period-cell",
+          text: projectPeriod,
+          rowSpan: projectRowSpan,
+          projectId: project.id,
+        }),
+      );
+    }
+
+    row.append(
+      createLedgerCell("ledger-date-cell", todo.dueDate ?? ""),
+      createLedgerCell("ledger-estimate-cell", todo.estimate ?? ""),
+      createLedgerCell("ledger-title-cell", todo.title),
+      createStatusCell(todo.status),
+      createProgressCell(todo.progress),
+      createPriorityCell(todo.priority),
+      createLedgerCell("ledger-issue-cell", todo.issueRisk ?? ""),
+    );
     const clearLedgerHover = () => {
       ledgerTableBody.querySelectorAll<HTMLElement>(".ledger-hover").forEach((cell) => {
         cell.classList.remove("ledger-hover");
