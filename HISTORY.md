@@ -87,6 +87,7 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Refined Weekly card styling with a single-line customer/project meta row, quieter card surface, and clearer task/content hierarchy.
 - Changed Weekly card headers from bracketed text to a chip-and-title layout for cleaner readability.
 - Changed Weekly item cards to show `[고객사][프로젝트명] Linked Task` in the header and removed the duplicate linked task footer.
 - Changed Ledger hover highlighting to leave customer cells unshaded while highlighting project, period, and task cells.
