@@ -127,38 +127,6 @@
           </div>
         </header>
 
-        <section class="work-log-card">
-          <div class="section-header">
-            <h3>Work Log</h3>
-          </div>
-          <form id="work-log-form" class="work-log-form">
-            <label>
-              Date
-              <input id="work-log-date" type="date" required />
-            </label>
-            <label>
-              Type
-              <select id="work-log-type">
-                <option value="계획">계획</option>
-                <option value="수행">수행</option>
-              </select>
-            </label>
-            <label>
-              Project
-              <select id="work-log-project" required></select>
-            </label>
-            <label>
-              Linked task
-              <select id="work-log-todo"></select>
-            </label>
-            <label class="full-field">
-              Content
-              <textarea id="work-log-content" rows="3" placeholder="Add weekly report content" required></textarea>
-            </label>
-            <button type="submit">Add work log</button>
-          </form>
-        </section>
-
         <section id="weekly-grid" class="weekly-grid"></section>
         <p id="weekly-empty-state" class="empty-state">이번 주 업무 기록이 없습니다.</p>
       </section>

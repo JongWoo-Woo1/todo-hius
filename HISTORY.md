@@ -164,6 +164,7 @@ All notable changes to this project are documented here.
 
 ### Removed
 
+- Removed the Work Log input form from Weekly View.
 - Removed Open task and Delete action buttons from Weekly plan/work report items.
 - Removed sidebar Export JSON, Import JSON, and Reset sample data controls from the Electron branch.
 - Removed `VERSIONING.md`; its rules now live in `AGENTS.md`.

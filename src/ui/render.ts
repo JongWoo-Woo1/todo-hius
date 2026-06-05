@@ -71,9 +71,6 @@ import {
   weeklyRangeLabel,
   weeklyViewButton,
   weeklyWorkspace,
-  workLogDateInput,
-  workLogProjectSelect,
-  workLogTodoSelect,
 } from "./dom";
 
 type CalendarTodo = {
@@ -274,39 +271,6 @@ function renderLedger(): void {
   ledgerEmptyState.hidden = rows.length > 0;
 }
 
-function renderWorkLogProjectOptions(): void {
-  const currentProjectId = workLogProjectSelect.value || getState().activeProjectId || "";
-  workLogProjectSelect.innerHTML = "";
-
-  getState().projects.forEach((project) => {
-    workLogProjectSelect.append(new Option(project.name, project.id));
-  });
-
-  const selectedProject = getState().projects.find((project) => project.id === currentProjectId) ?? getState().projects[0];
-  workLogProjectSelect.value = selectedProject?.id ?? "";
-}
-
-function renderWorkLogTodoOptions(): void {
-  const currentTodoId = workLogTodoSelect.value;
-  const selectedProject = getState().projects.find((project) => project.id === workLogProjectSelect.value);
-  workLogTodoSelect.innerHTML = "";
-  workLogTodoSelect.append(new Option("업무 연결 없음", ""));
-
-  selectedProject?.todos.forEach((todo) => {
-    workLogTodoSelect.append(new Option(todo.title, todo.id));
-  });
-
-  workLogTodoSelect.value = selectedProject?.todos.some((todo) => todo.id === currentTodoId) ? currentTodoId : "";
-}
-
-function renderWorkLogFormOptions(): void {
-  renderWorkLogProjectOptions();
-  renderWorkLogTodoOptions();
-  if (!workLogDateInput.value) {
-    workLogDateInput.value = toDateKey(getWeekdays(visibleWeekDate)[0]);
-  }
-}
-
 function createWeeklyBuckets(): Map<string, Record<(typeof WEEKLY_SECTIONS)[number]["key"], WeeklyItem[]>> {
   const buckets = new Map<string, Record<(typeof WEEKLY_SECTIONS)[number]["key"], WeeklyItem[]>>();
 
@@ -487,7 +451,6 @@ function renderWeeklySection(sectionKey: (typeof WEEKLY_SECTIONS)[number]["key"]
 }
 
 function renderWeekly(): void {
-  renderWorkLogFormOptions();
   weeklyRangeLabel.textContent = getWeekRangeLabel(visibleWeekDate);
   weeklyGrid.innerHTML = "";
 
@@ -1668,12 +1631,10 @@ function findTodoWithProject(todoId: string | null): { project: Project; todo: T
 
 export function goToPreviousWeek(): void {
   visibleWeekDate = new Date(visibleWeekDate.getFullYear(), visibleWeekDate.getMonth(), visibleWeekDate.getDate() - 7);
-  workLogDateInput.value = toDateKey(getWeekdays(visibleWeekDate)[0]);
 }
 
 export function goToNextWeek(): void {
   visibleWeekDate = new Date(visibleWeekDate.getFullYear(), visibleWeekDate.getMonth(), visibleWeekDate.getDate() + 7);
-  workLogDateInput.value = toDateKey(getWeekdays(visibleWeekDate)[0]);
 }
 
 export function getVisibleWeekDate(): Date {

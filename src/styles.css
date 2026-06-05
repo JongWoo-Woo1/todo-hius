@@ -1115,38 +1115,12 @@ button {
   gap: 12px;
 }
 
-.work-log-card {
-  margin-bottom: 18px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  padding: 16px;
-}
-
 .weekly-header-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
   gap: 12px;
-}
-
-.work-log-form {
-  display: grid;
-  grid-template-columns: 150px 150px minmax(180px, 1fr) minmax(180px, 1fr) auto;
-  gap: 12px;
-  align-items: end;
-}
-
-.work-log-form label {
-  display: grid;
-  gap: 8px;
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.work-log-form .full-field {
-  grid-column: 1 / -2;
 }
 
 .weekly-grid {
@@ -1240,13 +1214,6 @@ button {
   font-weight: 600;
 }
 
-.weekly-item-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
 .delete-work-log-button {
   justify-self: start;
   background: transparent;
@@ -1321,17 +1288,9 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .work-log-form {
-    grid-template-columns: 1fr;
-  }
-
   .weekly-header-actions {
     width: 100%;
     justify-content: flex-start;
-  }
-
-  .work-log-form .full-field {
-    grid-column: auto;
   }
 
   .weekly-grid {

@@ -3,7 +3,6 @@ import "./styles.css";
 import {
   addProject,
   addTodo,
-  addWorkLog,
   deleteActiveProject,
   getActiveProject,
   getState,
@@ -12,7 +11,7 @@ import {
   updateActiveProject,
   updateActiveProjectColor,
 } from "./state/store";
-import type { Project, Todo, WorkLogType } from "./types";
+import type { Project, Todo } from "./types";
 import { toDateKey } from "./utils/calendar";
 import { createId } from "./utils/id";
 import { getProjectColor } from "./utils/projectColor";
@@ -50,12 +49,6 @@ import {
   previousWeekButton,
   weeklyExportButton,
   weeklyViewButton,
-  workLogContentInput,
-  workLogDateInput,
-  workLogForm,
-  workLogProjectSelect,
-  workLogTodoSelect,
-  workLogTypeSelect,
 } from "./ui/dom";
 import {
   activateCalendarButton,
@@ -385,33 +378,6 @@ weeklyExportButton.addEventListener("click", async () => {
   const visibleWeekDate = getVisibleWeekDate();
   const workbook = await createWeeklyReportWorkbook(getState(), visibleWeekDate);
   await downloadWorkbook(workbook, `weekly-report-${getWeeklyReportFileDate(visibleWeekDate)}.xlsx`);
-});
-
-workLogProjectSelect.addEventListener("change", () => {
-  render();
-});
-
-workLogForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const content = workLogContentInput.value.trim();
-  const projectId = workLogProjectSelect.value;
-
-  if (!content || !projectId) {
-    return;
-  }
-
-  addWorkLog({
-    id: createId(),
-    projectId,
-    todoId: workLogTodoSelect.value || undefined,
-    date: workLogDateInput.value,
-    type: workLogTypeSelect.value as WorkLogType,
-    content,
-  });
-
-  workLogContentInput.value = "";
-  workLogTodoSelect.value = "";
-  render();
 });
 
 toggleAllProjectsButton.addEventListener("click", () => {
