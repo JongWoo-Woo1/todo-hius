@@ -454,34 +454,6 @@ function renderWeeklyItem(item: WeeklyItem): HTMLElement {
     wrapper.append(linkedTask);
   }
 
-  if (item.source === "workLog" && item.id) {
-    const actions = document.createElement("div");
-    actions.className = "weekly-item-actions";
-
-    if (item.projectId) {
-      const openButton = document.createElement("button");
-      openButton.type = "button";
-      openButton.className = "quiet-button";
-      openButton.textContent = "Open task";
-      openButton.addEventListener("click", () => {
-        goToProjectTodo(item.projectId!, item.todoId ?? null);
-        render();
-      });
-      actions.append(openButton);
-    }
-
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "delete-work-log-button";
-    deleteButton.textContent = "Delete";
-    deleteButton.addEventListener("click", () => {
-      deleteWorkLog(item.id!);
-      render();
-    });
-    actions.append(deleteButton);
-    wrapper.append(actions);
-  }
-
   return wrapper;
 }
 
