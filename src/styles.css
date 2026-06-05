@@ -1222,16 +1222,10 @@ button {
 }
 
 .weekly-item-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-}
-
-.weekly-linked-task {
   color: var(--text);
   font-size: 12px;
   font-weight: 600;
+  line-height: 1.35;
 }
 
 .weekly-item-content {

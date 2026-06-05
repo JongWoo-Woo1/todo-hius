@@ -445,17 +445,8 @@ function renderWeeklyItem(item: WeeklyItem): HTMLElement {
 
   const header = document.createElement("p");
   header.className = "weekly-item-header";
-  const client = document.createElement("strong");
-  client.textContent = `[${item.clientName || "No client"}]`;
-  const projectName = document.createElement("strong");
-  projectName.textContent = `[${item.projectName}]`;
-  header.append(client, projectName);
-  if (item.todoTitle) {
-    const linkedTask = document.createElement("span");
-    linkedTask.className = "weekly-linked-task";
-    linkedTask.textContent = item.todoTitle;
-    header.append(linkedTask);
-  }
+  const linkedTaskText = item.todoTitle ? ` ${item.todoTitle}` : "";
+  header.textContent = `[${item.clientName || "No client"}][${item.projectName}]${linkedTaskText}`;
 
   const content = document.createElement("p");
   content.className = "weekly-item-content";
