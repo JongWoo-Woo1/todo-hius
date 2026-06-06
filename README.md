@@ -1,8 +1,8 @@
 # HIUS Todo
 
-Vite + TypeScript + pure DOM 기반의 Electron 프로젝트 Todo 관리 앱입니다.
+Vite + TypeScript + pure DOM 기반의 Electron 업무 관리 앱입니다.
 
-프로젝트별 Todo, Calendar, Weekly, Ledger View를 관리하고, Electron 브랜치에서는 데이터를 `.todo` workspace 파일로 저장합니다.
+프로젝트별 Task를 관리하고, Calendar / Weekly / Ledger View로 일정과 진행 현황을 확인하며, 데이터를 `.todo` workspace 파일로 저장합니다.
 
 ## Run
 
@@ -31,7 +31,7 @@ npm.cmd run build
 |- tsconfig.json                   # renderer TypeScript config
 |- tsconfig.electron.json          # Electron main-process TypeScript config
 |- vite.config.ts                  # Vite config
-|- AGENTS.md                       # Codex working rules
+|- AGENTS.md                       # coding-agent working rules
 |- README.md                       # project map and usage
 |
 |- electron/
@@ -42,7 +42,7 @@ npm.cmd run build
 |- src/
 |  |- main.ts                      # renderer entry, DOM events, app wiring
 |  |- styles.css                   # app-wide styles
-|  |- types.ts                     # shared AppState, Project, Todo, WorkLog types
+|  |- types.ts                     # shared AppState, Project, Task, WorkLog types
 |  |- vite-env.d.ts                # Vite and Electron bridge declarations
 |  |
 |  |- app/
@@ -57,14 +57,24 @@ npm.cmd run build
 |  |  `- store.ts                  # AppState migration and mutations
 |  |
 |  |- ui/
-|  |  |- calendarView.ts           # Calendar filters, range controls, and grid rendering
+|  |  |- render.ts                 # render orchestration: wires state, UI actions, and view modules
 |  |  |- dom.ts                    # DOM element references
-|  |  |- ledgerView.ts             # Ledger filters and table rendering
-|  |  |- modalView.ts              # Calendar/Ledger popup and Todo modal rendering
+|  |  |- navView.ts                # view (Projects/Calendar/Weekly/Ledger) visibility switching
+|  |  |- projectListView.ts        # sidebar project list rendering and reordering
 |  |  |- projectView.ts            # Project header and project info rendering
-|  |  |- render.ts                 # render orchestration, Project/Todo list flow, and UI actions
+|  |  |- projectDetailView.ts      # Project detail shell / empty-state rendering
+|  |  |- taskListView.ts           # Task list rendering within a project
+|  |  |- taskView.ts               # Task detail card and Task edit form
+|  |  |- calendarView.ts           # Calendar filters, range controls, and grid rendering
+|  |  |- ledgerView.ts             # Ledger filters and table rendering
 |  |  |- weeklyView.ts             # Weekly report view rendering
-|  |  `- workLogView.ts            # WorkLog DOM rendering
+|  |  |- modalView.ts              # Calendar/Ledger task & project detail modal rendering
+|  |  |- workLogView.ts            # WorkLog DOM rendering
+|  |  |- workLogSectionView.ts     # project/task linked WorkLog summary sections
+|  |  |- workLogDetailView.ts      # WorkLog detail/create modal rendering
+|  |  |- detailView.ts             # shared detail-row (dl/dt/dd) helpers
+|  |  |- confirmDialog.ts          # async confirm dialog
+|  |  `- toast.ts                  # transient toast notifications
 |  |
 |  |- excel/
 |  |  |- projectLedgerReport.ts    # Ledger workbook creation
@@ -100,8 +110,8 @@ npm.cmd run build
 - `src/state/selectors.ts` owns AppState-derived lookup helpers.
 - `src/app/uiState.ts` owns temporary renderer-only UI state.
 - `src/ui/dom.ts` owns DOM references.
-- `src/ui/render.ts` coordinates rendering, UI-state transitions, and remaining Project/Todo list behavior.
-- `src/ui/*View.ts` files own feature-specific DOM rendering for Calendar, Ledger, Weekly, WorkLog, modal, and Project header/info surfaces.
+- `src/ui/render.ts` is the rendering-orchestration / UI-flow file: it calls each view module, wires their callbacks to store mutations and `uiState` transitions, and re-renders. It does little DOM drawing itself — feature-specific rendering lives in the `*View.ts` modules.
+- `src/ui/*View.ts` files own feature-specific DOM rendering for the project list, project header/info/detail, task list and task cards, Calendar, Ledger, Weekly, WorkLog surfaces, and modals.
 - `src/platform/todoFileClient.ts` wraps `window.hiusTodoFile` for renderer-side file API access.
 - `src/excel/` owns Excel workbook generation and download helpers.
 - `electron/` owns desktop shell behavior, menus, preload bridge, and filesystem-backed workspace persistence.
@@ -110,7 +120,7 @@ Renderer code should not access Node filesystem APIs directly. Electron filesyst
 
 ## Electron Workspace Files
 
-The Electron branch stores data through `.todo` workspace files.
+Data is stored through `.todo` workspace files.
 
 ```txt
 hius-dt-jw-todo/
@@ -126,23 +136,8 @@ hius-dt-jw-todo/
 - Unsaved changes trigger a save prompt on close.
 - During development, `hius-dt-jw-todo/hius-dt-jw.todo` opens automatically as the default workspace.
 
-## Current Refactor Direction
+## Design Notes
 
-The app currently uses pure TypeScript and direct DOM rendering. Keep that direction unless a React migration is explicitly requested.
+The app uses pure TypeScript and direct DOM rendering — no UI framework. Keep that direction unless a React migration is explicitly requested.
 
-Near-term structure goals:
-
-```txt
-src/app/uiState.ts          # temporary UI state
-src/app/renderApp.ts        # top-level render orchestration
-src/state/selectors.ts      # derived AppState queries
-src/ui/projectView.ts       # Project header and project info rendering
-src/ui/ledgerView.ts        # Ledger rendering
-src/ui/weeklyView.ts        # Weekly rendering
-src/ui/calendarView.ts      # Calendar rendering
-src/ui/workLogView.ts       # WorkLog rendering
-src/ui/modalView.ts         # shared modal rendering
-src/platform/todoFileClient.ts
-```
-
-Refactor gradually with small, typecheckable steps.
+Rendering is split so that `render.ts` only orchestrates flow while each `*View.ts` module owns one surface's DOM. Prefer adding new view modules over growing `render.ts`, and refactor in small, typecheckable steps.

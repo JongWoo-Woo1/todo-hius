@@ -2,153 +2,107 @@
 
 ## Project
 
-HIUS Todo is a Vite + TypeScript + pure DOM project management Todo app.
+HIUS Todo is a Vite + TypeScript + pure DOM project management app, wrapped in Electron and persisting data with `.todo` workspace files.
 
-The `electron` branch wraps the app in Electron and persists data with `.todo` workspace files. Do not migrate the app to React unless the user explicitly asks. Do not reintroduce localStorage persistence on the Electron branch.
+Do not migrate the app to React unless the user explicitly asks. Do not reintroduce localStorage persistence.
 
 ## Efficient Context Rules
 
-Read `AGENTS.md` first.
+Read `AGENTS.md` first. `README.md` is human-facing documentation — read it only when the task needs project structure, scripts, or user-facing behavior, not at the start of every task.
 
-`README.md` is passive project documentation by default. Do not automatically read it at the start of every task.
+Prefer focused search over broad reading. Inspect the smallest relevant file set first; do not scan the whole repo by default.
 
-Read `README.md` only when the task needs project structure, scripts, user-facing behavior, or documentation context.
-
-Prefer focused search over broad file reading. Inspect the smallest relevant file set first.
-
-Do not scan the whole repository by default. For button or event changes, search the visible label, DOM id, and TypeScript variable name first.
+On Windows/PowerShell, prefer `rg` or focused file reads over `Get-Content | Select-Object` pipelines that trigger repeated approvals.
 
 ## File Access Rules
 
-Respect `.gitignore`.
-
-Do not inspect or edit generated, dependency, or build-output folders unless explicitly requested:
-
-- `node_modules/`
-- `dist/`
-- `dist-electron/`
-- `build/`
-
-Do not read ignored environment or log files unless explicitly requested.
-
-On Windows/PowerShell, avoid read-only pipelines such as `Get-Content ... | Select-Object ...` if they trigger repeated approvals. Prefer `rg`, `Select-String`, or focused file reads.
+Respect `.gitignore`. Do not inspect or edit generated/dependency/build folders unless explicitly requested: `node_modules/`, `dist/`, `dist-electron/`, `build/`.
 
 ## Task Routing
 
 Use this map before broad searching:
 
-- App entry and event wiring: `src/main.ts`
-- Temporary renderer UI state: `src/app/uiState.ts`
-- App data state and mutations: `src/state/store.ts`
+- App entry / DOM event wiring: `src/main.ts`
+- Temporary renderer UI state (selected task, modal state, current view, visible week): `src/app/uiState.ts`
+- App data state and mutations + migration: `src/state/store.ts`
 - AppState-derived lookups/selectors: `src/state/selectors.ts`
 - Calendar range preferences: `src/state/calendarPreferences.ts`
-- Shared app types: `src/types.ts`
-- DOM references: `src/ui/dom.ts`
-- Render orchestration and remaining Project/Todo list flow: `src/ui/render.ts`
-- Project header/info UI: `src/ui/projectView.ts`
-- Project list/Todo card UI: search `renderProjects`, `renderTodos`, `renderTodoDetailView`, or `renderTodoEditForm` in `src/ui/render.ts`
-- Calendar UI: `src/ui/calendarView.ts`; state bridge in `renderCalendar` in `src/ui/render.ts`
-- Weekly UI: `src/ui/weeklyView.ts`
-- Ledger UI: `src/ui/ledgerView.ts`; Ledger project popup uses `src/ui/modalView.ts`
-- Modal/popup UI: `src/ui/modalView.ts`; state bridge in `renderCalendarDetailModal` in `src/ui/render.ts`
-- WorkLog DOM UI: `src/ui/workLogView.ts`; WorkLog state/delete flow in `src/ui/render.ts`
+- Shared app types (`AppState`, `Project`, `Task`, `WorkLog`): `src/types.ts`
 - Renderer file API wrapper: `src/platform/todoFileClient.ts`
+- DOM references: `src/ui/dom.ts`
+- Top-level render orchestration / UI flow bridge: `src/ui/render.ts`
+- Navigation / view switching UI: `src/ui/navView.ts`
+- Project list UI: `src/ui/projectListView.ts`
+- Project header/info UI: `src/ui/projectView.ts`
+- Project detail shell / empty-state UI: `src/ui/projectDetailView.ts`
+- Task list UI: `src/ui/taskListView.ts`
+- Task detail / edit UI: `src/ui/taskView.ts`
+- Calendar UI: `src/ui/calendarView.ts`
+- Weekly UI: `src/ui/weeklyView.ts`
+- Ledger UI: `src/ui/ledgerView.ts`
+- Calendar/Ledger shared task & project modal UI: `src/ui/modalView.ts`
+- WorkLog entry DOM UI: `src/ui/workLogView.ts`
+- WorkLog section/summary UI (project & task linked logs): `src/ui/workLogSectionView.ts`
+- WorkLog create/detail/edit modal: `src/ui/workLogDetailView.ts`
+- Shared detail-row helpers: `src/ui/detailView.ts`
+- Confirm dialog UI: `src/ui/confirmDialog.ts`
+- Toast UI: `src/ui/toast.ts`
 - Excel export: `src/excel/`
-- Date/week helpers: `src/utils/calendar.ts`, `src/utils/week.ts`, `src/utils/date.ts`
-- Electron app shell/menu: `electron/main.ts`
+- Date/week/task/project helpers: `src/utils/`
+- Electron app shell / menu / dirty state: `electron/main.ts`
 - Renderer bridge: `electron/preload.ts`
 - Workspace open/save: `electron/todoWorkspace.ts`
 - Sample/default data: `src/data/sampleProjects.ts`
-- Project map and scripts: `README.md` only when needed
 
 ## Button and Event Search Strategy
 
-For a specific button, menu, form, or event request:
+For a specific button, menu, form, or event:
 
 1. Search the visible UI label, DOM id, and TypeScript variable name.
 2. Check `src/ui/dom.ts` for the DOM reference.
-3. Check `src/main.ts` or the relevant view/controller file for event listeners.
-4. Follow the event path to state, rendering, Excel, or Electron modules only as needed.
-5. Avoid unrelated broad reads.
+3. Check `src/main.ts` or the relevant `*View.ts` file for the event listener.
+4. Follow the callback path through `render.ts` to state/Excel/Electron only as needed.
 
 ## Architecture Rules
 
-Keep responsibilities separate:
-
-- `electron/` owns Electron main process, preload bridge, and filesystem access.
-- `src/state/` owns AppState migration and mutation.
-- `src/ui/` owns DOM references and rendering.
-- `src/excel/` owns workbook creation and download helpers.
-- `src/utils/` owns reusable date/task/week helpers.
-
-View/rendering code should not call Electron IPC directly. Use the preload-exposed API through existing renderer wiring.
-
-State mutation should stay in `src/state/store.ts`. Avoid mutating AppState directly inside unrelated view helpers.
-
-On the Electron branch, persist with `.todo` workspace files, not localStorage.
+- `electron/` owns the Electron main process, preload bridge, and filesystem access only.
+- The renderer never accesses Node `fs` directly — go through the preload bridge and `src/platform/todoFileClient.ts`.
+- `src/state/store.ts` owns AppState mutation and migration.
+- `src/state/selectors.ts` owns AppState lookups/derived data only — no mutation.
+- `src/app/uiState.ts` holds only temporary UI state (selected task, modal state, current view, etc.).
+- `src/ui/*View.ts` files own DOM creation and rendering for one surface.
+- `src/ui/render.ts` stays an orchestration layer: it wires each View to `uiState`, `store` mutations, and re-renders. It should do little DOM drawing itself.
+- View files must not mutate AppState arbitrarily — pass intent up through callbacks into the `render.ts`/`store` flow.
+- View files must not call Electron IPC directly — use `src/platform/todoFileClient.ts` and the existing `src/main.ts` wiring.
+- Persist with `.todo` workspace files, not localStorage.
 
 ## Future Refactor Direction
 
-Prefer pure TypeScript with a clear feature-oriented structure rather than a React migration.
+The structure is already largely split into per-surface `*View.ts` modules. No large rewrite is needed.
 
-When refactoring UI code, move toward this structure gradually:
-
-- `src/app/uiState.ts`: temporary UI state such as current view, selected Todo, modal state, and visible week.
-- `src/app/renderApp.ts`: top-level render orchestration.
-- `src/state/selectors.ts`: AppState-derived queries.
-- `src/ui/projectView.ts`: Project header and project info rendering; Todo list/card rendering still lives in `src/ui/render.ts`.
-- `src/ui/ledgerView.ts`: Ledger filters, table, and popups.
-- `src/ui/weeklyView.ts`: Weekly report view.
-- `src/ui/calendarView.ts`: Calendar grid and controls.
-- `src/ui/workLogView.ts`: WorkLog display and actions.
-- `src/ui/modalView.ts`: shared modal rendering.
-- `src/platform/todoFileClient.ts`: renderer wrapper around `window.hiusTodoFile`.
-
-Do not perform a large architecture rewrite unless explicitly requested. Prefer small, focused refactors with typecheck after each meaningful step.
+- When shrinking `render.ts`, move one feature at a time, not large blocks at once.
+- New UI should go in its own `*View.ts` file; keep only wiring logic in `render.ts`.
+- Prefer `textContent`/`createElement` over `innerHTML`; never interpolate user input into `innerHTML`.
+- Keep docs/types/validation aligned in small steps.
 
 ## Data Compatibility
 
-Legacy project and Todo data should continue to load through migration in `src/state/store.ts`.
+Legacy project and task data continues to load through migration in `src/state/store.ts`. The migration still reads old serialization keys (`todos`, `todoId`) for back-compat — keep that.
 
-Todo completion fields must stay synchronized:
+Task completion fields must stay synchronized:
 
-- `status === "완료"` means `completed = true`
-- `progress === 1` means completed and status `"완료"`
-- non-complete statuses should keep `completed = false`
+- `status === "완료"` ⇒ `completed = true`
+- `progress === 1` ⇒ completed and status `"완료"`
+- non-complete statuses keep `completed = false`
 
 ## Validation
 
-For small TypeScript changes, run:
-
-```powershell
-npm.cmd run typecheck
-```
-
-Run build only after feature-level changes, Electron workspace/file I/O changes, Excel export changes, or before a final commit:
-
-```powershell
-npm.cmd run build
-```
-
-For documentation-only changes, no build is required.
-
-## Documentation Updates
-
-Update `README.md` only for project structure changes, scripts, user-facing behavior, or usage changes.
-
-Do not create or update a change-history document unless the user explicitly asks for release notes or a changelog.
+- Small TypeScript changes: `npm.cmd run typecheck`
+- Electron workspace/file I/O, Excel export, or build-affecting changes: `npm.cmd run build`
+- Documentation-only changes: no build/typecheck required
 
 ## Version Control
 
-Make focused changes.
+Make focused changes. Use conventional-style commits (`feat:`, `fix:`, `refactor:`, `style:`, `docs:`, `chore:`).
 
-Use concise conventional-style commits when committing:
-
-- `feat:`
-- `fix:`
-- `refactor:`
-- `style:`
-- `docs:`
-- `chore:`
-
-Commit and push only when the user asks, when a task is clearly complete, or when preserving a meaningful checkpoint. Do not commit after every tiny edit unless requested.
+Commit and push only when the user asks, when a task is clearly complete, or to preserve a meaningful checkpoint.
