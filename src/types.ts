@@ -4,7 +4,7 @@ export type TaskPriority = "낮음" | "보통" | "높음" | "최우선";
 
 export type WorkLogType = "계획" | "수행";
 
-export type Todo = {
+export type Task = {
   id: string;
   title: string;
   dueDate: string | null;
@@ -28,13 +28,13 @@ export type Project = {
   periodEnd?: string | null;
   periodText?: string;
   color: string;
-  todos: Todo[];
+  tasks: Task[];
 };
 
 export type WorkLog = {
   id: string;
   projectId: string;
-  todoId?: string;
+  taskId?: string;
   date: string;
   type: WorkLogType;
   content: string;

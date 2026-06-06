@@ -25,5 +25,11 @@
   },
   "dependencies": {
     "exceljs": "^4.4.0"
+  },
+  "electronmon": {
+    "patterns": [
+      "!**/hius-dt-jw-todo/**",
+      "!**/*.todo"
+    ]
   }
 }

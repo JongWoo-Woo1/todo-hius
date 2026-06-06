@@ -1,22 +1,22 @@
-import { deleteProjectButton, emptyState, projectWorkLogCard, todoCount, todoForm } from "./dom";
+import { deleteProjectButton, emptyState, projectWorkLogCard, taskCount, taskForm } from "./dom";
 import { renderEmptyProjectHeader } from "./projectView";
 
 // Project-detail surface shown when no project is selected.
 export function renderEmptyProjectDetail(): void {
   renderEmptyProjectHeader();
-  todoCount.textContent = "0 items";
+  taskCount.textContent = "0 items";
   emptyState.textContent = "Create a project first.";
   emptyState.hidden = false;
-  todoForm.hidden = true;
+  taskForm.hidden = true;
   projectWorkLogCard.hidden = true;
   deleteProjectButton.hidden = true;
 }
 
-// Project-detail surface shown for the active project's Todo list.
-export function renderProjectDetailShell(todoItemCount: number): void {
-  todoCount.textContent = `${todoItemCount} items`;
+// Project-detail surface shown for the active project's Task list.
+export function renderProjectDetailShell(taskItemCount: number): void {
+  taskCount.textContent = `${taskItemCount} items`;
   emptyState.textContent = "선택된 프로젝트에 업무가 없습니다.";
-  emptyState.hidden = todoItemCount > 0;
-  todoForm.hidden = false;
+  emptyState.hidden = taskItemCount > 0;
+  taskForm.hidden = false;
   deleteProjectButton.hidden = false;
 }

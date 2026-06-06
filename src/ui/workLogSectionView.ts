@@ -1,8 +1,8 @@
 import {
   getProjectById,
   getProjectWorkLogs,
-  getTodoByProject,
-  getTodoWorkLogs,
+  getTaskByProject,
+  getTaskWorkLogs,
 } from "../state/selectors";
 import type { AppState, Project, WorkLog } from "../types";
 import { toDateKey } from "../utils/calendar";
@@ -29,11 +29,11 @@ export type ProjectWorkLogSectionParams = WorkLogEntryHandlers & {
   onToggleExpand: (nextExpandedId: string | null) => void;
 };
 
-export type TodoWorkLogSummaryParams = WorkLogEntryHandlers & {
+export type TaskWorkLogSummaryParams = WorkLogEntryHandlers & {
   state: AppState;
-  todoId: string;
+  taskId: string;
   showAll: boolean;
-  onToggleExpand: (todoId: string, expand: boolean) => void;
+  onToggleExpand: (taskId: string, expand: boolean) => void;
 };
 
 function getRecentWorkLogCutoffKey(): string {
@@ -58,12 +58,12 @@ function createWorkLogEntry(
   options: { showProject?: boolean; compact?: boolean } = {},
 ): HTMLElement {
   const project = getProjectById(state, workLog.projectId);
-  const linkedTodo = getTodoByProject(project, workLog.todoId);
+  const linkedTask = getTaskByProject(project, workLog.taskId);
 
   return createWorkLogEntryElement(workLog, {
     ...options,
     project,
-    linkedTodo,
+    linkedTask,
     onSelect: () => handlers.onSelectWorkLog(workLog.id),
   });
 }
@@ -113,8 +113,8 @@ export function renderProjectWorkLogSection(params: ProjectWorkLogSectionParams)
   }
 }
 
-export function renderTodoWorkLogSummary(params: TodoWorkLogSummaryParams): HTMLElement {
-  const { state, todoId, showAll, onToggleExpand } = params;
+export function renderTaskWorkLogSummary(params: TaskWorkLogSummaryParams): HTMLElement {
+  const { state, taskId, showAll, onToggleExpand } = params;
   const section = document.createElement("section");
   section.className = "todo-work-log-summary";
 
@@ -122,7 +122,7 @@ export function renderTodoWorkLogSummary(params: TodoWorkLogSummaryParams): HTML
   heading.textContent = "Linked Weekly Logs";
   section.append(heading);
 
-  const workLogs = getTodoWorkLogs(state, todoId);
+  const workLogs = getTaskWorkLogs(state, taskId);
   const visibleWorkLogs = getVisibleWorkLogs(workLogs, showAll);
   if (workLogs.length === 0) {
     const empty = document.createElement("p");
@@ -145,7 +145,7 @@ export function renderTodoWorkLogSummary(params: TodoWorkLogSummaryParams): HTML
         totalCount: workLogs.length,
         expanded: showAll,
         onToggle: () => {
-          onToggleExpand(todoId, true);
+          onToggleExpand(taskId, true);
         },
       }),
     );
@@ -156,7 +156,7 @@ export function renderTodoWorkLogSummary(params: TodoWorkLogSummaryParams): HTML
         totalCount: workLogs.length,
         expanded: showAll,
         onToggle: () => {
-          onToggleExpand(todoId, false);
+          onToggleExpand(taskId, false);
         },
       }),
     );

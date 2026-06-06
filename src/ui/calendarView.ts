@@ -14,9 +14,9 @@ import {
   toggleAllProjectsButton,
 } from "./dom";
 
-type CalendarTodo = {
+type CalendarTask = {
   projectId: string;
-  todoId: string;
+  taskId: string;
   clientName: string;
   projectName: string;
   title: string;
@@ -29,52 +29,52 @@ type CalendarViewOptions = {
   calendarRangePreferences: CalendarRangePreferences;
   onSelectedProjectIdsChange: (selectedProjectIds: Set<string>) => void;
   onCalendarRangePreferencesChange: (preferences: CalendarRangePreferences) => void;
-  onTodoSelect: (todo: CalendarTodo) => void;
+  onTaskSelect: (task: CalendarTask) => void;
 };
 
 const RANGE_CALENDAR_YEAR = 2026;
 const MONTH_LABELS = Array.from({ length: 12 }, (_, index) => `${index + 1}`);
 
-function getDueTodosByDate(state: AppState, selectedProjectIds: Set<string>): Map<string, CalendarTodo[]> {
-  const dueTodosByDate = new Map<string, CalendarTodo[]>();
+function getDueTasksByDate(state: AppState, selectedProjectIds: Set<string>): Map<string, CalendarTask[]> {
+  const dueTasksByDate = new Map<string, CalendarTask[]>();
 
   state.projects.forEach((project) => {
     if (!selectedProjectIds.has(project.id)) {
       return;
     }
 
-    project.todos.forEach((todo) => {
-      if (!todo.dueDate) {
+    project.tasks.forEach((task) => {
+      if (!task.dueDate) {
         return;
       }
 
-      const items = dueTodosByDate.get(todo.dueDate) ?? [];
+      const items = dueTasksByDate.get(task.dueDate) ?? [];
       items.push({
         projectId: project.id,
-        todoId: todo.id,
+        taskId: task.id,
         clientName: project.clientName,
         projectName: project.name,
-        title: todo.title,
-        completed: todo.completed,
+        title: task.title,
+        completed: task.completed,
         color: project.color,
       });
-      dueTodosByDate.set(todo.dueDate, items);
+      dueTasksByDate.set(task.dueDate, items);
     });
   });
 
-  return dueTodosByDate;
+  return dueTasksByDate;
 }
 
 function appendMonthGrid({
   monthDate,
-  dueTodosByDate,
+  dueTasksByDate,
   container,
-  onTodoSelect,
+  onTaskSelect,
 }: {
   monthDate: Date;
-  dueTodosByDate: Map<string, CalendarTodo[]>;
+  dueTasksByDate: Map<string, CalendarTask[]>;
   container: HTMLElement;
-  onTodoSelect: (todo: CalendarTodo) => void;
+  onTaskSelect: (task: CalendarTask) => void;
 }): number {
   let itemCount = 0;
   const todayKey = toDateKey(new Date());
@@ -92,28 +92,28 @@ function appendMonthGrid({
     dateLabel.textContent = String(date.getDate());
     cell.append(dateLabel);
 
-    const todos = dueTodosByDate.get(dateKey) ?? [];
-    todos.forEach((todo) => {
+    const tasks = dueTasksByDate.get(dateKey) ?? [];
+    tasks.forEach((task) => {
       const item = document.createElement("div");
       item.className = "calendar-item";
-      item.classList.toggle("completed", todo.completed);
-      item.style.setProperty("--project-color", todo.color);
+      item.classList.toggle("completed", task.completed);
+      item.style.setProperty("--project-color", task.color);
       const title = document.createElement("strong");
-      title.textContent = todo.title;
+      title.textContent = task.title;
 
       const meta = document.createElement("div");
       meta.className = "calendar-item-meta";
       const client = document.createElement("span");
       client.className = "calendar-client-chip";
-      client.textContent = todo.clientName || "No client";
+      client.textContent = task.clientName || "No client";
       const projectName = document.createElement("span");
       projectName.className = "calendar-project-name";
-      projectName.textContent = todo.projectName;
+      projectName.textContent = task.projectName;
       meta.append(client, projectName);
 
       item.append(title, meta);
       item.addEventListener("click", () => {
-        onTodoSelect(todo);
+        onTaskSelect(task);
       });
       cell.append(item);
       itemCount += 1;
@@ -142,9 +142,9 @@ function appendWeekdays(container: HTMLElement): void {
 }
 
 function renderRangeCalendar(
-  dueTodosByDate: Map<string, CalendarTodo[]>,
+  dueTasksByDate: Map<string, CalendarTask[]>,
   preferences: CalendarRangePreferences,
-  onTodoSelect: (todo: CalendarTodo) => void,
+  onTaskSelect: (task: CalendarTask) => void,
 ): number {
   calendarMonthLabel.textContent = `${RANGE_CALENDAR_YEAR}`;
   calendarGrid.className = "calendar-range-grid";
@@ -164,9 +164,9 @@ function renderRangeCalendar(
     monthGrid.className = "calendar-grid compact-calendar-grid";
     itemCount += appendMonthGrid({
       monthDate: new Date(RANGE_CALENDAR_YEAR, month - 1, 1),
-      dueTodosByDate,
+      dueTasksByDate,
       container: monthGrid,
-      onTodoSelect,
+      onTaskSelect,
     });
     monthSection.append(monthGrid);
 
@@ -250,10 +250,10 @@ export function renderCalendarView(state: AppState, options: CalendarViewOptions
   renderRangeControls(preferences);
   renderCalendarFilters(state, options.selectedProjectIds, options.onSelectedProjectIdsChange);
 
-  const dueTodosByDate = getDueTodosByDate(state, options.selectedProjectIds);
+  const dueTasksByDate = getDueTasksByDate(state, options.selectedProjectIds);
   calendarGrid.innerHTML = "";
   calendarRangeControls.hidden = false;
-  const itemCount = renderRangeCalendar(dueTodosByDate, preferences, options.onTodoSelect);
+  const itemCount = renderRangeCalendar(dueTasksByDate, preferences, options.onTaskSelect);
 
   calendarEmptyState.hidden = itemCount > 0;
 }

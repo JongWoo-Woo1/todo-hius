@@ -12,7 +12,7 @@ import {
 } from "./platform/todoFileClient";
 import {
   addProject,
-  addTodo,
+  addTask,
   deleteActiveProject,
   getActiveProject,
   getState,
@@ -21,7 +21,7 @@ import {
   updateActiveProject,
   updateActiveProjectColor,
 } from "./state/store";
-import type { Project, Todo } from "./types";
+import type { Project, Task } from "./types";
 import { toDateKey } from "./utils/calendar";
 import { createId } from "./utils/id";
 import { getProjectColor } from "./utils/projectColor";
@@ -51,9 +51,9 @@ import {
   projectPeriodEndInput,
   projectPeriodStartInput,
   projectPeriodTextInput,
-  todoDueDateInput,
-  todoForm,
-  todoTitleInput,
+  taskDueDateInput,
+  taskForm,
+  taskTitleInput,
   toggleAllProjectsButton,
   nextWeekButton,
   previousWeekButton,
@@ -62,7 +62,7 @@ import {
 } from "./ui/dom";
 import {
   activateCalendarButton,
-  clearSelectedTodo,
+  clearSelectedTask,
   goToNextWeek,
   goToPreviousWeek,
   getVisibleWeekDate,
@@ -77,6 +77,7 @@ import {
   updateCalendarRangePreferences,
 } from "./ui/render";
 import { confirmDelete } from "./ui/confirmDialog";
+import { showToast } from "./ui/toast";
 
 let currentTodoWorkspacePath: string | undefined;
 let isDirty = false;
@@ -130,7 +131,7 @@ async function openDefaultProject(): Promise<void> {
 
     updateTodoWorkspacePath(result.workspacePath);
     setDirty(false);
-    clearSelectedTodo();
+    clearSelectedTask();
     resetCalendarSelection();
     render();
   } catch (error) {
@@ -158,7 +159,7 @@ async function openProject(): Promise<boolean> {
 
     updateTodoWorkspacePath(result.workspacePath);
     setDirty(false);
-    clearSelectedTodo();
+    clearSelectedTask();
     resetCalendarSelection();
     render();
     return true;
@@ -184,10 +185,16 @@ async function saveProject({ saveAs = false }: { saveAs?: boolean } = {}): Promi
 
     updateTodoWorkspacePath(result.workspacePath);
     setDirty(false);
+    showToast(
+      result.workspacePath
+        ? `프로젝트가 저장되었습니다.\n${result.workspacePath}`
+        : "프로젝트가 저장되었습니다.",
+      "success",
+    );
     return true;
   } catch (error) {
     console.error(error);
-    window.alert("Failed to save the .todo workspace.");
+    showToast(".todo 워크스페이스 저장에 실패했습니다.", "error");
     return false;
   }
 }
@@ -220,7 +227,7 @@ addProjectButton.addEventListener("click", () => {
     periodEnd: null,
     periodText: "",
     color: getProjectColor(getState().projects.length),
-    todos: [],
+    tasks: [],
   };
 
   addProject(project);
@@ -271,18 +278,18 @@ projectInfoForm.addEventListener("submit", (event) => {
   render();
 });
 
-todoForm.addEventListener("submit", (event) => {
+taskForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const activeProject = getActiveProject();
-  const title = todoTitleInput.value.trim();
+  const title = taskTitleInput.value.trim();
   if (!activeProject || !title) {
     return;
   }
 
-  const todo: Todo = {
+  const task: Task = {
     id: createId(),
     title,
-    dueDate: todoDueDateInput.value || null,
+    dueDate: taskDueDateInput.value || null,
     estimate: "",
     status: "대기",
     progress: 0,
@@ -294,8 +301,8 @@ todoForm.addEventListener("submit", (event) => {
     completed: false,
   };
 
-  addTodo(todo);
-  todoForm.reset();
+  addTask(task);
+  taskForm.reset();
   render();
 });
 
@@ -313,7 +320,7 @@ deleteProjectButton.addEventListener("click", async () => {
   }
 
   deleteActiveProject();
-  clearSelectedTodo();
+  clearSelectedTask();
   render();
 });
 
@@ -394,13 +401,13 @@ nextWeekButton.addEventListener("click", () => {
 });
 
 weeklyExportButton.addEventListener("click", async () => {
-  const [{ createWeeklyReportWorkbook, getWeeklyReportFileDate }, { downloadWorkbook }] = await Promise.all([
+  const [{ createWeeklyReportWorkbook, getWeeklyReportFileName }, { downloadWorkbook }] = await Promise.all([
     import("./excel/weeklyReport"),
     import("./excel/downloadWorkbook"),
   ]);
   const visibleWeekDate = getVisibleWeekDate();
   const workbook = await createWeeklyReportWorkbook(getState(), visibleWeekDate);
-  await downloadWorkbook(workbook, `weekly-report-${getWeeklyReportFileDate(visibleWeekDate)}.xlsx`);
+  await downloadWorkbook(workbook, getWeeklyReportFileName(visibleWeekDate));
 });
 
 toggleAllProjectsButton.addEventListener("click", () => {

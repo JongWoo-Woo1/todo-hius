@@ -1,8 +1,9 @@
-import type { Project, Todo, WorkLog } from "../types";
+import type { Project, Task, WorkLog } from "../types";
+import { formatDisplayDate } from "../utils/calendar";
 
 export type WorkLogEntryOptions = {
   project?: Project;
-  linkedTodo?: Todo;
+  linkedTask?: Task;
   showProject?: boolean;
   compact?: boolean;
   onSelect: () => void;
@@ -41,12 +42,12 @@ export function createWorkLogEntry(workLog: WorkLog, options: WorkLogEntryOption
 
   const meta = document.createElement("p");
   meta.className = "work-log-entry-meta";
-  const parts = [workLog.date, workLog.type];
+  const parts = [formatDisplayDate(workLog.date), workLog.type];
   if (options.showProject && options.project) {
     parts.push(options.project.name);
   }
-  if (options.linkedTodo) {
-    parts.push(options.linkedTodo.title);
+  if (options.linkedTask) {
+    parts.push(options.linkedTask.title);
   }
   meta.textContent = parts.join(" / ");
 

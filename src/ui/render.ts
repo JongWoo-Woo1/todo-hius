@@ -5,26 +5,26 @@ import {
 import { uiState } from "../app/uiState";
 import {
   addWorkLog,
-  deleteTodo,
+  deleteTask,
   deleteWorkLog,
   getActiveProject,
   getState,
   reorderProjects,
   selectProject,
-  toggleTodo,
-  updateTodo,
+  toggleTask,
+  updateTask,
   updateWorkLog,
 } from "../state/store";
 import { createId } from "../utils/id";
 import { toDateKey } from "../utils/calendar";
 import {
-  findTodoWithProject,
+  findTaskWithProject,
   getProjectById,
-  getSortedTodosByDueDate,
-  getTodoByProject,
+  getSortedTasksByDueDate,
+  getTaskByProject,
   getWorkLogById,
 } from "../state/selectors";
-import type { Project, Todo, WorkLogType } from "../types";
+import type { Project, Task, WorkLogType } from "../types";
 import { renderCalendarView } from "./calendarView";
 import { renderLedgerView } from "./ledgerView";
 import { renderCalendarDetailModalView } from "./modalView";
@@ -36,17 +36,17 @@ import {
   setProjectNameEditMode,
 } from "./projectView";
 import {
-  createTodoDetailView,
-  createTodoEditForm,
-} from "./todoView";
+  createTaskDetailView,
+  createTaskEditForm,
+} from "./taskView";
 import {
   renderProjectWorkLogSection,
-  renderTodoWorkLogSummary as renderTodoWorkLogSummarySection,
+  renderTaskWorkLogSummary as renderTaskWorkLogSummarySection,
 } from "./workLogSectionView";
 import { renderWeeklyView } from "./weeklyView";
 import { confirmDelete } from "./confirmDialog";
 import { renderEmptyProjectDetail, renderProjectDetailShell } from "./projectDetailView";
-import { clearTodoList, renderTodoList } from "./todoListView";
+import { clearTaskList, renderTaskList } from "./taskListView";
 import { renderViewVisibility } from "./navView";
 import { renderWorkLogDetailModalView } from "./workLogDetailView";
 
@@ -67,14 +67,14 @@ function renderLedger(): void {
   renderLedgerView(getState(), {
     onProjectSelect: (project) => {
       uiState.selectedModalProjectId = project.id;
-      uiState.selectedModalTodoId = null;
-      uiState.isModalTodoEditing = false;
+      uiState.selectedModalTaskId = null;
+      uiState.isModalTaskEditing = false;
       render();
     },
-    onTodoSelect: (todo) => {
+    onTaskSelect: (task) => {
       uiState.selectedModalProjectId = null;
-      uiState.selectedModalTodoId = todo.id;
-      uiState.isModalTodoEditing = false;
+      uiState.selectedModalTaskId = task.id;
+      uiState.isModalTaskEditing = false;
       render();
     },
   });
@@ -98,20 +98,20 @@ function renderProjectWorkLogs(): void {
   });
 }
 
-function renderTodoWorkLogSummary(todoId: string): HTMLElement {
-  return renderTodoWorkLogSummarySection({
+function renderTaskWorkLogSummary(taskId: string): HTMLElement {
+  return renderTaskWorkLogSummarySection({
     state: getState(),
-    todoId,
-    showAll: uiState.expandedTodoWorkLogIds.has(todoId),
+    taskId,
+    showAll: uiState.expandedTaskWorkLogIds.has(taskId),
     onSelectWorkLog: (workLogId) => {
       openWorkLogDetail(workLogId);
       render();
     },
     onToggleExpand: (id, expand) => {
       if (expand) {
-        uiState.expandedTodoWorkLogIds.add(id);
+        uiState.expandedTaskWorkLogIds.add(id);
       } else {
-        uiState.expandedTodoWorkLogIds.delete(id);
+        uiState.expandedTaskWorkLogIds.delete(id);
       }
       render();
     },
@@ -132,10 +132,10 @@ function renderCalendar(): void {
     onCalendarRangePreferencesChange: (preferences) => {
       uiState.calendarRangePreferences = preferences;
     },
-    onTodoSelect: (todo) => {
+    onTaskSelect: (task) => {
       uiState.selectedModalProjectId = null;
-      uiState.selectedModalTodoId = todo.todoId;
-      uiState.isModalTodoEditing = false;
+      uiState.selectedModalTaskId = task.taskId;
+      uiState.isModalTaskEditing = false;
       render();
     },
   });
@@ -145,14 +145,14 @@ function renderCalendar(): void {
 
 function closeCalendarDetailModal(): void {
   uiState.selectedModalProjectId = null;
-  uiState.selectedModalTodoId = null;
-  uiState.isModalTodoEditing = false;
+  uiState.selectedModalTaskId = null;
+  uiState.isModalTaskEditing = false;
 }
 
-function goToProjectTodo(projectId: string, todoId: string | null): void {
+function goToProjectTask(projectId: string, taskId: string | null): void {
   selectProject(projectId);
-  uiState.selectedTodoId = todoId;
-  uiState.editingTodoId = null;
+  uiState.selectedTaskId = taskId;
+  uiState.editingTaskId = null;
   uiState.isProjectInfoEditing = false;
   uiState.isProjectNameEditing = false;
   closeCalendarDetailModal();
@@ -160,7 +160,7 @@ function goToProjectTodo(projectId: string, todoId: string | null): void {
 }
 
 function renderCalendarDetailModal(): void {
-  const selection = findTodoWithProject(getState(), uiState.selectedModalTodoId);
+  const selection = findTaskWithProject(getState(), uiState.selectedModalTaskId);
   const selectedProject = uiState.selectedModalProjectId
     ? (getProjectById(getState(), uiState.selectedModalProjectId) ?? null)
     : null;
@@ -169,32 +169,33 @@ function renderCalendarDetailModal(): void {
     currentView: uiState.currentView,
     selectedProject,
     selection,
-    isTodoEditing: uiState.isModalTodoEditing,
+    isTaskEditing: uiState.isModalTaskEditing,
+    workLogSummary: selection ? renderTaskWorkLogSummary(selection.task.id) : null,
     onClose: () => {
       closeCalendarDetailModal();
       render();
     },
-    onOpenProjectTodo: (projectId, todoId) => {
-      goToProjectTodo(projectId, todoId);
+    onOpenProjectTask: (projectId, taskId) => {
+      goToProjectTask(projectId, taskId);
       render();
     },
-    onEditTodo: () => {
-      uiState.isModalTodoEditing = true;
+    onEditTask: () => {
+      uiState.isModalTaskEditing = true;
       render();
     },
-    onCancelTodoEdit: () => {
-      uiState.isModalTodoEditing = false;
+    onCancelTaskEdit: () => {
+      uiState.isModalTaskEditing = false;
       render();
     },
-    onSelectTodoFromProject: (todoId) => {
+    onSelectTaskFromProject: (taskId) => {
       uiState.selectedModalProjectId = null;
-      uiState.selectedModalTodoId = todoId;
-      uiState.isModalTodoEditing = false;
+      uiState.selectedModalTaskId = taskId;
+      uiState.isModalTaskEditing = false;
       render();
     },
-    onUpdateTodo: (todoId, updates) => {
-      updateTodo(todoId, updates);
-      uiState.isModalTodoEditing = false;
+    onUpdateTask: (taskId, updates) => {
+      updateTask(taskId, updates);
+      uiState.isModalTaskEditing = false;
       render();
     },
   });
@@ -230,13 +231,13 @@ function renderWorkLogDetailModal(): void {
   const isCreating = canShowWorkLogDetail && uiState.isWorkLogCreating;
   const workLog = canShowWorkLogDetail ? getWorkLogById(state, uiState.selectedWorkLogId) : undefined;
   const project = workLog ? getProjectById(state, workLog.projectId) : undefined;
-  const linkedTodo = getTodoByProject(project, workLog?.todoId);
+  const linkedTask = getTaskByProject(project, workLog?.taskId);
 
   renderWorkLogDetailModalView({
     workLog: workLog ?? null,
     project,
-    linkedTodo,
-    projectTodos: project?.todos ?? [],
+    linkedTask,
+    projectTasks: project?.tasks ?? [],
     isEditing: uiState.isWorkLogEditing,
     isCreating,
     projects: state.projects,
@@ -255,8 +256,8 @@ function renderWorkLogDetailModal(): void {
       render();
     },
     onOpenTask: () => {
-      if (project && linkedTodo) {
-        goToProjectTodo(project.id, linkedTodo.id);
+      if (project && linkedTask) {
+        goToProjectTask(project.id, linkedTask.id);
       }
       closeWorkLogDetail();
       render();
@@ -283,12 +284,14 @@ function renderWorkLogDetailModal(): void {
       closeWorkLogDetail();
       render();
     },
-    onCreate: ({ projectId, date, type, todoId, content }) => {
-      if (!projectId || !content) {
+    onCreate: ({ projectId, date, type, taskId, content }) => {
+      // A linked task on its own signals intent to perform that task, so
+      // content is optional as long as either content or a task is provided.
+      if (!projectId || (!content && !taskId)) {
         return;
       }
 
-      addWorkLog({ id: createId(), projectId, date, type, todoId, content });
+      addWorkLog({ id: createId(), projectId, date, type, taskId, content });
       closeWorkLogDetail();
       render();
     },
@@ -308,96 +311,96 @@ export function showProjectNameEditMode(isEditing: boolean): void {
   setProjectNameEditMode(isEditing, activeProject ?? null);
 }
 
-// Todo detail
+// Task detail
 
-function renderTodoDetailView(todo: Todo): HTMLElement {
-  return createTodoDetailView(todo, {
-    workLogSummary: renderTodoWorkLogSummary(todo.id),
+function renderTaskDetailView(task: Task): HTMLElement {
+  return createTaskDetailView(task, {
+    workLogSummary: renderTaskWorkLogSummary(task.id),
     onEdit: () => {
-      uiState.editingTodoId = todo.id;
+      uiState.editingTaskId = task.id;
       render();
     },
     onDelete: async () => {
-      if (!(await confirmDelete(`"${todo.title}" 업무를 삭제하시겠습니까?\n연결된 주간 업무 기록도 함께 삭제됩니다.`))) {
+      if (!(await confirmDelete(`"${task.title}" 업무를 삭제하시겠습니까?\n연결된 주간 업무 기록도 함께 삭제됩니다.`))) {
         return;
       }
 
-      deleteTodo(todo.id);
-      uiState.selectedTodoId = null;
-      uiState.editingTodoId = null;
+      deleteTask(task.id);
+      uiState.selectedTaskId = null;
+      uiState.editingTaskId = null;
       render();
     },
   });
 }
 
-function renderTodoEditForm(todo: Todo): HTMLElement {
-  return createTodoEditForm(todo, {
+function renderTaskEditForm(task: Task): HTMLElement {
+  return createTaskEditForm(task, {
     onUpdate: (updates) => {
-      updateTodo(todo.id, updates);
-      uiState.editingTodoId = null;
+      updateTask(task.id, updates);
+      uiState.editingTaskId = null;
       render();
     },
     onCancel: () => {
-      uiState.editingTodoId = null;
+      uiState.editingTaskId = null;
       render();
     },
     onDelete: async () => {
-      if (!(await confirmDelete(`"${todo.title}" 업무를 삭제하시겠습니까?\n연결된 주간 업무 기록도 함께 삭제됩니다.`))) {
+      if (!(await confirmDelete(`"${task.title}" 업무를 삭제하시겠습니까?\n연결된 주간 업무 기록도 함께 삭제됩니다.`))) {
         return;
       }
 
-      deleteTodo(todo.id);
-      uiState.selectedTodoId = null;
-      uiState.editingTodoId = null;
+      deleteTask(task.id);
+      uiState.selectedTaskId = null;
+      uiState.editingTaskId = null;
       render();
     },
   });
 }
 
-function renderTodos(): void {
+function renderTasks(): void {
   const activeProject = getActiveProject();
 
   if (!activeProject) {
-    clearTodoList();
+    clearTaskList();
     renderEmptyProjectDetail();
     uiState.isProjectNameEditing = false;
     showProjectNameEditMode(false);
     uiState.isProjectInfoEditing = false;
     showProjectInfoEditMode(false);
-    uiState.selectedTodoId = null;
-    uiState.editingTodoId = null;
+    uiState.selectedTaskId = null;
+    uiState.editingTaskId = null;
     return;
   }
 
-  const sortedTodos = getSortedTodosByDueDate(activeProject);
+  const sortedTasks = getSortedTasksByDueDate(activeProject);
   renderProjectHeader(activeProject);
   showProjectNameEditMode(uiState.isProjectNameEditing);
   renderProjectInfo(activeProject);
   showProjectInfoEditMode(uiState.isProjectInfoEditing);
   renderProjectWorkLogs();
-  renderProjectDetailShell(sortedTodos.length);
+  renderProjectDetailShell(sortedTasks.length);
 
-  renderTodoList({
-    todos: sortedTodos,
-    selectedTodoId: uiState.selectedTodoId,
-    editingTodoId: uiState.editingTodoId,
-    renderDetailView: renderTodoDetailView,
-    renderEditForm: renderTodoEditForm,
-    onToggle: (todoId, completed) => {
-      toggleTodo(todoId, completed);
+  renderTaskList({
+    tasks: sortedTasks,
+    selectedTaskId: uiState.selectedTaskId,
+    editingTaskId: uiState.editingTaskId,
+    renderDetailView: renderTaskDetailView,
+    renderEditForm: renderTaskEditForm,
+    onToggle: (taskId, completed) => {
+      toggleTask(taskId, completed);
       render();
     },
-    onSelect: (todoId) => {
-      if (uiState.selectedTodoId === todoId) {
-        uiState.selectedTodoId = null;
-        uiState.editingTodoId = null;
+    onSelect: (taskId) => {
+      if (uiState.selectedTaskId === taskId) {
+        uiState.selectedTaskId = null;
+        uiState.editingTaskId = null;
         render();
         return;
       }
 
-      uiState.selectedTodoId = todoId;
-      if (uiState.editingTodoId && uiState.editingTodoId !== todoId) {
-        uiState.editingTodoId = null;
+      uiState.selectedTaskId = taskId;
+      if (uiState.editingTaskId && uiState.editingTaskId !== taskId) {
+        uiState.editingTaskId = null;
       }
       render();
     },
@@ -406,9 +409,9 @@ function renderTodos(): void {
 
 // Exported render controls
 
-export function clearSelectedTodo(): void {
-  uiState.selectedTodoId = null;
-  uiState.editingTodoId = null;
+export function clearSelectedTask(): void {
+  uiState.selectedTaskId = null;
+  uiState.editingTaskId = null;
 }
 
 export function resetCalendarSelection(): void {
@@ -416,13 +419,13 @@ export function resetCalendarSelection(): void {
   closeCalendarDetailModal();
 }
 
-export function selectTodo(todoId: string): void {
-  uiState.selectedTodoId = todoId;
-  uiState.editingTodoId = null;
+export function selectTask(taskId: string): void {
+  uiState.selectedTaskId = taskId;
+  uiState.editingTaskId = null;
 }
 
-export function getSelectedTodoId(): string | null {
-  return uiState.selectedTodoId;
+export function getSelectedTaskId(): string | null {
+  return uiState.selectedTaskId;
 }
 
 export function showProjectView(): void {
@@ -469,7 +472,7 @@ export function updateCalendarRangePreferences(updates: Partial<CalendarRangePre
 
 export function render(): void {
   renderProjectList({ onSelectProject: selectProject, onReorderProjects: reorderProjects, onRender: render });
-  renderTodos();
+  renderTasks();
   renderLedger();
   renderWeeklyView(getState(), uiState.visibleWeekDate, {
     onSelectWorkLog: (workLogId) => {

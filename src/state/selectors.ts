@@ -1,28 +1,28 @@
-import type { AppState, Project, Todo, WorkLog } from "../types";
+import type { AppState, Project, Task, WorkLog } from "../types";
 
-export type TodoWithProject = {
+export type TaskWithProject = {
   project: Project;
-  todo: Todo;
+  task: Task;
 };
 
 export function getProjectById(state: AppState, projectId: string): Project | undefined {
   return state.projects.find((project) => project.id === projectId);
 }
 
-export function getTodoByProject(project: Project | undefined, todoId: string | undefined): Todo | undefined {
-  if (!project || !todoId) {
+export function getTaskByProject(project: Project | undefined, taskId: string | undefined): Task | undefined {
+  if (!project || !taskId) {
     return undefined;
   }
 
-  return project.todos.find((todo) => todo.id === todoId);
+  return project.tasks.find((task) => task.id === taskId);
 }
 
-export function getSortedTodosByDueDate(project: Project | undefined): Todo[] {
+export function getSortedTasksByDueDate(project: Project | undefined): Task[] {
   if (!project) {
     return [];
   }
 
-  return [...project.todos].sort((left, right) => {
+  return [...project.tasks].sort((left, right) => {
     if (!left.dueDate && !right.dueDate) {
       return left.title.localeCompare(right.title);
     }
@@ -53,21 +53,21 @@ export function getProjectWorkLogs(state: AppState, projectId: string): WorkLog[
     .sort((left, right) => right.date.localeCompare(left.date));
 }
 
-export function getTodoWorkLogs(state: AppState, todoId: string): WorkLog[] {
+export function getTaskWorkLogs(state: AppState, taskId: string): WorkLog[] {
   return state.workLogs
-    .filter((workLog) => workLog.todoId === todoId)
+    .filter((workLog) => workLog.taskId === taskId)
     .sort((left, right) => right.date.localeCompare(left.date));
 }
 
-export function findTodoWithProject(state: AppState, todoId: string | null): TodoWithProject | null {
-  if (!todoId) {
+export function findTaskWithProject(state: AppState, taskId: string | null): TaskWithProject | null {
+  if (!taskId) {
     return null;
   }
 
   for (const project of state.projects) {
-    const todo = project.todos.find((item) => item.id === todoId);
-    if (todo) {
-      return { project, todo };
+    const task = project.tasks.find((item) => item.id === taskId);
+    if (task) {
+      return { project, task };
     }
   }
 

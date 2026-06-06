@@ -15,6 +15,7 @@ import {
   projectPeriodStartInput,
   projectPeriodTextInput,
 } from "./dom";
+import { formatDisplayDate } from "../utils/calendar";
 import { createDetailRow, getDetailValue } from "./detailView";
 
 export function renderEmptyProjectHeader(): void {
@@ -45,8 +46,8 @@ export function renderProjectInfoView(project: Project | null): void {
     createDetailRow("업체명", getDetailValue(project.clientName)),
     createDetailRow("프로젝트 번호", getDetailValue(project.projectNumber)),
     createDetailRow("프로젝트 기간", getDetailValue(project.periodText)),
-    createDetailRow("시작일", getDetailValue(project.periodStart)),
-    createDetailRow("종료일", getDetailValue(project.periodEnd)),
+    createDetailRow("시작일", getDetailValue(formatDisplayDate(project.periodStart))),
+    createDetailRow("종료일", getDetailValue(formatDisplayDate(project.periodEnd))),
   );
 }
 

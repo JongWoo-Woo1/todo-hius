@@ -1,6 +1,6 @@
-import type { AppState, Project, TaskPriority, TaskStatus, Todo, WorkLog, WorkLogType } from "../types";
+import type { AppState, Project, TaskPriority, TaskStatus, Task, WorkLog, WorkLogType } from "../types";
 
-type SampleTodoInput = {
+type SampleTaskInput = {
   id: string;
   title: string;
   dueDate?: string | null;
@@ -17,13 +17,13 @@ type SampleTodoInput = {
 type SampleWorkLogInput = {
   id: string;
   projectId: string;
-  todoId?: string;
+  taskId?: string;
   date: string;
   type: WorkLogType;
   content: string;
 };
 
-function createTodo({
+function createTask({
   id,
   title,
   dueDate = null,
@@ -35,7 +35,7 @@ function createTodo({
   issueRisk = "",
   priority = "보통",
   memo = "",
-}: SampleTodoInput): Todo {
+}: SampleTaskInput): Task {
   const completed = status === "완료" || progress >= 1;
 
   return {
@@ -69,20 +69,20 @@ export function createSampleState(): AppState {
       periodStart: "2026-06-01",
       periodEnd: null,
       color: "#2563eb",
-      todos: [
-        createTodo({
+      tasks: [
+        createTask({
           id: "todo-katech-ui-dev",
           title: "APS, TMS UI 개발",
           estimate: "1W",
           workerComment: "피드백 대기중",
         }),
-        createTodo({
+        createTask({
           id: "todo-katech-tms-hils-link",
           title: "TMS HILs 개발 및 연동",
           estimate: "1W",
           workerComment: "일정 대기중",
         }),
-        createTodo({
+        createTask({
           id: "todo-katech-aps-hils-link",
           title: "APS HILs 개발 및 연동",
           estimate: "1W",
@@ -99,21 +99,21 @@ export function createSampleState(): AppState {
       periodStart: "2025-06-01",
       periodEnd: null,
       color: "#16a34a",
-      todos: [
-        createTodo({
+      tasks: [
+        createTask({
           id: "todo-ksoe-opcua-server",
           title: "OPCUA server",
           estimate: "1W",
           status: "미완",
           workerComment: "연말 연기",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-opcua-client",
           title: "OPCUA client",
           estimate: "1W",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-opcua-certification",
           title: "OPCUA client: certification 기능 개발",
           dueDate: "2026-06-02",
@@ -123,26 +123,26 @@ export function createSampleState(): AppState {
           priority: "높음",
           workerComment: "Windows certstore 기반 create/delete/download/upload 구현 완료, 공유 진행",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-modbustcp-master",
           title: "ModbusTCP Master",
           estimate: "1W",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-modbustcp-slave",
           title: "ModbusTCP Slave",
           estimate: "1W",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-mqtt-broker",
           title: "MQTT Broker",
           estimate: "1W",
           status: "미완",
           workerComment: "연말 연기",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-mqtt-client",
           title: "MQTT Client",
           estimate: "1W",
@@ -160,8 +160,8 @@ export function createSampleState(): AppState {
       periodStart: "2026-04-01",
       periodEnd: "2026-12-31",
       color: "#0f766e",
-      todos: [
-        createTodo({
+      tasks: [
+        createTask({
           id: "todo-ksoe-amesim-training",
           title: "AMESIM 모델개발 교육",
           estimate: "6M",
@@ -169,13 +169,13 @@ export function createSampleState(): AppState {
           progress: 0.1,
           workerComment: "6월 교육자료 개발",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-amesim-training-april",
           title: "AMESIM 모델개발 교육 - 4월",
           estimate: "3D",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-amesim-training-june",
           title: "AMESIM 모델개발 교육 - 6월",
           dueDate: "2026-06-09",
@@ -183,13 +183,13 @@ export function createSampleState(): AppState {
           status: "진행중",
           workerComment: "교육 6월 준비, 교육자료 개발",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-h50-model",
           title: "H50 모델 고도화",
           estimate: "6M",
           status: "대기",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-h50-model-improvement",
           title: "H50 모델 고도화 - 모델 개선, 수정, 문서화 등",
           dueDate: "2026-06-09",
@@ -198,7 +198,7 @@ export function createSampleState(): AppState {
           progress: 0.1,
           workerComment: "진도 점검 회의 6월 준비",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-sofc-data-analysis",
           title: "SOFC PFD/P&ID/HMB 데이터 분석",
           estimate: "1W",
@@ -217,8 +217,8 @@ export function createSampleState(): AppState {
       periodStart: "2026-01-01",
       periodEnd: null,
       color: "#7c3aed",
-      todos: [
-        createTodo({
+      tasks: [
+        createTask({
           id: "todo-ksoe-pcs-hils-rack",
           title: "PCS HILs Rack 단동테스트 및 납품",
           estimate: "1W",
@@ -226,7 +226,7 @@ export function createSampleState(): AppState {
           progress: 0.6,
           workerComment: "전면패널 수정 후 신호선 테스트 진행",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-pcs-hils-support",
           title: "PCS HILs 기술지원",
           estimate: "1W",
@@ -245,8 +245,8 @@ export function createSampleState(): AppState {
       periodStart: null,
       periodEnd: null,
       color: "#0891b2",
-      todos: [
-        createTodo({
+      tasks: [
+        createTask({
           id: "todo-ksoe-submarine-model-standby",
           title: "잠수함 모델 개발 업무 범위 확인",
           estimate: "*",
@@ -264,8 +264,8 @@ export function createSampleState(): AppState {
       periodStart: "2026-04-01",
       periodEnd: "2026-07-31",
       color: "#f97316",
-      todos: [
-        createTodo({
+      tasks: [
+        createTask({
           id: "todo-kyungchang-fpga-spi",
           title: "FPGA SPI 통신 프로토콜 추가, MLX90363 대상 개발",
           dueDate: "2026-06-04",
@@ -275,14 +275,14 @@ export function createSampleState(): AppState {
           priority: "높음",
           workerComment: "준비 완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-kyungchang-auto-test-upgrade",
           title: "AUTO TEST 업그레이드: DTC, Current, Past 기능 추가",
           dueDate: "2026-06-16",
           estimate: "3D",
           status: "미완",
         }),
-        createTodo({
+        createTask({
           id: "todo-kyungchang-veristand-project",
           title: "4개 차종 대상 VeriStand Project 개발",
           dueDate: "2026-06-16",
@@ -300,26 +300,26 @@ export function createSampleState(): AppState {
       periodStart: "2025-08-01",
       periodEnd: "2026-06-30",
       color: "#9333ea",
-      todos: [
-        createTodo({
+      tasks: [
+        createTask({
           id: "todo-gmb-mils-system-test",
           title: "MILs 시스템 단독테스트",
           estimate: "1W",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-gmb-pump-auto-test",
           title: "펌프 대상 AUTO TEST",
           estimate: "1M",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-gmb-mils-program-add",
           title: "MILs 프로그램 추가개발 (manual test, dashboard, 사용자 메뉴얼 등)",
           estimate: "2M",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-gmb-mils-feedback",
           title: "MILs 프로그램 피드백 및 개선",
           dueDate: "2026-06-12",
@@ -338,32 +338,32 @@ export function createSampleState(): AppState {
       periodStart: "2025-08-01",
       periodEnd: "2026-06-30",
       color: "#dc2626",
-      todos: [
-        createTodo({
+      tasks: [
+        createTask({
           id: "todo-hdx-sensor-single-test",
           title: "센서 단동 테스트: 라이다, 레이더, 카메라",
           estimate: "1W",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-hdx-crio-ros2",
           title: "cRIO ROS2 연동 프로그램 개발",
           estimate: "1W",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-hdx-host-program",
           title: "HOST 프로그램 개발 (RT 모니터링)",
           estimate: "1W",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-hdx-sensor-logging-replay",
           title: "Sensor, Logging and Replay 기능 개발",
           estimate: "1W",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-hdx-signal-generation",
           title: "Signal Generation 기능 개발",
           dueDate: "2026-05-23",
@@ -373,7 +373,7 @@ export function createSampleState(): AppState {
           priority: "최우선",
           workerComment: "개발 완료, HDX 담당자와 개발내용 공유 예정",
         }),
-        createTodo({
+        createTask({
           id: "todo-hdx-development-feedback",
           title: "개발 내용 공유 및 피드백 검토",
           dueDate: "2026-06-01",
@@ -392,22 +392,22 @@ export function createSampleState(): AppState {
       periodStart: "2026-05-01",
       periodEnd: null,
       color: "#14b8a6",
-      todos: [
-        createTodo({
+      tasks: [
+        createTask({
           id: "todo-uipa-kickoff",
           title: "1차년도 착수회의 참석",
           dueDate: "2026-05-18",
           estimate: "1D",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-uipa-taehwa",
           title: "태화호 탑승 및 AI선박 로드맵 확인",
           dueDate: "2026-05-19",
           estimate: "1D",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-ai-ship-scope",
           title: "사업 내용 및 연구개발 범위 파악",
           dueDate: "2026-05-14",
@@ -426,20 +426,20 @@ export function createSampleState(): AppState {
       periodStart: "2026-05-01",
       periodEnd: null,
       color: "#64748b",
-      todos: [
-        createTodo({
+      tasks: [
+        createTask({
           id: "todo-ksoe-pems-research-note-23",
           title: "23년 연구노트 작성",
           estimate: "1D",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-pems-research-note-24",
           title: "24년 연구노트 작성",
           estimate: "1D",
           status: "완료",
         }),
-        createTodo({
+        createTask({
           id: "todo-ksoe-pems-research-note-25",
           title: "25년 연구노트 목차 정리 및 작성",
           estimate: "2D",
@@ -453,7 +453,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-06-sofc-plan",
       projectId: "project-ksoe-sofc-amesim",
-      todoId: "todo-ksoe-amesim-training",
+      taskId: "todo-ksoe-amesim-training",
       date: "2026-05-06",
       type: "계획",
       content: "AMESIM 교육자료 개선 및 교육",
@@ -461,7 +461,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-06-sofc-done",
       projectId: "project-ksoe-sofc-amesim",
-      todoId: "todo-ksoe-amesim-training",
+      taskId: "todo-ksoe-amesim-training",
       date: "2026-05-06",
       type: "수행",
       content: "AMESIM 교육 자료 개선, 결재 요청, 자료 공유. SOFC P&ID/데이터 전달받고 분석 필요사항 확인",
@@ -469,7 +469,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-06-hdx-done",
       projectId: "project-hdx-adas",
-      todoId: "todo-hdx-signal-generation",
+      taskId: "todo-hdx-signal-generation",
       date: "2026-05-06",
       type: "수행",
       content: "Signal Generation 개발. RT 코드와 SigGen 모듈 개발, Lidar/Radar/Camera 데이터 송신 구조 검토",
@@ -477,7 +477,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-08-custom-done",
       projectId: "project-ksoe-custom-device",
-      todoId: "todo-ksoe-opcua-certification",
+      taskId: "todo-ksoe-opcua-certification",
       date: "2026-05-08",
       type: "수행",
       content: "OPCUA Certification 기능 POC 진행. LabVIEW OPCUA Certification 파일 생성 방식 검토",
@@ -485,7 +485,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-08-hdx-done",
       projectId: "project-hdx-adas",
-      todoId: "todo-hdx-signal-generation",
+      taskId: "todo-hdx-signal-generation",
       date: "2026-05-08",
       type: "수행",
       content: "Replay 기능 저장파일 만료 시 state 처리 버그 해결. 하위 모듈 idle 확인 후 close msg 전송 코드 추가",
@@ -493,7 +493,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-11-custom-done",
       projectId: "project-ksoe-custom-device",
-      todoId: "todo-ksoe-opcua-certification",
+      taskId: "todo-ksoe-opcua-certification",
       date: "2026-05-11",
       type: "수행",
       content: "OPCUA certification LabVIEW DEMO 개발. Server/Client cert 파일 공유 통신 POC와 설명자료 작성, 민영욱 책임 공유",
@@ -501,7 +501,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-11-hdx-done",
       projectId: "project-hdx-adas",
-      todoId: "todo-hdx-signal-generation",
+      taskId: "todo-hdx-signal-generation",
       date: "2026-05-11",
       type: "수행",
       content: "Signal Generation 개발. Radar/Lidar/Camera siggen 모듈 개발 및 Camera 포트 병렬 루프 검토",
@@ -509,7 +509,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-14-ksoe-ai-done",
       projectId: "project-uipa-ai-ship",
-      todoId: "todo-ksoe-ai-ship-scope",
+      taskId: "todo-ksoe-ai-ship-scope",
       date: "2026-05-14",
       type: "수행",
       content: "사업 내용과 연구개발 범위 파악. KSOE AI에이전트/SDS 플랫폼, HIUS XIL 플랫폼 범위 확인",
@@ -517,7 +517,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-15-pcs-done",
       projectId: "project-ksoe-pcs-hils",
-      todoId: "todo-ksoe-pcs-hils-rack",
+      taskId: "todo-ksoe-pcs-hils-rack",
       date: "2026-05-15",
       type: "수행",
       content: "HILs Rack 단동테스트 진행. PXI/NI Linux RT OS, VeriStand, 워크스테이션 셋업 및 전면패널 와셔 수정 필요사항 확인",
@@ -525,7 +525,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-18-pcs-done",
       projectId: "project-ksoe-pcs-hils",
-      todoId: "todo-ksoe-pcs-hils-rack",
+      taskId: "todo-ksoe-pcs-hils-rack",
       date: "2026-05-18",
       type: "수행",
       content: "단동테스트 진행. 오전 울산 공장 방문, 전면패널 와셔 수정, 전면패널 신호선 단동테스트 정상 확인",
@@ -533,7 +533,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-18-uipa-done",
       projectId: "project-uipa-ai-ship",
-      todoId: "todo-uipa-kickoff",
+      taskId: "todo-uipa-kickoff",
       date: "2026-05-18",
       type: "수행",
       content: "1차년도 착수회의 참석. 오후 두왕동 방문 및 회식 참석",
@@ -541,7 +541,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-19-uipa-done",
       projectId: "project-uipa-ai-ship",
-      todoId: "todo-uipa-taehwa",
+      taskId: "todo-uipa-taehwa",
       date: "2026-05-19",
       type: "수행",
       content: "태화호 탑승. 엔진룸/기관실 방문, 태화호 ICT 융합 및 AI선박 로드맵 확인",
@@ -549,7 +549,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-19-pems-done",
       projectId: "project-ksoe-pems",
-      todoId: "todo-ksoe-pems-research-note-25",
+      taskId: "todo-ksoe-pems-research-note-25",
       date: "2026-05-19",
       type: "수행",
       content: "25년 연구노트 목차 정리 및 내용 작성. PPT 형태로 작성",
@@ -557,7 +557,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-20-pcs-done",
       projectId: "project-ksoe-pcs-hils",
-      todoId: "todo-ksoe-pcs-hils-support",
+      taskId: "todo-ksoe-pcs-hils-support",
       date: "2026-05-20",
       type: "수행",
       content: "두왕동 HMS 방문 및 PCS HILs 기술지원. Hardwiring 신호 확인, ModbusTCP 데이터 포맷 수정, Little Endian/Word Swap/Scaling 코드 수정",
@@ -565,7 +565,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-21-hdx-done",
       projectId: "project-hdx-adas",
-      todoId: "todo-hdx-signal-generation",
+      taskId: "todo-hdx-signal-generation",
       date: "2026-05-21",
       type: "수행",
       content: "Signal Generation 개발 마무리 및 사용자 설정값 타입 정의 작성",
@@ -573,7 +573,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-21-kyungchang-done",
       projectId: "project-kyungchang-e-shift-hils",
-      todoId: "todo-kyungchang-fpga-spi",
+      taskId: "todo-kyungchang-fpga-spi",
       date: "2026-05-21",
       type: "수행",
       content: "FPGA SPI 통신, MLX90363 대상 개발",
@@ -581,7 +581,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-22-pems-done",
       projectId: "project-ksoe-pems",
-      todoId: "todo-ksoe-pems-research-note-24",
+      taskId: "todo-ksoe-pems-research-note-24",
       date: "2026-05-22",
       type: "수행",
       content: "24년 연구노트 작성 완료",
@@ -589,7 +589,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-26-hdx-done",
       projectId: "project-hdx-adas",
-      todoId: "todo-hdx-signal-generation",
+      taskId: "todo-hdx-signal-generation",
       date: "2026-05-26",
       type: "수행",
       content: "Signal Generation 개발 완료. Camera UDP Streaming Demo 개발 및 실시간 송수신 확인",
@@ -597,7 +597,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-27-custom-done",
       projectId: "project-ksoe-custom-device",
-      todoId: "todo-ksoe-opcua-certification",
+      taskId: "todo-ksoe-opcua-certification",
       date: "2026-05-27",
       type: "수행",
       content: "OPCUA certification 기능 개발 시작. 프로젝트 수정 및 opcua cert page 추가",
@@ -605,7 +605,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-27-pcs-done",
       projectId: "project-ksoe-pcs-hils",
-      todoId: "todo-ksoe-pcs-hils-rack",
+      taskId: "todo-ksoe-pcs-hils-rack",
       date: "2026-05-27",
       type: "수행",
       content: "HILs RACK 단동테스트. HMS 원격 연결, 전면 단자대 채널 수정, I/O 수정사항 단동테스트 수행 및 신호 정상 확인",
@@ -613,7 +613,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-28-sofc-done",
       projectId: "project-ksoe-sofc-amesim",
-      todoId: "todo-ksoe-sofc-data-analysis",
+      taskId: "todo-ksoe-sofc-data-analysis",
       date: "2026-05-28",
       type: "수행",
       content: "데이터 분석(PFD, P&ID, HMB), 모델개발 개요 작성, H50 AMESIM 모델과 P&ID 차이점 스터디",
@@ -621,7 +621,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-29-custom-done",
       projectId: "project-ksoe-custom-device",
-      todoId: "todo-ksoe-opcua-certification",
+      taskId: "todo-ksoe-opcua-certification",
       date: "2026-05-29",
       type: "수행",
       content: "RT Target의 OPCUA cert 폴더 파일 목록 조회, cert 파일 속성 조회, OPCUA certification page 개발",
@@ -629,7 +629,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-05-29-kyungchang-done",
       projectId: "project-kyungchang-e-shift-hils",
-      todoId: "todo-kyungchang-fpga-spi",
+      taskId: "todo-kyungchang-fpga-spi",
       date: "2026-05-29",
       type: "수행",
       content: "VeriStand 원격 기술지원. Channel Mapping, CAN Frame Disable 구성, VeriStand API/get channel value 사용방법 가이드",
@@ -637,7 +637,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-06-01-custom-plan",
       projectId: "project-ksoe-custom-device",
-      todoId: "todo-ksoe-opcua-certification",
+      taskId: "todo-ksoe-opcua-certification",
       date: "2026-06-01",
       type: "계획",
       content: "OPCUA certification 개발 완료 및 민영욱 책임에게 공유 목표",
@@ -645,7 +645,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-06-01-hdx-plan",
       projectId: "project-hdx-adas",
-      todoId: "todo-hdx-development-feedback",
+      taskId: "todo-hdx-development-feedback",
       date: "2026-06-01",
       type: "계획",
       content: "개발사항 공유 to 배경한 이사, HDX 담당자와 일정 논의",
@@ -653,7 +653,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-06-01-custom-done",
       projectId: "project-ksoe-custom-device",
-      todoId: "todo-ksoe-opcua-certification",
+      taskId: "todo-ksoe-opcua-certification",
       date: "2026-06-01",
       type: "수행",
       content: "OPCUA Custom Device cert 기능 개발. Certification library 생성, cert page/create/delete/download/upload/dialog 개발",
@@ -661,7 +661,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-06-02-kyungchang-plan",
       projectId: "project-kyungchang-e-shift-hils",
-      todoId: "todo-kyungchang-fpga-spi",
+      taskId: "todo-kyungchang-fpga-spi",
       date: "2026-06-02",
       type: "계획",
       content: "FPGA SPI 통신 프로토콜 추가, MLX90363",
@@ -669,7 +669,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-06-02-sofc-plan",
       projectId: "project-ksoe-sofc-amesim",
-      todoId: "todo-ksoe-h50-model-improvement",
+      taskId: "todo-ksoe-h50-model-improvement",
       date: "2026-06-02",
       type: "계획",
       content: "H50 모델 개선, 수정 및 6월 교육자료 개발",
@@ -677,7 +677,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-06-02-custom-done",
       projectId: "project-ksoe-custom-device",
-      todoId: "todo-ksoe-opcua-certification",
+      taskId: "todo-ksoe-opcua-certification",
       date: "2026-06-02",
       type: "수행",
       content: "OPCUA Client 코드 연동, RT Driver 적용 완료, Server-Client 인증 통신 정상 확인",
@@ -685,7 +685,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-06-02-pcs-done",
       projectId: "project-ksoe-pcs-hils",
-      todoId: "todo-ksoe-pcs-hils-support",
+      taskId: "todo-ksoe-pcs-hils-support",
       date: "2026-06-02",
       type: "수행",
       content: "HMC 기술지원. ModbusTCP Custom Device Master-Slave 연결 문제 원인 확인, PXI 네트워크/IP 설정 이슈 확인",
@@ -693,7 +693,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-06-04-kyungchang-plan",
       projectId: "project-kyungchang-e-shift-hils",
-      todoId: "todo-kyungchang-fpga-spi",
+      taskId: "todo-kyungchang-fpga-spi",
       date: "2026-06-04",
       type: "계획",
       content: "FPGA SPI 통신 프로토콜 추가 완료 목표 및 개발사항 공유",
@@ -701,7 +701,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-06-04-custom-done",
       projectId: "project-ksoe-custom-device",
-      todoId: "todo-ksoe-opcua-certification",
+      taskId: "todo-ksoe-opcua-certification",
       date: "2026-06-04",
       type: "수행",
       content: "OPCUA certification 개발 완료 및 송세진 책임에게 공유. Target/Windows 개발 완료, 원격지원 및 사용방법 공유",
@@ -709,7 +709,7 @@ export function createSampleState(): AppState {
     createWorkLog({
       id: "worklog-2026-06-05-sofc-plan",
       projectId: "project-ksoe-sofc-amesim",
-      todoId: "todo-ksoe-h50-model-improvement",
+      taskId: "todo-ksoe-h50-model-improvement",
       date: "2026-06-05",
       type: "계획",
       content: "H50 모델 개선, 수정 및 6월 교육자료 개발",

@@ -1,9 +1,9 @@
-import type { AppState, Project, Todo } from "../types";
+import type { AppState, Project, Task } from "../types";
 import { formatProjectPeriod } from "./project";
 
 export type LedgerRow = {
   project: Project;
-  todo: Todo;
+  task: Task;
   clientName: string;
   projectNumber: string;
   projectName: string;
@@ -13,9 +13,9 @@ export type LedgerRow = {
 export function getLedgerRows(state: AppState): LedgerRow[] {
   return state.projects
     .flatMap((project) =>
-      project.todos.map((todo) => ({
+      project.tasks.map((task) => ({
         project,
-        todo,
+        task,
         clientName: project.clientName,
         projectNumber: project.projectNumber ?? "",
         projectName: project.name,
@@ -33,6 +33,6 @@ export function getLedgerRows(state: AppState): LedgerRow[] {
         return projectCompare;
       }
 
-      return (left.todo.dueDate ?? "").localeCompare(right.todo.dueDate ?? "");
+      return (left.task.dueDate ?? "").localeCompare(right.task.dueDate ?? "");
     });
 }

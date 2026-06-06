@@ -1,16 +1,21 @@
 import { createSampleState } from "../data/sampleProjects";
-import type { AppState, Project, TaskPriority, TaskStatus, Todo, WorkLog, WorkLogType } from "../types";
+import type { AppState, Project, Task, TaskPriority, TaskStatus, WorkLog, WorkLogType } from "../types";
 import { getProjectColor } from "../utils/projectColor";
 
-type LegacyTodo = Partial<Todo> & {
+type LegacyTask = Partial<Task> & {
   completed?: boolean;
 };
 
-type LegacyProject = Partial<Project> & {
-  todos?: LegacyTodo[];
+// `todos` is the legacy serialization key (renamed to `tasks`); both are read for back-compat.
+type LegacyProject = Partial<Omit<Project, "tasks">> & {
+  tasks?: LegacyTask[];
+  todos?: LegacyTask[];
 };
 
-type LegacyWorkLog = Partial<WorkLog>;
+// `todoId` is the legacy serialization key (renamed to `taskId`); both are read for back-compat.
+type LegacyWorkLog = Partial<WorkLog> & {
+  todoId?: string;
+};
 
 type LegacyAppState = Partial<AppState> & {
   projects?: LegacyProject[];
@@ -100,10 +105,10 @@ function normalizeProgress(value: unknown, completed: boolean): number {
   return Math.min(1, Math.max(0, value));
 }
 
-function synchronizeTodoStatus(todo: Todo): Todo {
-  if (todo.progress >= 1 || todo.status === "완료") {
+function synchronizeTaskStatus(task: Task): Task {
+  if (task.progress >= 1 || task.status === "완료") {
     return {
-      ...todo,
+      ...task,
       completed: true,
       progress: 1,
       status: "완료",
@@ -111,28 +116,28 @@ function synchronizeTodoStatus(todo: Todo): Todo {
   }
 
   return {
-    ...todo,
+    ...task,
     completed: false,
   };
 }
 
-function normalizeTodo(todo: LegacyTodo, index: number): Todo {
-  const completed = todo.completed === true;
-  const progress = normalizeProgress(todo.progress, completed);
-  const status = completed || progress >= 1 ? "완료" : isTaskStatus(todo.status) ? todo.status : "대기";
+function normalizeTask(task: LegacyTask, index: number): Task {
+  const completed = task.completed === true;
+  const progress = normalizeProgress(task.progress, completed);
+  const status = completed || progress >= 1 ? "완료" : isTaskStatus(task.status) ? task.status : "대기";
 
-  return synchronizeTodoStatus({
-    id: todo.id ?? `todo-${index}`,
-    title: todo.title ?? "Untitled task",
-    dueDate: todo.dueDate ?? null,
-    estimate: todo.estimate ?? "",
+  return synchronizeTaskStatus({
+    id: task.id ?? `task-${index}`,
+    title: task.title ?? "Untitled task",
+    dueDate: task.dueDate ?? null,
+    estimate: task.estimate ?? "",
     status,
     progress,
-    workerComment: todo.workerComment ?? "",
-    managerComment: todo.managerComment ?? "",
-    issueRisk: todo.issueRisk ?? "",
-    priority: isTaskPriority(todo.priority) ? todo.priority : "보통",
-    memo: todo.memo ?? "",
+    workerComment: task.workerComment ?? "",
+    managerComment: task.managerComment ?? "",
+    issueRisk: task.issueRisk ?? "",
+    priority: isTaskPriority(task.priority) ? task.priority : "보통",
+    memo: task.memo ?? "",
     completed,
   });
 }
@@ -151,7 +156,7 @@ function normalizeProject(project: LegacyProject, index: number): Project {
     periodEnd: project.periodEnd ?? null,
     periodText: project.periodText ?? "",
     color: project.color ?? getProjectColor(index),
-    todos: (project.todos ?? []).map(normalizeTodo),
+    tasks: (project.tasks ?? project.todos ?? []).map(normalizeTask),
   };
 }
 
@@ -170,7 +175,7 @@ function normalizeWorkLog(workLog: LegacyWorkLog, index: number): WorkLog | null
   return {
     id: workLog.id ?? `work-log-${index}`,
     projectId,
-    todoId: workLog.todoId,
+    taskId: workLog.taskId ?? workLog.todoId,
     date: workLog.date ?? new Date().toISOString().slice(0, 10),
     type,
     content: workLog.content ?? "",
@@ -193,11 +198,11 @@ function mergeDuplicateProjects(projects: Project[]): Project[] {
       return;
     }
 
-    const existingTodoIds = new Set(existingProject.todos.map((todo) => todo.id));
-    project.todos.forEach((todo) => {
-      if (!existingTodoIds.has(todo.id)) {
-        existingProject.todos.push(todo);
-        existingTodoIds.add(todo.id);
+    const existingTaskIds = new Set(existingProject.tasks.map((task) => task.id));
+    project.tasks.forEach((task) => {
+      if (!existingTaskIds.has(task.id)) {
+        existingProject.tasks.push(task);
+        existingTaskIds.add(task.id);
       }
     });
   });
@@ -303,49 +308,49 @@ export function deleteActiveProject(): void {
   saveState();
 }
 
-export function addTodo(todo: Todo): void {
+export function addTask(task: Task): void {
   const activeProject = getActiveProject();
   if (!activeProject) {
     return;
   }
 
-  activeProject.todos.push(normalizeTodo(todo, activeProject.todos.length));
+  activeProject.tasks.push(normalizeTask(task, activeProject.tasks.length));
   saveState();
 }
 
-export function updateTodo(todoId: string, updates: Partial<Todo>): void {
-  const activeProject = getActiveProject();
-  const todoIndex = activeProject?.todos.findIndex((item) => item.id === todoId) ?? -1;
-  if (!activeProject || todoIndex < 0) {
+export function updateTask(taskId: string, updates: Partial<Task>): void {
+  const project = state.projects.find((p) => p.tasks.some((t) => t.id === taskId));
+  const taskIndex = project?.tasks.findIndex((item) => item.id === taskId) ?? -1;
+  if (!project || taskIndex < 0) {
     return;
   }
 
-  activeProject.todos[todoIndex] = normalizeTodo(
+  project.tasks[taskIndex] = normalizeTask(
     {
-      ...activeProject.todos[todoIndex],
+      ...project.tasks[taskIndex],
       ...updates,
     },
-    todoIndex,
+    taskIndex,
   );
   saveState();
 }
 
-export function toggleTodo(todoId: string, completed: boolean): void {
-  updateTodo(todoId, {
+export function toggleTask(taskId: string, completed: boolean): void {
+  updateTask(taskId, {
     completed,
     status: completed ? "완료" : "대기",
     progress: completed ? 1 : 0,
   });
 }
 
-export function deleteTodo(todoId: string): void {
-  const activeProject = getActiveProject();
-  if (!activeProject) {
+export function deleteTask(taskId: string): void {
+  const project = state.projects.find((p) => p.tasks.some((t) => t.id === taskId));
+  if (!project) {
     return;
   }
 
-  activeProject.todos = activeProject.todos.filter((todo) => todo.id !== todoId);
-  state.workLogs = state.workLogs.filter((workLog) => workLog.todoId !== todoId);
+  project.tasks = project.tasks.filter((task) => task.id !== taskId);
+  state.workLogs = state.workLogs.filter((workLog) => workLog.taskId !== taskId);
   saveState();
 }
 

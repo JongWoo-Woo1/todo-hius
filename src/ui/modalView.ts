@@ -1,29 +1,31 @@
-import type { Project, TaskPriority, TaskStatus, Todo } from "../types";
+import type { Project, TaskPriority, TaskStatus, Task } from "../types";
+import { formatDisplayDate } from "../utils/calendar";
 import { formatProgressPercent } from "../utils/task";
 import { calendarDetailContent, calendarDetailModal } from "./dom";
 import { createDetailRow, getDetailValue } from "./detailView";
 
-type TodoSelection = {
+type TaskSelection = {
   project: Project;
-  todo: Todo;
+  task: Task;
 };
 
-type TodoUpdates = Partial<Todo>;
+type TaskUpdates = Partial<Task>;
 
 type ModalViewOptions = {
   currentView: "projects" | "ledger" | "weekly" | "calendar";
   selectedProject: Project | null;
-  selection: TodoSelection | null;
-  isTodoEditing: boolean;
+  selection: TaskSelection | null;
+  isTaskEditing: boolean;
+  workLogSummary: HTMLElement | null;
   onClose: () => void;
-  onOpenProjectTodo: (projectId: string, todoId: string | null) => void;
-  onEditTodo: () => void;
-  onCancelTodoEdit: () => void;
-  onSelectTodoFromProject: (todoId: string) => void;
-  onUpdateTodo: (todoId: string, updates: TodoUpdates) => void;
+  onOpenProjectTask: (projectId: string, taskId: string | null) => void;
+  onEditTask: () => void;
+  onCancelTaskEdit: () => void;
+  onSelectTaskFromProject: (taskId: string) => void;
+  onUpdateTask: (taskId: string, updates: TaskUpdates) => void;
 };
 
-function getTodoProgressFromPercentValue(value: string): number {
+function getTaskProgressFromPercentValue(value: string): number {
   const progressPercent = Number(value);
   if (Number.isNaN(progressPercent)) {
     return 0;
@@ -32,7 +34,7 @@ function getTodoProgressFromPercentValue(value: string): number {
   return Math.min(1, Math.max(0, progressPercent / 100));
 }
 
-function renderCalendarTodoView(project: Project, todo: Todo, options: ModalViewOptions): HTMLElement {
+function renderCalendarTaskView(project: Project, task: Task, options: ModalViewOptions): HTMLElement {
   const wrapper = document.createElement("div");
   wrapper.className = "calendar-detail-view";
 
@@ -44,7 +46,7 @@ function renderCalendarTodoView(project: Project, todo: Todo, options: ModalView
   eyebrow.textContent = project.name;
   const heading = document.createElement("h3");
   heading.id = "calendar-detail-title";
-  heading.textContent = todo.title;
+  heading.textContent = task.title;
   title.append(eyebrow, heading);
 
   const closeButton = document.createElement("button");
@@ -57,12 +59,12 @@ function renderCalendarTodoView(project: Project, todo: Todo, options: ModalView
   const list = document.createElement("dl");
   list.className = "todo-detail-list calendar-detail-list";
   list.append(
-    createDetailRow("내부 목표 완료일", getDetailValue(todo.dueDate)),
-    createDetailRow("공수", getDetailValue(todo.estimate)),
-    createDetailRow("진행상태", todo.status),
-    createDetailRow("진척률", formatProgressPercent(todo.progress)),
-    createDetailRow("우선순위", getDetailValue(todo.priority)),
-    createDetailRow("메모", getDetailValue(todo.memo)),
+    createDetailRow("내부 목표 완료일", getDetailValue(formatDisplayDate(task.dueDate))),
+    createDetailRow("공수", getDetailValue(task.estimate)),
+    createDetailRow("진행상태", task.status),
+    createDetailRow("진척률", formatProgressPercent(task.progress)),
+    createDetailRow("우선순위", getDetailValue(task.priority)),
+    createDetailRow("메모", getDetailValue(task.memo)),
   );
 
   const actions = document.createElement("div");
@@ -73,16 +75,21 @@ function renderCalendarTodoView(project: Project, todo: Todo, options: ModalView
   projectButton.className = "quiet-button";
   projectButton.textContent = "Project로 이동";
   projectButton.addEventListener("click", () => {
-    options.onOpenProjectTodo(project.id, todo.id);
+    options.onOpenProjectTask(project.id, task.id);
   });
 
   const editButton = document.createElement("button");
   editButton.type = "button";
   editButton.textContent = "수정";
-  editButton.addEventListener("click", options.onEditTodo);
+  editButton.addEventListener("click", options.onEditTask);
 
   actions.append(projectButton, editButton);
-  wrapper.append(header, list, actions);
+
+  if (options.workLogSummary) {
+    wrapper.append(header, list, options.workLogSummary, actions);
+  } else {
+    wrapper.append(header, list, actions);
+  }
   return wrapper;
 }
 
@@ -113,39 +120,39 @@ function renderLedgerProjectView(project: Project, options: ModalViewOptions): H
     createDetailRow("업체", getDetailValue(project.clientName)),
     createDetailRow("프로젝트 번호", getDetailValue(project.projectNumber)),
     createDetailRow("프로젝트 기간", getDetailValue(project.periodText)),
-    createDetailRow("시작일", getDetailValue(project.periodStart)),
-    createDetailRow("종료일", getDetailValue(project.periodEnd)),
-    createDetailRow("업무 수", `${project.todos.length}`),
+    createDetailRow("시작일", getDetailValue(formatDisplayDate(project.periodStart))),
+    createDetailRow("종료일", getDetailValue(formatDisplayDate(project.periodEnd))),
+    createDetailRow("업무 수", `${project.tasks.length}`),
   );
 
   const taskList = document.createElement("div");
   taskList.className = "ledger-project-task-list";
-  if (project.todos.length === 0) {
+  if (project.tasks.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
     empty.textContent = "이 프로젝트에 업무가 없습니다.";
     taskList.append(empty);
   } else {
-    project.todos.forEach((todo) => {
+    project.tasks.forEach((task) => {
       const item = document.createElement("button");
       item.type = "button";
       item.className = "ledger-project-task-button";
 
       const status = document.createElement("span");
       status.className = "status-badge";
-      status.dataset.status = todo.status;
-      status.textContent = todo.status;
+      status.dataset.status = task.status;
+      status.textContent = task.status;
 
       const title = document.createElement("strong");
-      title.textContent = todo.title;
+      title.textContent = task.title;
 
       const progress = document.createElement("span");
       progress.className = "progress-pill";
-      progress.textContent = formatProgressPercent(todo.progress);
+      progress.textContent = formatProgressPercent(task.progress);
 
       item.append(status, title, progress);
       item.addEventListener("click", () => {
-        options.onSelectTodoFromProject(todo.id);
+        options.onSelectTaskFromProject(task.id);
       });
       taskList.append(item);
     });
@@ -158,7 +165,7 @@ function renderLedgerProjectView(project: Project, options: ModalViewOptions): H
   projectButton.className = "quiet-button";
   projectButton.textContent = "Project로 이동";
   projectButton.addEventListener("click", () => {
-    options.onOpenProjectTodo(project.id, null);
+    options.onOpenProjectTask(project.id, null);
   });
 
   actions.append(projectButton);
@@ -166,7 +173,7 @@ function renderLedgerProjectView(project: Project, options: ModalViewOptions): H
   return wrapper;
 }
 
-function renderCalendarTodoEditForm(project: Project, todo: Todo, options: ModalViewOptions): HTMLElement {
+function renderCalendarTaskEditForm(project: Project, task: Task, options: ModalViewOptions): HTMLElement {
   const form = document.createElement("form");
   form.className = "detail-form calendar-detail-form";
   form.innerHTML = `
@@ -231,27 +238,27 @@ function renderCalendarTodoEditForm(project: Project, todo: Todo, options: Modal
   const prioritySelect = form.querySelector<HTMLSelectElement>('[name="priority"]')!;
   const memoInput = form.querySelector<HTMLTextAreaElement>('[name="memo"]')!;
 
-  titleInput.value = todo.title;
-  dueDateInput.value = todo.dueDate ?? "";
-  estimateInput.value = todo.estimate ?? "";
-  statusSelect.value = todo.status;
-  progressInput.value = String(Math.round(todo.progress * 100));
-  prioritySelect.value = todo.priority ?? "보통";
-  memoInput.value = todo.memo;
+  titleInput.value = task.title;
+  dueDateInput.value = task.dueDate ?? "";
+  estimateInput.value = task.estimate ?? "";
+  statusSelect.value = task.status;
+  progressInput.value = String(Math.round(task.progress * 100));
+  prioritySelect.value = task.priority ?? "보통";
+  memoInput.value = task.memo;
 
   form.querySelector<HTMLButtonElement>('[data-action="close"]')!.addEventListener("click", options.onClose);
   form.querySelector<HTMLButtonElement>('[data-action="project"]')!.addEventListener("click", () => {
-    options.onOpenProjectTodo(project.id, todo.id);
+    options.onOpenProjectTask(project.id, task.id);
   });
-  form.querySelector<HTMLButtonElement>('[data-action="cancel"]')!.addEventListener("click", options.onCancelTodoEdit);
+  form.querySelector<HTMLButtonElement>('[data-action="cancel"]')!.addEventListener("click", options.onCancelTaskEdit);
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    const progress = getTodoProgressFromPercentValue(progressInput.value);
+    const progress = getTaskProgressFromPercentValue(progressInput.value);
     const selectedStatus = statusSelect.value as TaskStatus;
     const status: TaskStatus = progress >= 1 ? "완료" : selectedStatus;
 
-    options.onUpdateTodo(todo.id, {
+    options.onUpdateTask(task.id, {
       title: titleInput.value.trim(),
       dueDate: dueDateInput.value || null,
       estimate: estimateInput.value.trim(),
@@ -269,7 +276,7 @@ function renderCalendarTodoEditForm(project: Project, todo: Todo, options: Modal
 export function renderCalendarDetailModalView(options: ModalViewOptions): void {
   calendarDetailContent.innerHTML = "";
   calendarDetailModal.onclick = (event) => {
-    if (event.target !== calendarDetailModal) {
+    if (event.target !== calendarDetailModal || options.isTaskEditing) {
       return;
     }
 
@@ -293,9 +300,9 @@ export function renderCalendarDetailModalView(options: ModalViewOptions): void {
   }
 
   calendarDetailContent.append(
-    options.isTodoEditing
-      ? renderCalendarTodoEditForm(options.selection.project, options.selection.todo, options)
-      : renderCalendarTodoView(options.selection.project, options.selection.todo, options),
+    options.isTaskEditing
+      ? renderCalendarTaskEditForm(options.selection.project, options.selection.task, options)
+      : renderCalendarTaskView(options.selection.project, options.selection.task, options),
   );
   calendarDetailModal.hidden = false;
 }

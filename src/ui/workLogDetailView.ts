@@ -1,22 +1,34 @@
-import type { Project, Todo, WorkLog, WorkLogType } from "../types";
+import type { Project, Task, WorkLog, WorkLogType } from "../types";
+import { formatDisplayDate } from "../utils/calendar";
 import { workLogDetailContent, workLogDetailModal } from "./dom";
 import { createDetailRow, getDetailValue } from "./detailView";
 
 type WorkLogUpdates = Partial<WorkLog>;
 
+function addTabIndent(textarea: HTMLTextAreaElement): void {
+  textarea.addEventListener("keydown", (event) => {
+    if (event.key !== "Tab") return;
+    event.preventDefault();
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    textarea.value = textarea.value.slice(0, start) + "  " + textarea.value.slice(end);
+    textarea.selectionStart = textarea.selectionEnd = start + 2;
+  });
+}
+
 export type WorkLogCreateInput = {
   projectId: string;
   date: string;
   type: WorkLogType;
-  todoId: string | undefined;
+  taskId: string | undefined;
   content: string;
 };
 
 export type WorkLogDetailModalOptions = {
   workLog: WorkLog | null;
   project: Project | undefined;
-  linkedTodo: Todo | undefined;
-  projectTodos: Todo[];
+  linkedTask: Task | undefined;
+  projectTasks: Task[];
   isEditing: boolean;
   isCreating: boolean;
   projects: Project[];
@@ -31,8 +43,8 @@ export type WorkLogDetailModalOptions = {
   onCreate: (input: WorkLogCreateInput) => void;
 };
 
-function buildTodoOptions(todos: Todo[]): string {
-  return ['<option value="">없음</option>', ...todos.map((todo) => `<option value="${todo.id}">${todo.title}</option>`)].join("");
+function buildTaskOptions(tasks: Task[]): string {
+  return ['<option value="">없음</option>', ...tasks.map((task) => `<option value="${task.id}">${task.title}</option>`)].join("");
 }
 
 function createModalHeader(project: Project | undefined, heading: string, onClose: () => void): HTMLElement {
@@ -62,14 +74,14 @@ function renderWorkLogDetail(workLog: WorkLog, options: WorkLogDetailModalOption
   const wrapper = document.createElement("div");
   wrapper.className = "calendar-detail-view work-log-detail-view";
 
-  wrapper.append(createModalHeader(options.project, `${workLog.date} · ${workLog.type}`, options.onClose));
+  wrapper.append(createModalHeader(options.project, `${formatDisplayDate(workLog.date)} · ${workLog.type}`, options.onClose));
 
   const list = document.createElement("dl");
   list.className = "todo-detail-list calendar-detail-list";
   list.append(
-    createDetailRow("날짜", getDetailValue(workLog.date)),
+    createDetailRow("날짜", getDetailValue(formatDisplayDate(workLog.date))),
     createDetailRow("구분", workLog.type),
-    createDetailRow("연결 업무", getDetailValue(options.linkedTodo?.title)),
+    createDetailRow("연결 업무", getDetailValue(options.linkedTask?.title)),
   );
   wrapper.append(list);
 
@@ -84,7 +96,7 @@ function renderWorkLogDetail(workLog: WorkLog, options: WorkLogDetailModalOption
   const actions = document.createElement("div");
   actions.className = "modal-actions";
 
-  if (options.linkedTodo) {
+  if (options.linkedTask) {
     const openButton = document.createElement("button");
     openButton.type = "button";
     openButton.className = "quiet-button";
@@ -113,8 +125,8 @@ function renderWorkLogEditForm(workLog: WorkLog, options: WorkLogDetailModalOpti
   const form = document.createElement("form");
   form.className = "detail-form calendar-detail-form";
 
-  const todoOptions = options.projectTodos
-    .map((todo) => `<option value="${todo.id}">${todo.title}</option>`)
+  const taskOptions = options.projectTasks
+    .map((task) => `<option value="${task.id}">${task.title}</option>`)
     .join("");
 
   form.innerHTML = `
@@ -138,14 +150,14 @@ function renderWorkLogEditForm(workLog: WorkLog, options: WorkLogDetailModalOpti
     </label>
     <label class="full-field">
       연결 업무
-      <select name="todoId">
+      <select name="taskId">
         <option value="">없음</option>
-        ${todoOptions}
+        ${taskOptions}
       </select>
     </label>
     <label class="full-field">
       내용
-      <textarea name="content" rows="5" required></textarea>
+      <textarea name="content" rows="14"></textarea>
     </label>
     <div class="modal-actions full-field">
       <button class="quiet-button" type="button" data-action="cancel">취소</button>
@@ -155,13 +167,14 @@ function renderWorkLogEditForm(workLog: WorkLog, options: WorkLogDetailModalOpti
 
   const dateInput = form.querySelector<HTMLInputElement>('[name="date"]')!;
   const typeSelect = form.querySelector<HTMLSelectElement>('[name="type"]')!;
-  const todoSelect = form.querySelector<HTMLSelectElement>('[name="todoId"]')!;
+  const taskSelect = form.querySelector<HTMLSelectElement>('[name="taskId"]')!;
   const contentInput = form.querySelector<HTMLTextAreaElement>('[name="content"]')!;
 
   dateInput.value = workLog.date;
   typeSelect.value = workLog.type;
-  todoSelect.value = workLog.todoId ?? "";
+  taskSelect.value = workLog.taskId ?? "";
   contentInput.value = workLog.content;
+  addTabIndent(contentInput);
 
   form.querySelector<HTMLButtonElement>('[data-action="close"]')!.addEventListener("click", options.onClose);
   form.querySelector<HTMLButtonElement>('[data-action="cancel"]')!.addEventListener("click", options.onCancelEdit);
@@ -171,7 +184,7 @@ function renderWorkLogEditForm(workLog: WorkLog, options: WorkLogDetailModalOpti
     options.onUpdate({
       date: dateInput.value,
       type: typeSelect.value as WorkLogType,
-      todoId: todoSelect.value || undefined,
+      taskId: taskSelect.value || undefined,
       content: contentInput.value.trim(),
     });
   });
@@ -212,11 +225,11 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
     </label>
     <label class="full-field">
       연결 업무
-      <select name="todoId"></select>
+      <select name="taskId"></select>
     </label>
     <label class="full-field">
       내용
-      <textarea name="content" rows="5" required></textarea>
+      <textarea name="content" rows="14"></textarea>
     </label>
     <div class="modal-actions full-field">
       <button class="quiet-button" type="button" data-action="cancel">취소</button>
@@ -227,19 +240,20 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
   const projectSelect = form.querySelector<HTMLSelectElement>('[name="projectId"]')!;
   const dateInput = form.querySelector<HTMLInputElement>('[name="date"]')!;
   const typeSelect = form.querySelector<HTMLSelectElement>('[name="type"]')!;
-  const todoSelect = form.querySelector<HTMLSelectElement>('[name="todoId"]')!;
+  const taskSelect = form.querySelector<HTMLSelectElement>('[name="taskId"]')!;
   const contentInput = form.querySelector<HTMLTextAreaElement>('[name="content"]')!;
 
   dateInput.value = options.defaultDate;
   typeSelect.value = options.defaultType;
   projectSelect.value = options.projects[0]?.id ?? "";
+  addTabIndent(contentInput);
 
-  const syncTodoOptions = (): void => {
+  const syncTaskOptions = (): void => {
     const project = options.projects.find((candidate) => candidate.id === projectSelect.value);
-    todoSelect.innerHTML = buildTodoOptions(project?.todos ?? []);
+    taskSelect.innerHTML = buildTaskOptions(project?.tasks ?? []);
   };
-  syncTodoOptions();
-  projectSelect.addEventListener("change", syncTodoOptions);
+  syncTaskOptions();
+  projectSelect.addEventListener("change", syncTaskOptions);
 
   form.querySelector<HTMLButtonElement>('[data-action="close"]')!.addEventListener("click", options.onClose);
   form.querySelector<HTMLButtonElement>('[data-action="cancel"]')!.addEventListener("click", options.onClose);
@@ -250,7 +264,7 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
       projectId: projectSelect.value,
       date: dateInput.value,
       type: typeSelect.value as WorkLogType,
-      todoId: todoSelect.value || undefined,
+      taskId: taskSelect.value || undefined,
       content: contentInput.value.trim(),
     });
   });
@@ -261,7 +275,7 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
 export function renderWorkLogDetailModalView(options: WorkLogDetailModalOptions): void {
   workLogDetailContent.innerHTML = "";
   workLogDetailModal.onclick = (event) => {
-    if (event.target === workLogDetailModal) {
+    if (event.target === workLogDetailModal && !options.isCreating && !options.isEditing) {
       options.onClose();
     }
   };

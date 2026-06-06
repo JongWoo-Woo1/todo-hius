@@ -23,3 +23,18 @@ export function toDateKey(date: Date): string {
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
+// Display format for a YYYY-MM-DD date string: drops the century digits of the
+// year (2026-06-06 -> 26-06-06). Storage/keys keep the full toDateKey form.
+export function formatDisplayDate(value: string | null | undefined): string {
+  if (!value) {
+    return "";
+  }
+
+  const [year, month, day] = value.split("-");
+  if (!year || !month || !day) {
+    return value;
+  }
+
+  return `${year.slice(-2)}-${month}-${day}`;
+}

@@ -1,23 +1,24 @@
-import type { TaskPriority, TaskStatus, Todo } from "../types";
+import type { TaskPriority, TaskStatus, Task } from "../types";
+import { formatDisplayDate } from "../utils/calendar";
 import { formatDueDate } from "../utils/date";
-import { formatProgressPercent, isTodoOverdue } from "../utils/task";
+import { formatProgressPercent, isTaskOverdue } from "../utils/task";
 import { createDetailRow, getDetailValue } from "./detailView";
 
-type TodoUpdates = Partial<Todo>;
+type TaskUpdates = Partial<Task>;
 
-type TodoDetailViewOptions = {
+type TaskDetailViewOptions = {
   workLogSummary: HTMLElement;
   onEdit: () => void;
   onDelete: () => void;
 };
 
-type TodoEditFormOptions = {
-  onUpdate: (updates: TodoUpdates) => void;
+type TaskEditFormOptions = {
+  onUpdate: (updates: TaskUpdates) => void;
   onCancel: () => void;
   onDelete: () => void;
 };
 
-type TodoListItemOptions = {
+type TaskListItemOptions = {
   selected: boolean;
   detail: HTMLElement | null;
   onToggle: (completed: boolean) => void;
@@ -55,19 +56,19 @@ function createProgressPill(progress: number): HTMLSpanElement {
   return pill;
 }
 
-export function createTodoDetailView(todo: Todo, options: TodoDetailViewOptions): HTMLElement {
+export function createTaskDetailView(task: Task, options: TaskDetailViewOptions): HTMLElement {
   const detail = document.createElement("div");
   detail.className = "todo-inline-detail";
 
   const list = document.createElement("dl");
   list.className = "todo-detail-list";
   list.append(
-    createDetailRow("내부 목표 완료일", getDetailValue(todo.dueDate)),
-    createDetailRow("공수", getDetailValue(todo.estimate)),
-    createDetailRow("진행상태", todo.status),
-    createDetailRow("진척률", formatProgressPercent(todo.progress)),
-    createDetailRow("우선순위", getDetailValue(todo.priority)),
-    createDetailRow("메모", getDetailValue(todo.memo)),
+    createDetailRow("내부 목표 완료일", getDetailValue(formatDisplayDate(task.dueDate))),
+    createDetailRow("공수", getDetailValue(task.estimate)),
+    createDetailRow("진행상태", task.status),
+    createDetailRow("진척률", formatProgressPercent(task.progress)),
+    createDetailRow("우선순위", getDetailValue(task.priority)),
+    createDetailRow("메모", getDetailValue(task.memo)),
   );
 
   const actions = document.createElement("div");
@@ -96,7 +97,7 @@ export function createTodoDetailView(todo: Todo, options: TodoDetailViewOptions)
   return detail;
 }
 
-export function createTodoEditForm(todo: Todo, options: TodoEditFormOptions): HTMLElement {
+export function createTaskEditForm(task: Task, options: TaskEditFormOptions): HTMLElement {
   const form = document.createElement("form");
   form.className = "detail-form todo-inline-form";
   form.innerHTML = `
@@ -154,13 +155,13 @@ export function createTodoEditForm(todo: Todo, options: TodoEditFormOptions): HT
   const prioritySelect = form.querySelector<HTMLSelectElement>('[name="priority"]')!;
   const memoInput = form.querySelector<HTMLTextAreaElement>('[name="memo"]')!;
 
-  titleInput.value = todo.title;
-  dueDateInput.value = todo.dueDate ?? "";
-  estimateInput.value = todo.estimate ?? "";
-  statusSelect.value = todo.status;
-  progressInput.value = String(Math.round(todo.progress * 100));
-  prioritySelect.value = todo.priority ?? "보통";
-  memoInput.value = todo.memo;
+  titleInput.value = task.title;
+  dueDateInput.value = task.dueDate ?? "";
+  estimateInput.value = task.estimate ?? "";
+  statusSelect.value = task.status;
+  progressInput.value = String(Math.round(task.progress * 100));
+  prioritySelect.value = task.priority ?? "보통";
+  memoInput.value = task.memo;
 
   form.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -189,18 +190,18 @@ export function createTodoEditForm(todo: Todo, options: TodoEditFormOptions): HT
   return form;
 }
 
-export function createTodoListItem(todo: Todo, options: TodoListItemOptions): HTMLLIElement {
+export function createTaskListItem(task: Task, options: TaskListItemOptions): HTMLLIElement {
   const item = document.createElement("li");
   item.className = "todo-item";
-  item.classList.toggle("completed", todo.completed);
+  item.classList.toggle("completed", task.completed);
   item.classList.toggle("selected", options.selected);
   item.classList.toggle("expanded", options.selected);
-  item.classList.toggle("overdue", isTodoOverdue(todo));
+  item.classList.toggle("overdue", isTaskOverdue(task));
 
   const checkbox = document.createElement("input");
   checkbox.className = "todo-checkbox";
   checkbox.type = "checkbox";
-  checkbox.checked = todo.completed;
+  checkbox.checked = task.completed;
   checkbox.addEventListener("change", () => {
     options.onToggle(checkbox.checked);
   });
@@ -213,27 +214,27 @@ export function createTodoListItem(todo: Todo, options: TodoListItemOptions): HT
 
   const title = document.createElement("p");
   title.className = "todo-title";
-  title.append(createStatusBadge(todo.status));
+  title.append(createStatusBadge(task.status));
 
-  if (todo.priority) {
-    title.append(createPriorityBadge(todo.priority));
+  if (task.priority) {
+    title.append(createPriorityBadge(task.priority));
   }
 
-  if (isTodoOverdue(todo)) {
+  if (isTaskOverdue(task)) {
     const overdue = document.createElement("span");
     overdue.className = "overdue-badge";
     overdue.textContent = "Overdue";
     title.append(overdue);
   }
 
-  title.append(document.createTextNode(todo.title));
+  title.append(document.createTextNode(task.title));
 
   const meta = document.createElement("p");
   meta.className = "todo-meta";
 
   const dueDate = document.createElement("span");
-  dueDate.textContent = formatDueDate(todo.dueDate);
-  meta.append(createProgressPill(todo.progress), dueDate);
+  dueDate.textContent = formatDueDate(task.dueDate);
+  meta.append(createProgressPill(task.progress), dueDate);
 
   copy.append(title, meta);
 

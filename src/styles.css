@@ -1248,6 +1248,7 @@ button {
 .weekly-table td {
   padding: 8px;
   background: #ffffff;
+  overflow: hidden;
 }
 
 .weekly-table tr[data-weekly-section="plan"] td {
@@ -1263,6 +1264,7 @@ button {
   align-content: start;
   gap: 8px;
   min-height: 100%;
+  min-width: 0;
 }
 
 .weekly-item {
@@ -1279,6 +1281,72 @@ button {
 .weekly-item:hover {
   border-color: color-mix(in srgb, var(--project-color) 32%, #cbd5e1);
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.weekly-project-group {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--project-color) 18%, rgba(148, 163, 184, 0.26));
+  border-left: 3px solid var(--project-color);
+  background: color-mix(in srgb, var(--project-color) 12%, white);
+  padding: 9px 10px;
+  font-size: 13px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.weekly-project-group.clickable {
+  cursor: pointer;
+}
+
+.weekly-project-group.clickable:hover {
+  border-color: color-mix(in srgb, var(--project-color) 32%, #cbd5e1);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.weekly-project-group.clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.weekly-group-entry {
+  padding-top: 6px;
+  margin-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--project-color) 20%, rgba(148, 163, 184, 0.22));
+  min-width: 0;
+}
+
+.weekly-group-entry p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.weekly-group-entry:first-of-type {
+  padding-top: 4px;
+  margin-top: 4px;
+  border-top: none;
+}
+
+.weekly-group-entry.clickable {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 5px 6px;
+  margin: 4px -6px 0;
+  transition: background-color 120ms ease;
+}
+
+.weekly-group-entry.clickable:first-of-type {
+  margin-top: 4px;
+}
+
+.weekly-group-entry.clickable:hover {
+  background: color-mix(in srgb, var(--project-color) 20%, rgba(255, 255, 255, 0.7));
+}
+
+.weekly-group-entry.clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .weekly-cell-add {
@@ -1359,6 +1427,7 @@ button {
 .weekly-item-content {
   color: var(--text);
   line-height: 1.45;
+  white-space: pre-wrap;
 }
 
 .delete-work-log-button {
@@ -1458,4 +1527,55 @@ button {
     min-height: 96px;
     padding: 8px;
   }
+}
+
+.toast-container {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.toast {
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 11px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+  cursor: pointer;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.toast-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-success {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.toast-error {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+  background: var(--danger-soft);
+  color: var(--danger);
 }

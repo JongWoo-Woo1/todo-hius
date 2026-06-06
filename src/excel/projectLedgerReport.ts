@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import type { AppState } from "../types";
+import { formatDisplayDate } from "../utils/calendar";
 import { getLedgerRows } from "../utils/ledger";
 
 const LEDGER_HEADERS = [
@@ -61,16 +62,7 @@ function mergeRowsByKey(
 }
 
 function formatLedgerDate(date: string | null | undefined): string {
-  if (!date) {
-    return "";
-  }
-
-  const [year, month, day] = date.split("-");
-  if (!year || !month || !day) {
-    return date;
-  }
-
-  return `${year.slice(-2)}-${month}-${day}`;
+  return formatDisplayDate(date);
 }
 
 function getTextWidth(value: string): number {
@@ -147,20 +139,20 @@ export function createProjectLedgerWorkbook(state: AppState): ExcelJS.Workbook {
     cell.border = thinBorder;
   });
 
-  rows.forEach(({ todo, clientName, projectNumber, projectName, projectPeriod }, index) => {
+  rows.forEach(({ task, clientName, projectNumber, projectName, projectPeriod }, index) => {
     const row = worksheet.getRow(DATA_START_ROW + index);
-    row.height = getDataRowHeight(todo.title);
+    row.height = getDataRowHeight(task.title);
 
     [
       clientName,
       projectNumber,
       projectName,
       projectPeriod,
-      formatLedgerDate(todo.dueDate),
-      todo.estimate ?? "",
-      todo.title,
-      todo.status,
-      todo.progress,
+      formatLedgerDate(task.dueDate),
+      task.estimate ?? "",
+      task.title,
+      task.status,
+      task.progress,
     ].forEach((value, valueIndex) => {
       const columnNumber = TABLE_START_COLUMN + valueIndex;
       const cell = row.getCell(columnNumber);

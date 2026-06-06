@@ -1,19 +1,18 @@
-import { getProjectById, getTodoByProject } from "../state/selectors";
+import { getProjectById, getTaskByProject } from "../state/selectors";
 import type { AppState, WorkLogType } from "../types";
-import { toDateKey } from "../utils/calendar";
+import { formatDisplayDate, toDateKey } from "../utils/calendar";
 import { getWeekRangeLabel, getWeekdays } from "../utils/week";
 import { weeklyEmptyState, weeklyGrid, weeklyRangeLabel } from "./dom";
 
 type WeeklyItem = {
-  id?: string;
-  projectId?: string;
-  todoId?: string;
+  id: string;
+  projectId: string;
+  taskId?: string;
   clientName: string;
   projectName: string;
-  todoTitle?: string;
+  taskTitle?: string;
   content: string;
   color: string;
-  source: "todo" | "workLog";
 };
 
 type WeeklyViewOptions = {
@@ -39,54 +38,68 @@ function createWeeklyBuckets(visibleWeekDate: Date): Map<string, Record<(typeof 
   return buckets;
 }
 
-function renderWeeklyItem(item: WeeklyItem, options: WeeklyViewOptions): HTMLElement {
-  const wrapper = document.createElement("div");
-  wrapper.className = "weekly-item";
-  wrapper.classList.toggle("todo-source", item.source === "todo");
-  wrapper.style.setProperty("--project-color", item.color);
+function makeActivatable(element: HTMLElement, activate: () => void): void {
+  element.classList.add("clickable");
+  element.setAttribute("role", "button");
+  element.tabIndex = 0;
+  element.addEventListener("click", activate);
+  element.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      activate();
+    }
+  });
+}
 
-  if (item.source === "workLog" && item.id) {
-    const workLogId = item.id;
-    wrapper.classList.add("clickable");
-    wrapper.setAttribute("role", "button");
-    wrapper.tabIndex = 0;
-    wrapper.addEventListener("click", () => options.onSelectWorkLog(workLogId));
-    wrapper.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        options.onSelectWorkLog(workLogId);
-      }
-    });
+function renderWeeklyProjectGroup(groupItems: WeeklyItem[], options: WeeklyViewOptions): HTMLElement {
+  const firstItem = groupItems[0];
+  const isSingle = groupItems.length === 1;
+
+  const group = document.createElement("div");
+  group.className = "weekly-project-group";
+  group.style.setProperty("--project-color", firstItem.color);
+
+  if (isSingle) {
+    makeActivatable(group, () => options.onSelectWorkLog(firstItem.id));
   }
-
-  const header = document.createElement("div");
-  header.className = "weekly-item-header";
 
   const meta = document.createElement("div");
   meta.className = "weekly-item-meta";
   const client = document.createElement("span");
   client.className = "weekly-client-chip";
-  client.textContent = item.clientName || "No client";
+  client.textContent = firstItem.clientName || "No client";
   const projectName = document.createElement("span");
   projectName.className = "weekly-project-name";
-  projectName.textContent = item.projectName;
+  projectName.textContent = firstItem.projectName;
   meta.append(client, projectName);
+  group.append(meta);
 
-  if (item.todoTitle) {
-    const linkedTask = document.createElement("p");
-    linkedTask.className = "weekly-linked-title";
-    linkedTask.textContent = item.todoTitle;
-    header.append(meta, linkedTask);
-  } else {
-    header.append(meta);
-  }
+  groupItems.forEach((item) => {
+    const entry = document.createElement("div");
+    entry.className = "weekly-group-entry";
 
-  const content = document.createElement("p");
-  content.className = "weekly-item-content";
-  content.textContent = item.content;
-  wrapper.append(header, content);
+    if (!isSingle) {
+      makeActivatable(entry, () => options.onSelectWorkLog(item.id));
+    }
 
-  return wrapper;
+    if (item.taskTitle) {
+      const linked = document.createElement("p");
+      linked.className = "weekly-linked-title";
+      linked.textContent = item.taskTitle;
+      entry.append(linked);
+    }
+
+    if (item.content) {
+      const content = document.createElement("p");
+      content.className = "weekly-item-content";
+      content.textContent = item.content;
+      entry.append(content);
+    }
+
+    group.append(entry);
+  });
+
+  return group;
 }
 
 function renderWeeklyItems(items: WeeklyItem[], options: WeeklyViewOptions): HTMLElement {
@@ -100,8 +113,14 @@ function renderWeeklyItems(items: WeeklyItem[], options: WeeklyViewOptions): HTM
     return body;
   }
 
+  const groupMap = new Map<string, WeeklyItem[]>();
   items.forEach((item) => {
-    body.append(renderWeeklyItem(item, options));
+    if (!groupMap.has(item.projectId)) groupMap.set(item.projectId, []);
+    groupMap.get(item.projectId)!.push(item);
+  });
+
+  groupMap.forEach((groupItems) => {
+    body.append(renderWeeklyProjectGroup(groupItems, options));
   });
 
   return body;
@@ -114,26 +133,6 @@ export function renderWeeklyView(state: AppState, visibleWeekDate: Date, options
   const buckets = createWeeklyBuckets(visibleWeekDate);
   let weeklyItemCount = 0;
 
-  state.projects.forEach((project) => {
-    project.todos.forEach((todo) => {
-      if (!todo.dueDate || !buckets.has(todo.dueDate)) {
-        return;
-      }
-
-      buckets.get(todo.dueDate)!.plan.push({
-        projectId: project.id,
-        todoId: todo.id,
-        clientName: project.clientName,
-        projectName: project.name,
-        todoTitle: todo.title,
-        content: todo.title,
-        color: project.color,
-        source: "todo",
-      });
-      weeklyItemCount += 1;
-    });
-  });
-
   state.workLogs.forEach((workLog) => {
     const bucket = buckets.get(workLog.date);
     if (!bucket) {
@@ -141,20 +140,19 @@ export function renderWeeklyView(state: AppState, visibleWeekDate: Date, options
     }
 
     const project = getProjectById(state, workLog.projectId);
-    const linkedTodo = getTodoByProject(project, workLog.todoId);
+    const linkedTask = getTaskByProject(project, workLog.taskId);
     const clientName = project?.clientName ?? "";
     const projectName = project?.name ?? "Unknown";
     const color = project?.color ?? "#94a3b8";
     const item: WeeklyItem = {
       id: workLog.id,
       projectId: workLog.projectId,
-      todoId: workLog.todoId,
+      taskId: workLog.taskId,
       clientName,
       projectName,
-      todoTitle: linkedTodo?.title,
+      taskTitle: linkedTask?.title,
       content: workLog.content,
       color,
-      source: "workLog",
     };
 
     if (workLog.type === "계획") {
@@ -184,7 +182,7 @@ export function renderWeeklyView(state: AppState, visibleWeekDate: Date, options
     th.scope = "col";
     th.innerHTML = `
       <span>${date.toLocaleDateString("en-US", { weekday: "short" })}</span>
-      <strong>${dateKey}</strong>
+      <strong>${formatDisplayDate(dateKey)}</strong>
     `;
     headerRow.append(th);
   });

@@ -1,4 +1,4 @@
-import { toDateKey } from "./calendar";
+import { formatDisplayDate, toDateKey } from "./calendar";
 
 function getMonday(date: Date): Date {
   const day = date.getDay();
@@ -15,5 +15,5 @@ export function getWeekdays(date: Date): Date[] {
 
 export function getWeekRangeLabel(date: Date): string {
   const weekdays = getWeekdays(date);
-  return `${toDateKey(weekdays[0])} ~ ${toDateKey(weekdays[weekdays.length - 1])}`;
+  return `${formatDisplayDate(toDateKey(weekdays[0]))} ~ ${formatDisplayDate(toDateKey(weekdays[weekdays.length - 1]))}`;
 }

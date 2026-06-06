@@ -2,7 +2,7 @@ import { dialog, ipcMain, type BrowserWindow } from "electron";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-type Todo = {
+type Task = {
   id: string;
   title: string;
   dueDate: string | null;
@@ -26,13 +26,13 @@ type Project = {
   periodEnd?: string | null;
   periodText?: string;
   color: string;
-  todos: Todo[];
+  tasks: Task[];
 };
 
 type WorkLog = {
   id: string;
   projectId: string;
-  todoId?: string;
+  taskId?: string;
   date: string;
   type: string;
   content: string;
