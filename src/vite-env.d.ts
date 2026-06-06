@@ -30,11 +30,24 @@ type DefaultTodoWorkspaceResult =
 
 type TodoFileMenuCommand = "open-project" | "save-project" | "save-project-as";
 
+type RecentWorkspaceEntry = {
+  path: string;
+  name: string;
+  exists: boolean;
+};
+
+type RecentWorkspacesResult = {
+  recents: RecentWorkspaceEntry[];
+};
+
 declare global {
   interface Window {
     hiusTodoFile?: {
       openDefaultWorkspace: () => Promise<DefaultTodoWorkspaceResult>;
       openWorkspace: () => Promise<OpenTodoWorkspaceResult>;
+      openWorkspacePath: (workspacePath: string) => Promise<OpenTodoWorkspaceResult>;
+      listRecents: () => Promise<RecentWorkspacesResult>;
+      removeRecent: (workspacePath: string) => Promise<RecentWorkspacesResult>;
       saveWorkspace: (state: AppState, workspacePath?: string) => Promise<SaveTodoWorkspaceResult>;
       saveWorkspaceAs: (state: AppState) => Promise<SaveTodoWorkspaceResult>;
       setDirty: (isDirty: boolean) => void;

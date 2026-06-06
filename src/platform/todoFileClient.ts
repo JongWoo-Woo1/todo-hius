@@ -29,6 +29,20 @@ export function openTodoWorkspace(): ReturnType<TodoFileApi["openWorkspace"]> {
   return getRequiredTodoFileApi().openWorkspace();
 }
 
+export type RecentWorkspaceEntry = Awaited<ReturnType<TodoFileApi["listRecents"]>>["recents"][number];
+
+export function openTodoWorkspacePath(workspacePath: string): ReturnType<TodoFileApi["openWorkspacePath"]> {
+  return getRequiredTodoFileApi().openWorkspacePath(workspacePath);
+}
+
+export function listRecentTodoWorkspaces(): ReturnType<TodoFileApi["listRecents"]> {
+  return getRequiredTodoFileApi().listRecents();
+}
+
+export function removeRecentTodoWorkspace(workspacePath: string): ReturnType<TodoFileApi["removeRecent"]> {
+  return getRequiredTodoFileApi().removeRecent(workspacePath);
+}
+
 export function saveTodoWorkspace(
   state: AppState,
   workspacePath?: string,

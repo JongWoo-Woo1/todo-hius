@@ -2,10 +2,12 @@ import "./styles.css";
 
 import {
   isTodoFileClientAvailable,
+  listRecentTodoWorkspaces,
   onTodoFileMenuCommand,
   onTodoFileSaveRequest,
-  openDefaultTodoWorkspace,
   openTodoWorkspace,
+  openTodoWorkspacePath,
+  removeRecentTodoWorkspace,
   saveTodoWorkspace,
   saveTodoWorkspaceAs,
   setTodoFileDirty,
@@ -78,6 +80,7 @@ import {
 } from "./ui/render";
 import { confirmDelete } from "./ui/confirmDialog";
 import { showToast } from "./ui/toast";
+import { closeStartupDialog, openStartupDialog } from "./ui/startupDialog";
 
 let currentTodoWorkspacePath: string | undefined;
 let isDirty = false;
@@ -110,23 +113,31 @@ function markDirty(): void {
   setDirty(true);
 }
 
-async function openDefaultProject(): Promise<void> {
+function startNewProject(): void {
+  replaceState({ projects: [], activeProjectId: null, workLogs: [] });
+  updateTodoWorkspacePath(undefined);
+  setDirty(false);
+  clearSelectedTask();
+  resetCalendarSelection();
+  render();
+}
+
+async function openProjectByPath(workspacePath: string): Promise<boolean> {
   if (!isTodoFileClientAvailable()) {
-    return;
+    return false;
   }
 
   try {
-    const result = await openDefaultTodoWorkspace();
-    if (!result.found) {
-      updateTodoWorkspacePath(result.workspacePath);
-      setDirty(false);
-      return;
+    const result = await openTodoWorkspacePath(workspacePath);
+    if (result.canceled) {
+      showToast("프로젝트를 찾을 수 없어 목록에서 제거했습니다.", "error");
+      return false;
     }
 
     const imported = replaceState(result.state);
     if (!imported) {
-      window.alert("Failed to load the default HIUS Todo project.");
-      return;
+      showToast("유효하지 않은 .todo 워크스페이스입니다.", "error");
+      return false;
     }
 
     updateTodoWorkspacePath(result.workspacePath);
@@ -134,10 +145,45 @@ async function openDefaultProject(): Promise<void> {
     clearSelectedTask();
     resetCalendarSelection();
     render();
+    return true;
   } catch (error) {
     console.error(error);
-    window.alert("Failed to load the default HIUS Todo project.");
+    showToast(".todo 워크스페이스를 여는 데 실패했습니다.", "error");
+    return false;
   }
+}
+
+async function showStartupChooser(): Promise<void> {
+  if (!isTodoFileClientAvailable()) {
+    return;
+  }
+
+  const { recents } = await listRecentTodoWorkspaces();
+  openStartupDialog({
+    recents,
+    onOpenRecent: async (workspacePath) => {
+      const opened = await openProjectByPath(workspacePath);
+      if (opened) {
+        closeStartupDialog();
+      } else {
+        void showStartupChooser();
+      }
+    },
+    onOpenOther: async () => {
+      const opened = await openProject();
+      if (opened) {
+        closeStartupDialog();
+      }
+    },
+    onNewProject: () => {
+      startNewProject();
+      closeStartupDialog();
+    },
+    onRemoveRecent: async (workspacePath) => {
+      await removeRecentTodoWorkspace(workspacePath);
+      void showStartupChooser();
+    },
+  });
 }
 
 async function openProject(): Promise<boolean> {
@@ -417,6 +463,5 @@ toggleAllProjectsButton.addEventListener("click", () => {
 
 render();
 
-void openDefaultProject().finally(() => {
-  setStateChangeListener(markDirty);
-});
+setStateChangeListener(markDirty);
+void showStartupChooser();

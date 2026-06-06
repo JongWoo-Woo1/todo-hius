@@ -3,6 +3,17 @@ dist/
 dist-electron/
 build/
 
+# electron-builder packaged output
+release/
+
+# personal .todo workspace data (treated as user files outside the repo)
+*.todo
+hius-dt-jw-todo/
+
+# runtime .todo workspace save artifacts
+.todo-save-*/
+.projects-backup-*/
+
 .env
 .env.local
 .env.*.local

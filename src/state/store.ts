@@ -1,6 +1,13 @@
-import { createSampleState } from "../data/sampleProjects";
 import type { AppState, Project, Task, TaskPriority, TaskStatus, WorkLog, WorkLogType } from "../types";
 import { getProjectColor } from "../utils/projectColor";
+
+function createEmptyState(): AppState {
+  return {
+    projects: [],
+    activeProjectId: null,
+    workLogs: [],
+  };
+}
 
 type LegacyTask = Partial<Task> & {
   completed?: boolean;
@@ -29,7 +36,7 @@ const AI_SHIP_PROJECT_ID = "project-uipa-ai-ship";
 const MERGED_AI_SHIP_PROJECT_IDS = new Set([AI_SHIP_PROJECT_ID, "project-ksoe-ai-ship"]);
 const REMOVED_PROJECT_IDS = new Set(["project-hd-grc-ni-seminar"]);
 
-let state = createSampleState();
+let state = createEmptyState();
 let stateChangeListener: (() => void) | null = null;
 
 function isTaskStatus(value: unknown): value is TaskStatus {

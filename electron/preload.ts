@@ -5,6 +5,9 @@ type MenuCommand = "open-project" | "save-project" | "save-project-as";
 contextBridge.exposeInMainWorld("hiusTodoFile", {
   openDefaultWorkspace: () => ipcRenderer.invoke("todo-workspace:open-default"),
   openWorkspace: () => ipcRenderer.invoke("todo-workspace:open"),
+  openWorkspacePath: (workspacePath: string) => ipcRenderer.invoke("todo-workspace:open-path", workspacePath),
+  listRecents: () => ipcRenderer.invoke("todo-workspace:recents"),
+  removeRecent: (workspacePath: string) => ipcRenderer.invoke("todo-workspace:remove-recent", workspacePath),
   saveWorkspace: (state: unknown, workspacePath?: string) =>
     ipcRenderer.invoke("todo-workspace:save", state, workspacePath),
   saveWorkspaceAs: (state: unknown) => ipcRenderer.invoke("todo-workspace:save", state),

@@ -1,6 +1,15 @@
-import { dialog, ipcMain, type BrowserWindow } from "electron";
+import { app, dialog, ipcMain, type BrowserWindow } from "electron";
 import fs from "node:fs/promises";
 import path from "node:path";
+
+const RECENTS_FILE_NAME = "recent-workspaces.json";
+const MAX_RECENTS = 10;
+
+type RecentEntry = {
+  path: string;
+  name: string;
+  exists: boolean;
+};
 
 type Task = {
   id: string;
@@ -137,6 +146,52 @@ async function pathExists(filePath: string): Promise<boolean> {
   }
 }
 
+function getRecentsFilePath(): string {
+  return path.join(app.getPath("userData"), RECENTS_FILE_NAME);
+}
+
+async function readRecentPaths(): Promise<string[]> {
+  try {
+    const data = JSON.parse(await fs.readFile(getRecentsFilePath(), "utf8"));
+    if (Array.isArray(data?.recents)) {
+      return data.recents.filter((entry: unknown): entry is string => typeof entry === "string");
+    }
+  } catch {
+    // No recents file yet (or unreadable) — start empty.
+  }
+  return [];
+}
+
+async function writeRecentPaths(recents: string[]): Promise<void> {
+  const filePath = getRecentsFilePath();
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, `${JSON.stringify({ recents }, null, 2)}\n`, "utf8");
+}
+
+async function addRecentWorkspace(workspacePath: string): Promise<void> {
+  const normalized = path.resolve(workspacePath);
+  const existing = await readRecentPaths();
+  const deduped = existing.filter((entry) => path.resolve(entry).toLowerCase() !== normalized.toLowerCase());
+  await writeRecentPaths([normalized, ...deduped].slice(0, MAX_RECENTS));
+}
+
+async function removeRecentWorkspace(workspacePath: string): Promise<void> {
+  const normalized = path.resolve(workspacePath).toLowerCase();
+  const existing = await readRecentPaths();
+  await writeRecentPaths(existing.filter((entry) => path.resolve(entry).toLowerCase() !== normalized));
+}
+
+async function listRecentWorkspaces(): Promise<RecentEntry[]> {
+  const recents = await readRecentPaths();
+  return Promise.all(
+    recents.map(async (entry) => ({
+      path: entry,
+      name: path.basename(entry, ".todo"),
+      exists: await pathExists(entry),
+    })),
+  );
+}
+
 async function openWorkspaceFile(workspacePath: string): Promise<AppState> {
   const manifest = await readJsonFile(workspacePath);
   assertWorkspaceManifest(manifest);
@@ -267,11 +322,38 @@ export function registerTodoWorkspaceHandlers(mainWindow: BrowserWindow, paths: 
     }
 
     const workspacePath = result.filePaths[0];
+    const state = await openWorkspaceFile(workspacePath);
+    await addRecentWorkspace(workspacePath);
     return {
       canceled: false,
       workspacePath,
-      state: await openWorkspaceFile(workspacePath),
+      state,
     };
+  });
+
+  ipcMain.handle("todo-workspace:open-path", async (_event, workspacePath: string): Promise<OpenWorkspaceResult> => {
+    if (!workspacePath || !(await pathExists(workspacePath))) {
+      await removeRecentWorkspace(workspacePath);
+      return { canceled: true };
+    }
+
+    try {
+      const state = await openWorkspaceFile(workspacePath);
+      await addRecentWorkspace(workspacePath);
+      return { canceled: false, workspacePath, state };
+    } catch {
+      await removeRecentWorkspace(workspacePath);
+      return { canceled: true };
+    }
+  });
+
+  ipcMain.handle("todo-workspace:recents", async (): Promise<{ recents: RecentEntry[] }> => {
+    return { recents: await listRecentWorkspaces() };
+  });
+
+  ipcMain.handle("todo-workspace:remove-recent", async (_event, workspacePath: string): Promise<{ recents: RecentEntry[] }> => {
+    await removeRecentWorkspace(workspacePath);
+    return { recents: await listRecentWorkspaces() };
   });
 
   ipcMain.handle(
@@ -294,6 +376,7 @@ export function registerTodoWorkspaceHandlers(mainWindow: BrowserWindow, paths: 
       }
 
       await saveWorkspaceFile(workspacePath, state);
+      await addRecentWorkspace(workspacePath);
       return {
         canceled: false,
         workspacePath,

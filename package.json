@@ -11,13 +11,16 @@
     "build:web": "vite build",
     "build:electron": "tsc -p tsconfig.electron.json",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
+    "dist:dir": "npm run build && electron-builder --dir",
+    "dist:portable": "npm run build && electron-builder --win portable"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
     "concurrently": "^10.0.3",
     "cross-env": "^10.1.0",
     "electron": "^42.3.3",
+    "electron-builder": "^26.15.0",
     "electronmon": "^2.0.4",
     "typescript": "^5.8.3",
     "vite": "^7.1.0",
@@ -31,5 +34,31 @@
       "!**/hius-dt-jw-todo/**",
       "!**/*.todo"
     ]
+  },
+  "build": {
+    "appId": "com.hius.todo",
+    "productName": "HIUS Todo",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "!dist-electron/hius-dt-jw-todo/**",
+      "!**/*.todo",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "artifactName": "${productName}-Portable-${version}-${arch}.${ext}"
   }
 }
