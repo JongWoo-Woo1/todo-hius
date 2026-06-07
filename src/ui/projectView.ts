@@ -11,12 +11,20 @@ import {
   projectNameForm,
   projectNameInput,
   projectNumberInput,
-  projectPeriodEndInput,
-  projectPeriodStartInput,
-  projectPeriodTextInput,
+  projectPeriodEndMonthInput,
+  projectPeriodStartMonthInput,
+  projectPeriodStatusSelect,
 } from "./dom";
-import { formatDisplayDate } from "../utils/calendar";
+import { formatProjectPeriod } from "../utils/project";
 import { createDetailRow, getDetailValue } from "./detailView";
+
+function syncProjectPeriodInputs(): void {
+  const isMonthPeriod = projectPeriodStatusSelect.value === "연도월";
+  projectPeriodStartMonthInput.disabled = !isMonthPeriod;
+  projectPeriodEndMonthInput.disabled = !isMonthPeriod;
+}
+
+projectPeriodStatusSelect.addEventListener("change", syncProjectPeriodInputs);
 
 export function renderEmptyProjectHeader(): void {
   activeProjectName.textContent = "Add a project";
@@ -30,9 +38,10 @@ export function renderProjectHeader(project: Project): void {
   projectColorInput.value = project.color;
   projectClientNameInput.value = project.clientName;
   projectNumberInput.value = project.projectNumber ?? "";
-  projectPeriodTextInput.value = project.periodText ?? "";
-  projectPeriodStartInput.value = project.periodStart ?? "";
-  projectPeriodEndInput.value = project.periodEnd ?? "";
+  projectPeriodStatusSelect.value = project.periodStatus ?? "대기";
+  projectPeriodStartMonthInput.value = project.periodStartMonth ?? "";
+  projectPeriodEndMonthInput.value = project.periodEndMonth ?? "";
+  syncProjectPeriodInputs();
 }
 
 export function renderProjectInfoView(project: Project | null): void {
@@ -45,9 +54,7 @@ export function renderProjectInfoView(project: Project | null): void {
   projectInfoView.append(
     createDetailRow("업체명", getDetailValue(project.clientName)),
     createDetailRow("프로젝트 번호", getDetailValue(project.projectNumber)),
-    createDetailRow("프로젝트 기간", getDetailValue(project.periodText)),
-    createDetailRow("시작일", getDetailValue(formatDisplayDate(project.periodStart))),
-    createDetailRow("종료일", getDetailValue(formatDisplayDate(project.periodEnd))),
+    createDetailRow("프로젝트 기간", getDetailValue(formatProjectPeriod(project))),
   );
 }
 

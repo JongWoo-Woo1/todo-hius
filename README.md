@@ -65,6 +65,7 @@ npm.cmd run build
 |  |  |- projectDetailView.ts      # Project detail shell / empty-state rendering
 |  |  |- taskListView.ts           # Task list rendering within a project
 |  |  |- taskView.ts               # Task detail card and Task edit form
+|  |  |- taskTrashView.ts          # deleted Task restore/permanent-delete UI
 |  |  |- calendarView.ts           # Calendar filters, range controls, and grid rendering
 |  |  |- ledgerView.ts             # Ledger filters and table rendering
 |  |  |- weeklyView.ts             # Weekly report view rendering

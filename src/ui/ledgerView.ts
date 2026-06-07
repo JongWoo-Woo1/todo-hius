@@ -110,11 +110,17 @@ export function renderLedgerView(state: AppState, { onProjectSelect, onTaskSelec
   const clientFilter = ledgerClientFilter.value || "전체";
   const overdueOnly = ledgerOverdueOnlyInput.checked;
 
-  const rows = getLedgerRows(state).filter(({ project, task }) => {
+  const rows = getLedgerRows(state).filter((ledgerRow) => {
+    const { project } = ledgerRow;
     if (clientFilter !== "전체" && project.clientName !== clientFilter) {
       return false;
     }
 
+    if (ledgerRow.kind === "project-empty") {
+      return statusFilter === "전체" && !overdueOnly;
+    }
+
+    const { task } = ledgerRow;
     if (statusFilter !== "전체" && task.status !== statusFilter) {
       return false;
     }
@@ -131,17 +137,23 @@ export function renderLedgerView(state: AppState, { onProjectSelect, onTaskSelec
     return true;
   });
 
-  rows.forEach(({ project, task, clientName, projectName, projectPeriod }, index) => {
+  rows.forEach((ledgerRow, index) => {
+    const { project, clientName, projectName, projectPeriod } = ledgerRow;
     const clientRowSpan = rows.filter((row) => row.clientName === clientName).length;
     const projectRowSpan = rows.filter((row) => row.project.id === project.id).length;
     const isFirstClientRow = rows.findIndex((row) => row.clientName === clientName) === index;
     const isFirstProjectRow = rows.findIndex((row) => row.project.id === project.id) === index;
+    const isTaskRow = ledgerRow.kind === "task";
+    const task = isTaskRow ? ledgerRow.task : null;
+    const isPriorityFocus = task?.priority === "높음" || task?.priority === "최우선";
     const row = document.createElement("tr");
-    row.classList.toggle("completed", task.completed);
-    row.classList.toggle("priority-high", task.priority === "높음");
+    row.classList.toggle("completed", task?.completed === true);
+    row.classList.toggle("priority-high", isPriorityFocus);
     row.dataset.ledgerClient = clientName;
     row.dataset.ledgerProjectId = project.id;
-    row.dataset.ledgerTaskId = task.id;
+    if (task) {
+      row.dataset.ledgerTaskId = task.id;
+    }
     row.tabIndex = 0;
 
     if (isFirstClientRow) {
@@ -172,15 +184,27 @@ export function renderLedgerView(state: AppState, { onProjectSelect, onTaskSelec
       );
     }
 
-    row.append(
-      createLedgerCell("ledger-date-cell", formatDisplayDate(task.dueDate)),
-      createLedgerCell("ledger-estimate-cell", task.estimate ?? ""),
-      createLedgerCell("ledger-title-cell", task.title),
-      createStatusCell(task.status),
-      createProgressCell(task.progress),
-      createPriorityCell(task.priority),
-      createLedgerCell("ledger-issue-cell", task.issueRisk ?? ""),
-    );
+    if (task) {
+      row.append(
+        createLedgerCell("ledger-date-cell", formatDisplayDate(task.dueDate)),
+        createLedgerCell("ledger-estimate-cell", task.estimate ?? ""),
+        createLedgerCell("ledger-title-cell", task.title),
+        createStatusCell(task.status),
+        createProgressCell(task.progress),
+        createPriorityCell(task.priority),
+        createLedgerCell("ledger-memo-cell", task.memo),
+      );
+    } else {
+      row.append(
+        createLedgerCell("ledger-date-cell", "-"),
+        createLedgerCell("ledger-estimate-cell", "-"),
+        createLedgerCell("ledger-title-cell", "업무 미등록"),
+        createLedgerCell("ledger-status-cell", "-"),
+        createLedgerCell("ledger-progress-cell", "-"),
+        createLedgerCell("ledger-priority-cell", "-"),
+        createLedgerCell("ledger-memo-cell", "-"),
+      );
+    }
     const clearLedgerHover = () => {
       ledgerTableBody.querySelectorAll<HTMLElement>(".ledger-hover").forEach((cell) => {
         cell.classList.remove("ledger-hover");
@@ -229,7 +253,11 @@ export function renderLedgerView(state: AppState, { onProjectSelect, onTaskSelec
     row.addEventListener("focus", setLedgerTaskHover);
     row.addEventListener("blur", clearLedgerHover);
     row.addEventListener("click", () => {
-      onTaskSelect(task);
+      if (task) {
+        onTaskSelect(task);
+      } else {
+        onProjectSelect(project);
+      }
     });
     row.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") {
@@ -237,7 +265,11 @@ export function renderLedgerView(state: AppState, { onProjectSelect, onTaskSelec
       }
 
       event.preventDefault();
-      onTaskSelect(task);
+      if (task) {
+        onTaskSelect(task);
+      } else {
+        onProjectSelect(project);
+      }
     });
     ledgerTableBody.append(row);
   });

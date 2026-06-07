@@ -106,3 +106,5 @@ Task completion fields must stay synchronized:
 Make focused changes. Use conventional-style commits (`feat:`, `fix:`, `refactor:`, `style:`, `docs:`, `chore:`).
 
 Commit and push only when the user asks, when a task is clearly complete, or to preserve a meaningful checkpoint.
+
+When the user asks to push changes, briefly check whether `AGENTS.md` or `README.md` should be updated for the completed work and update only genuinely relevant documentation. When there is no explicit push request or documentation request, avoid routine `AGENTS.md`/`README.md` edits to keep token use and change noise low.

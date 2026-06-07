@@ -6,6 +6,19 @@ function getMonday(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + mondayOffset);
 }
 
+export function getDefaultVisibleWeekDate(date = new Date()): Date {
+  const day = date.getDay();
+  if (day === 6) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 2);
+  }
+
+  if (day === 0) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+  }
+
+  return new Date(date);
+}
+
 export function getWeekdays(date: Date): Date[] {
   const monday = getMonday(date);
   return Array.from({ length: 5 }, (_, index) => {

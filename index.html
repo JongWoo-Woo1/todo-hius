@@ -57,15 +57,18 @@
             </label>
             <label>
               Period
-              <input id="project-period-text" type="text" placeholder="Example: 2026 Q2 - Q3" />
+              <select id="project-period-status">
+                <option value="대기">대기</option>
+                <option value="연도월">연도 월</option>
+              </select>
             </label>
             <label>
-              Start
-              <input id="project-period-start" type="date" />
+              시작연월
+              <input id="project-period-start-month" type="month" />
             </label>
             <label>
-              End
-              <input id="project-period-end" type="date" />
+              만료연월
+              <input id="project-period-end-month" type="month" />
             </label>
             <div class="project-info-actions">
               <button type="submit">저장</button>
@@ -104,6 +107,15 @@
             </div>
             <ul id="todo-list" class="todo-list"></ul>
             <p id="empty-state" class="empty-state">No tasks yet.</p>
+          </section>
+
+          <section id="task-trash-card" class="task-trash-card" hidden>
+            <div class="todo-panel-header">
+              <h3>삭제된 Task</h3>
+              <button id="toggle-task-trash-button" class="quiet-button" type="button">삭제된 Task 보기</button>
+            </div>
+            <div id="task-trash-list" class="task-trash-list" hidden></div>
+            <p id="task-trash-empty" class="empty-state" hidden>삭제된 Task가 없습니다.</p>
           </section>
         </div>
       </section>
@@ -147,9 +159,8 @@
               <option value="전체">전체</option>
               <option value="대기">대기</option>
               <option value="진행중">진행중</option>
-              <option value="미완">미완</option>
+              <option value="검토대기">검토대기</option>
               <option value="완료">완료</option>
-              <option value="보류">보류</option>
             </select>
           </label>
 
@@ -183,7 +194,7 @@
               <col class="ledger-col-status" />
               <col class="ledger-col-progress" />
               <col class="ledger-col-priority" />
-              <col class="ledger-col-issue" />
+              <col class="ledger-col-memo" />
             </colgroup>
             <thead>
               <tr>
@@ -196,7 +207,7 @@
                 <th>진행상태</th>
                 <th>진척률</th>
                 <th>우선순위</th>
-                <th>비고</th>
+                <th>메모</th>
               </tr>
             </thead>
             <tbody id="ledger-table-body"></tbody>

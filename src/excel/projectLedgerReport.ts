@@ -13,6 +13,7 @@ const LEDGER_HEADERS = [
   "주요 추진내용",
   "진행상태",
   "진척률",
+  "메모",
 ];
 
 const TABLE_START_ROW = 2;
@@ -29,6 +30,12 @@ const thinBorder: Partial<ExcelJS.Borders> = {
   left: { style: "thin" },
   bottom: { style: "thin" },
   right: { style: "thin" },
+};
+
+const priorityFill: ExcelJS.Fill = {
+  type: "pattern",
+  pattern: "solid",
+  fgColor: { argb: "FFFFF7ED" },
 };
 
 function mergeRowsByKey(
@@ -122,6 +129,7 @@ export function createProjectLedgerWorkbook(state: AppState): ExcelJS.Workbook {
     { width: 44 },
     { width: 9 },
     { width: 8 },
+    { width: 25 },
   ];
 
   const headerRow = worksheet.getRow(HEADER_ROW_NUMBER);
@@ -139,25 +147,35 @@ export function createProjectLedgerWorkbook(state: AppState): ExcelJS.Workbook {
     cell.border = thinBorder;
   });
 
-  rows.forEach(({ task, clientName, projectNumber, projectName, projectPeriod }, index) => {
+  rows.forEach((ledgerRow, index) => {
+    const { clientName, projectNumber, projectName, projectPeriod } = ledgerRow;
     const row = worksheet.getRow(DATA_START_ROW + index);
-    row.height = getDataRowHeight(task.title);
+    const mainContent = ledgerRow.kind === "task" ? ledgerRow.task.title : "업무 미등록";
+    const isPriorityFocus =
+      ledgerRow.kind === "task" &&
+      !ledgerRow.task.completed &&
+      (ledgerRow.task.priority === "높음" || ledgerRow.task.priority === "최우선");
+    row.height = getDataRowHeight(mainContent);
 
     [
       clientName,
       projectNumber,
       projectName,
       projectPeriod,
-      formatLedgerDate(task.dueDate),
-      task.estimate ?? "",
-      task.title,
-      task.status,
-      task.progress,
+      ledgerRow.kind === "task" ? formatLedgerDate(ledgerRow.task.dueDate) : "-",
+      ledgerRow.kind === "task" ? ledgerRow.task.estimate ?? "" : "-",
+      mainContent,
+      ledgerRow.kind === "task" ? ledgerRow.task.status : "-",
+      ledgerRow.kind === "task" ? ledgerRow.task.progress : "-",
+      ledgerRow.kind === "task" ? ledgerRow.task.memo : "-",
     ].forEach((value, valueIndex) => {
       const columnNumber = TABLE_START_COLUMN + valueIndex;
       const cell = row.getCell(columnNumber);
       cell.value = value;
       applyTableCellStyle(cell);
+      if (isPriorityFocus && valueIndex >= 4) {
+        cell.fill = priorityFill;
+      }
     });
   });
 
@@ -172,13 +190,21 @@ export function createProjectLedgerWorkbook(state: AppState): ExcelJS.Workbook {
       };
     });
 
-    [8].forEach((columnNumber) => {
+    [8, 11].forEach((columnNumber) => {
       worksheet.getCell(rowNumber, columnNumber).alignment = {
         horizontal: "left",
         vertical: "middle",
         wrapText: true,
       };
     });
+
+    if (worksheet.getCell(rowNumber, 11).value === "-") {
+      worksheet.getCell(rowNumber, 11).alignment = {
+        horizontal: "center",
+        vertical: "middle",
+        wrapText: true,
+      };
+    }
   }
 
   if (rows.length > 1) {

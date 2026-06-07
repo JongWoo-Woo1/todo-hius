@@ -1,8 +1,10 @@
-export type TaskStatus = "대기" | "진행중" | "미완" | "완료" | "보류";
+export type TaskStatus = "대기" | "진행중" | "검토대기" | "완료";
 
 export type TaskPriority = "낮음" | "보통" | "높음" | "최우선";
 
 export type WorkLogType = "계획" | "수행";
+
+export type ProjectPeriodStatus = "대기" | "연도월";
 
 export type Task = {
   id: string;
@@ -27,14 +29,20 @@ export type Project = {
   periodStart?: string | null;
   periodEnd?: string | null;
   periodText?: string;
+  periodStatus?: ProjectPeriodStatus;
+  periodStartMonth?: string | null;
+  periodEndMonth?: string | null;
   color: string;
   tasks: Task[];
+  deletedTasks: Task[];
 };
 
 export type WorkLog = {
   id: string;
   projectId: string;
   taskId?: string;
+  linkedTaskTitleSnapshot?: string;
+  linkedTaskDeleted?: boolean;
   date: string;
   type: WorkLogType;
   content: string;

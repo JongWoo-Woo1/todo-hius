@@ -1,5 +1,6 @@
 import type { Project, TaskPriority, TaskStatus, Task } from "../types";
 import { formatDisplayDate } from "../utils/calendar";
+import { formatProjectPeriod } from "../utils/project";
 import { formatProgressPercent } from "../utils/task";
 import { calendarDetailContent, calendarDetailModal } from "./dom";
 import { createDetailRow, getDetailValue } from "./detailView";
@@ -20,6 +21,7 @@ type ModalViewOptions = {
   onClose: () => void;
   onOpenProjectTask: (projectId: string, taskId: string | null) => void;
   onEditTask: () => void;
+  onDeleteTask: (task: Task) => void;
   onCancelTaskEdit: () => void;
   onSelectTaskFromProject: (taskId: string) => void;
   onUpdateTask: (taskId: string, updates: TaskUpdates) => void;
@@ -83,7 +85,15 @@ function renderCalendarTaskView(project: Project, task: Task, options: ModalView
   editButton.textContent = "수정";
   editButton.addEventListener("click", options.onEditTask);
 
-  actions.append(projectButton, editButton);
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.className = "danger-button";
+  deleteButton.textContent = "휴지통으로 이동";
+  deleteButton.addEventListener("click", () => {
+    options.onDeleteTask(task);
+  });
+
+  actions.append(projectButton, deleteButton, editButton);
 
   if (options.workLogSummary) {
     wrapper.append(header, list, options.workLogSummary, actions);
@@ -119,9 +129,7 @@ function renderLedgerProjectView(project: Project, options: ModalViewOptions): H
   list.append(
     createDetailRow("업체", getDetailValue(project.clientName)),
     createDetailRow("프로젝트 번호", getDetailValue(project.projectNumber)),
-    createDetailRow("프로젝트 기간", getDetailValue(project.periodText)),
-    createDetailRow("시작일", getDetailValue(formatDisplayDate(project.periodStart))),
-    createDetailRow("종료일", getDetailValue(formatDisplayDate(project.periodEnd))),
+    createDetailRow("프로젝트 기간", getDetailValue(formatProjectPeriod(project))),
     createDetailRow("업무 수", `${project.tasks.length}`),
   );
 
@@ -201,9 +209,8 @@ function renderCalendarTaskEditForm(project: Project, task: Task, options: Modal
       <select name="status">
         <option value="대기">대기</option>
         <option value="진행중">진행중</option>
-        <option value="미완">미완</option>
+        <option value="검토대기">검토대기</option>
         <option value="완료">완료</option>
-        <option value="보류">보류</option>
       </select>
     </label>
     <label>

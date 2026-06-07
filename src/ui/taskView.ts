@@ -118,9 +118,8 @@ export function createTaskEditForm(task: Task, options: TaskEditFormOptions): HT
       <select name="status">
         <option value="대기">대기</option>
         <option value="진행중">진행중</option>
-        <option value="미완">미완</option>
+        <option value="검토대기">검토대기</option>
         <option value="완료">완료</option>
-        <option value="보류">보류</option>
       </select>
     </label>
     <label>

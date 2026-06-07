@@ -1,4 +1,13 @@
-import type { AppState, Project, Task, TaskPriority, TaskStatus, WorkLog, WorkLogType } from "../types";
+import type {
+  AppState,
+  Project,
+  ProjectPeriodStatus,
+  Task,
+  TaskPriority,
+  TaskStatus,
+  WorkLog,
+  WorkLogType,
+} from "../types";
 import { getProjectColor } from "../utils/projectColor";
 
 function createEmptyState(): AppState {
@@ -9,14 +18,16 @@ function createEmptyState(): AppState {
   };
 }
 
-type LegacyTask = Partial<Task> & {
+type LegacyTask = Partial<Omit<Task, "status">> & {
+  status?: unknown;
   completed?: boolean;
 };
 
 // `todos` is the legacy serialization key (renamed to `tasks`); both are read for back-compat.
-type LegacyProject = Partial<Omit<Project, "tasks">> & {
+type LegacyProject = Partial<Omit<Project, "tasks" | "deletedTasks">> & {
   tasks?: LegacyTask[];
   todos?: LegacyTask[];
+  deletedTasks?: LegacyTask[];
 };
 
 // `todoId` is the legacy serialization key (renamed to `taskId`); both are read for back-compat.
@@ -29,9 +40,10 @@ type LegacyAppState = Partial<AppState> & {
   workLogs?: LegacyWorkLog[];
 };
 
-const TASK_STATUSES: TaskStatus[] = ["대기", "진행중", "미완", "완료", "보류"];
+const TASK_STATUSES: TaskStatus[] = ["대기", "진행중", "검토대기", "완료"];
 const TASK_PRIORITIES: TaskPriority[] = ["낮음", "보통", "높음", "최우선"];
 const WORK_LOG_TYPES: WorkLogType[] = ["계획", "수행"];
+const PROJECT_PERIOD_STATUSES: ProjectPeriodStatus[] = ["대기", "연도월"];
 const AI_SHIP_PROJECT_ID = "project-uipa-ai-ship";
 const MERGED_AI_SHIP_PROJECT_IDS = new Set([AI_SHIP_PROJECT_ID, "project-ksoe-ai-ship"]);
 const REMOVED_PROJECT_IDS = new Set(["project-hd-grc-ni-seminar"]);
@@ -39,8 +51,12 @@ const REMOVED_PROJECT_IDS = new Set(["project-hd-grc-ni-seminar"]);
 let state = createEmptyState();
 let stateChangeListener: (() => void) | null = null;
 
-function isTaskStatus(value: unknown): value is TaskStatus {
-  return typeof value === "string" && TASK_STATUSES.includes(value as TaskStatus);
+function normalizeTaskStatus(value: unknown): TaskStatus {
+  if (value === "미완" || value === "보류") {
+    return "대기";
+  }
+
+  return typeof value === "string" && TASK_STATUSES.includes(value as TaskStatus) ? (value as TaskStatus) : "대기";
 }
 
 function isTaskPriority(value: unknown): value is TaskPriority {
@@ -78,6 +94,93 @@ function normalizeClientName(value: unknown): string {
   }
 
   return trimmedValue;
+}
+
+function isProjectPeriodStatus(value: unknown): value is ProjectPeriodStatus {
+  return typeof value === "string" && PROJECT_PERIOD_STATUSES.includes(value as ProjectPeriodStatus);
+}
+
+function normalizeProjectPeriodMonth(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const match = value.match(/^(\d{2}|\d{4})-(\d{1,2})(?:-\d{1,2})?$/);
+  if (!match) {
+    return null;
+  }
+
+  const rawYear = match[1];
+  const year = rawYear.length === 2 ? `20${rawYear}` : rawYear;
+  const month = match[2].padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function parseProjectPeriodText(value: unknown): {
+  status: ProjectPeriodStatus;
+  startMonth: string | null;
+  endMonth: string | null;
+} | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmedValue = value.trim();
+  if (!trimmedValue) {
+    return null;
+  }
+
+  if (trimmedValue === "대기") {
+    return { status: "대기", startMonth: null, endMonth: null };
+  }
+
+  const rangeMatch = trimmedValue.match(/^(?:(\d{2}|\d{4})\.(\d{1,2}))?\s*~\s*(?:(\d{2}|\d{4})\.(\d{1,2}))?$/);
+  if (!rangeMatch) {
+    return null;
+  }
+
+  const startMonth = rangeMatch[1] && rangeMatch[2] ? normalizeProjectPeriodMonth(`${rangeMatch[1]}-${rangeMatch[2]}`) : null;
+  const endMonth = rangeMatch[3] && rangeMatch[4] ? normalizeProjectPeriodMonth(`${rangeMatch[3]}-${rangeMatch[4]}`) : null;
+  return { status: "연도월", startMonth, endMonth };
+}
+
+function normalizeProjectPeriod(project: LegacyProject): {
+  periodStatus: ProjectPeriodStatus;
+  periodStartMonth: string | null;
+  periodEndMonth: string | null;
+} {
+  if (isProjectPeriodStatus(project.periodStatus)) {
+    return {
+      periodStatus: project.periodStatus,
+      periodStartMonth: normalizeProjectPeriodMonth(project.periodStartMonth),
+      periodEndMonth: normalizeProjectPeriodMonth(project.periodEndMonth),
+    };
+  }
+
+  const parsedPeriodText = parseProjectPeriodText(project.periodText);
+  if (parsedPeriodText) {
+    return {
+      periodStatus: parsedPeriodText.status,
+      periodStartMonth: parsedPeriodText.startMonth,
+      periodEndMonth: parsedPeriodText.endMonth,
+    };
+  }
+
+  const startMonth = normalizeProjectPeriodMonth(project.periodStart);
+  const endMonth = normalizeProjectPeriodMonth(project.periodEnd);
+  if (startMonth || endMonth) {
+    return {
+      periodStatus: "연도월",
+      periodStartMonth: startMonth,
+      periodEndMonth: endMonth,
+    };
+  }
+
+  return {
+    periodStatus: "대기",
+    periodStartMonth: null,
+    periodEndMonth: null,
+  };
 }
 
 function isAiShipProject(id: string, name: string): boolean {
@@ -131,7 +234,8 @@ function synchronizeTaskStatus(task: Task): Task {
 function normalizeTask(task: LegacyTask, index: number): Task {
   const completed = task.completed === true;
   const progress = normalizeProgress(task.progress, completed);
-  const status = completed || progress >= 1 ? "완료" : isTaskStatus(task.status) ? task.status : "대기";
+  const status = completed || progress >= 1 ? "완료" : normalizeTaskStatus(task.status);
+  const memo = task.memo || task.issueRisk || "";
 
   return synchronizeTaskStatus({
     id: task.id ?? `task-${index}`,
@@ -142,9 +246,8 @@ function normalizeTask(task: LegacyTask, index: number): Task {
     progress,
     workerComment: task.workerComment ?? "",
     managerComment: task.managerComment ?? "",
-    issueRisk: task.issueRisk ?? "",
     priority: isTaskPriority(task.priority) ? task.priority : "보통",
-    memo: task.memo ?? "",
+    memo,
     completed,
   });
 }
@@ -153,6 +256,7 @@ function normalizeProject(project: LegacyProject, index: number): Project {
   const id = project.id ?? `project-${index}`;
   const name = normalizeProjectName(project.name);
   const isAiShip = isAiShipProject(id, name);
+  const period = normalizeProjectPeriod(project);
 
   return {
     id: normalizeProjectId(id, name),
@@ -161,9 +265,13 @@ function normalizeProject(project: LegacyProject, index: number): Project {
     projectNumber: project.projectNumber ?? "",
     periodStart: project.periodStart ?? null,
     periodEnd: project.periodEnd ?? null,
-    periodText: project.periodText ?? "",
+    periodText: "",
+    periodStatus: period.periodStatus,
+    periodStartMonth: period.periodStartMonth,
+    periodEndMonth: period.periodEndMonth,
     color: project.color ?? getProjectColor(index),
     tasks: (project.tasks ?? project.todos ?? []).map(normalizeTask),
+    deletedTasks: (project.deletedTasks ?? []).map(normalizeTask),
   };
 }
 
@@ -183,6 +291,8 @@ function normalizeWorkLog(workLog: LegacyWorkLog, index: number): WorkLog | null
     id: workLog.id ?? `work-log-${index}`,
     projectId,
     taskId: workLog.taskId ?? workLog.todoId,
+    linkedTaskTitleSnapshot: workLog.linkedTaskTitleSnapshot,
+    linkedTaskDeleted: workLog.linkedTaskDeleted === true,
     date: workLog.date ?? new Date().toISOString().slice(0, 10),
     type,
     content: workLog.content ?? "",
@@ -210,6 +320,17 @@ function mergeDuplicateProjects(projects: Project[]): Project[] {
       if (!existingTaskIds.has(task.id)) {
         existingProject.tasks.push(task);
         existingTaskIds.add(task.id);
+      }
+    });
+
+    const existingDeletedTaskIds = new Set([
+      ...existingProject.tasks.map((task) => task.id),
+      ...existingProject.deletedTasks.map((task) => task.id),
+    ]);
+    project.deletedTasks.forEach((task) => {
+      if (!existingDeletedTaskIds.has(task.id)) {
+        existingProject.deletedTasks.push(task);
+        existingDeletedTaskIds.add(task.id);
       }
     });
   });
@@ -356,8 +477,61 @@ export function deleteTask(taskId: string): void {
     return;
   }
 
-  project.tasks = project.tasks.filter((task) => task.id !== taskId);
-  state.workLogs = state.workLogs.filter((workLog) => workLog.taskId !== taskId);
+  const taskIndex = project.tasks.findIndex((task) => task.id === taskId);
+  if (taskIndex < 0) {
+    return;
+  }
+
+  const [deletedTask] = project.tasks.splice(taskIndex, 1);
+  project.deletedTasks.push(deletedTask);
+  state.workLogs.forEach((workLog) => {
+    if (workLog.taskId !== taskId) {
+      return;
+    }
+
+    workLog.linkedTaskTitleSnapshot = workLog.linkedTaskTitleSnapshot || deletedTask.title;
+    workLog.linkedTaskDeleted = true;
+  });
+  saveState();
+}
+
+export function restoreDeletedTask(taskId: string): void {
+  const project = state.projects.find((p) => p.deletedTasks.some((t) => t.id === taskId));
+  if (!project) {
+    return;
+  }
+
+  const taskIndex = project.deletedTasks.findIndex((task) => task.id === taskId);
+  if (taskIndex < 0) {
+    return;
+  }
+
+  const [restoredTask] = project.deletedTasks.splice(taskIndex, 1);
+  project.tasks.push(restoredTask);
+  state.workLogs.forEach((workLog) => {
+    if (workLog.taskId === taskId) {
+      workLog.linkedTaskDeleted = false;
+    }
+  });
+  saveState();
+}
+
+export function permanentlyDeleteTask(taskId: string): void {
+  const project = state.projects.find((p) => p.deletedTasks.some((t) => t.id === taskId));
+  const taskIndex = project?.deletedTasks.findIndex((task) => task.id === taskId) ?? -1;
+  if (!project || taskIndex < 0) {
+    return;
+  }
+
+  const [deletedTask] = project.deletedTasks.splice(taskIndex, 1);
+  state.workLogs.forEach((workLog) => {
+    if (workLog.taskId !== taskId) {
+      return;
+    }
+
+    workLog.linkedTaskTitleSnapshot = workLog.linkedTaskTitleSnapshot || deletedTask.title;
+    workLog.linkedTaskDeleted = true;
+  });
   saveState();
 }
 

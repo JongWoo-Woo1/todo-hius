@@ -1,7 +1,7 @@
 import {
+  getLinkedTaskDisplay,
   getProjectById,
   getProjectWorkLogs,
-  getTaskByProject,
   getTaskWorkLogs,
 } from "../state/selectors";
 import type { AppState, Project, WorkLog } from "../types";
@@ -58,12 +58,12 @@ function createWorkLogEntry(
   options: { showProject?: boolean; compact?: boolean } = {},
 ): HTMLElement {
   const project = getProjectById(state, workLog.projectId);
-  const linkedTask = getTaskByProject(project, workLog.taskId);
+  const linkedTaskDisplay = getLinkedTaskDisplay(project, workLog);
 
   return createWorkLogEntryElement(workLog, {
     ...options,
     project,
-    linkedTask,
+    linkedTaskLabel: linkedTaskDisplay.label,
     onSelect: () => handlers.onSelectWorkLog(workLog.id),
   });
 }

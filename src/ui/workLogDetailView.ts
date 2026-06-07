@@ -27,7 +27,8 @@ export type WorkLogCreateInput = {
 export type WorkLogDetailModalOptions = {
   workLog: WorkLog | null;
   project: Project | undefined;
-  linkedTask: Task | undefined;
+  linkedTaskLabel: string;
+  canOpenLinkedTask: boolean;
   projectTasks: Task[];
   isEditing: boolean;
   isCreating: boolean;
@@ -43,8 +44,32 @@ export type WorkLogDetailModalOptions = {
   onCreate: (input: WorkLogCreateInput) => void;
 };
 
-function buildTaskOptions(tasks: Task[]): string {
-  return ['<option value="">없음</option>', ...tasks.map((task) => `<option value="${task.id}">${task.title}</option>`)].join("");
+function appendOption(select: HTMLSelectElement, value: string, label: string): void {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = label;
+  select.append(option);
+}
+
+function setTaskOptions(
+  select: HTMLSelectElement,
+  tasks: Task[],
+  selectedTaskId?: string,
+  selectedTaskLabel?: string,
+): void {
+  select.innerHTML = "";
+  appendOption(select, "", "선택 안 함");
+
+  tasks.forEach((task) => {
+    appendOption(select, task.id, task.title);
+  });
+
+  const hasSelectedTask = Boolean(selectedTaskId && tasks.some((task) => task.id === selectedTaskId));
+  if (selectedTaskId && !hasSelectedTask) {
+    appendOption(select, selectedTaskId, selectedTaskLabel ?? selectedTaskId);
+  }
+
+  select.value = selectedTaskId ?? "";
 }
 
 function createModalHeader(project: Project | undefined, heading: string, onClose: () => void): HTMLElement {
@@ -81,7 +106,7 @@ function renderWorkLogDetail(workLog: WorkLog, options: WorkLogDetailModalOption
   list.append(
     createDetailRow("날짜", getDetailValue(formatDisplayDate(workLog.date))),
     createDetailRow("구분", workLog.type),
-    createDetailRow("연결 업무", getDetailValue(options.linkedTask?.title)),
+    createDetailRow("연결 업무", options.linkedTaskLabel),
   );
   wrapper.append(list);
 
@@ -96,7 +121,7 @@ function renderWorkLogDetail(workLog: WorkLog, options: WorkLogDetailModalOption
   const actions = document.createElement("div");
   actions.className = "modal-actions";
 
-  if (options.linkedTask) {
+  if (options.canOpenLinkedTask) {
     const openButton = document.createElement("button");
     openButton.type = "button";
     openButton.className = "quiet-button";
@@ -125,10 +150,6 @@ function renderWorkLogEditForm(workLog: WorkLog, options: WorkLogDetailModalOpti
   const form = document.createElement("form");
   form.className = "detail-form calendar-detail-form";
 
-  const taskOptions = options.projectTasks
-    .map((task) => `<option value="${task.id}">${task.title}</option>`)
-    .join("");
-
   form.innerHTML = `
     <div class="modal-header full-field">
       <div>
@@ -150,10 +171,7 @@ function renderWorkLogEditForm(workLog: WorkLog, options: WorkLogDetailModalOpti
     </label>
     <label class="full-field">
       연결 업무
-      <select name="taskId">
-        <option value="">없음</option>
-        ${taskOptions}
-      </select>
+      <select name="taskId"></select>
     </label>
     <label class="full-field">
       내용
@@ -172,7 +190,7 @@ function renderWorkLogEditForm(workLog: WorkLog, options: WorkLogDetailModalOpti
 
   dateInput.value = workLog.date;
   typeSelect.value = workLog.type;
-  taskSelect.value = workLog.taskId ?? "";
+  setTaskOptions(taskSelect, options.projectTasks, workLog.taskId, options.linkedTaskLabel);
   contentInput.value = workLog.content;
   addTabIndent(contentInput);
 
@@ -250,7 +268,7 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
 
   const syncTaskOptions = (): void => {
     const project = options.projects.find((candidate) => candidate.id === projectSelect.value);
-    taskSelect.innerHTML = buildTaskOptions(project?.tasks ?? []);
+    setTaskOptions(taskSelect, project?.tasks ?? []);
   };
   syncTaskOptions();
   projectSelect.addEventListener("change", syncTaskOptions);

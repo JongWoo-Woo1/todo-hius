@@ -1,4 +1,4 @@
-import { getProjectById, getTaskByProject } from "../state/selectors";
+import { getLinkedTaskDisplay, getProjectById } from "../state/selectors";
 import type { AppState, WorkLogType } from "../types";
 import { formatDisplayDate, toDateKey } from "../utils/calendar";
 import { getWeekRangeLabel, getWeekdays } from "../utils/week";
@@ -140,7 +140,7 @@ export function renderWeeklyView(state: AppState, visibleWeekDate: Date, options
     }
 
     const project = getProjectById(state, workLog.projectId);
-    const linkedTask = getTaskByProject(project, workLog.taskId);
+    const linkedTaskDisplay = getLinkedTaskDisplay(project, workLog);
     const clientName = project?.clientName ?? "";
     const projectName = project?.name ?? "Unknown";
     const color = project?.color ?? "#94a3b8";
@@ -150,7 +150,7 @@ export function renderWeeklyView(state: AppState, visibleWeekDate: Date, options
       taskId: workLog.taskId,
       clientName,
       projectName,
-      taskTitle: linkedTask?.title,
+      taskTitle: linkedTaskDisplay.label,
       content: workLog.content,
       color,
     };

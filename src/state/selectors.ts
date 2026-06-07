@@ -5,6 +5,12 @@ export type TaskWithProject = {
   task: Task;
 };
 
+export type LinkedTaskDisplay = {
+  label: string;
+  activeTask?: Task;
+  deletedTask?: Task;
+};
+
 export function getProjectById(state: AppState, projectId: string): Project | undefined {
   return state.projects.find((project) => project.id === projectId);
 }
@@ -15,6 +21,32 @@ export function getTaskByProject(project: Project | undefined, taskId: string | 
   }
 
   return project.tasks.find((task) => task.id === taskId);
+}
+
+export function getDeletedTaskByProject(project: Project | undefined, taskId: string | undefined): Task | undefined {
+  if (!project || !taskId) {
+    return undefined;
+  }
+
+  return project.deletedTasks.find((task) => task.id === taskId);
+}
+
+export function getLinkedTaskDisplay(project: Project | undefined, workLog: WorkLog): LinkedTaskDisplay {
+  const activeTask = getTaskByProject(project, workLog.taskId);
+  if (activeTask) {
+    return { label: activeTask.title, activeTask };
+  }
+
+  const deletedTask = getDeletedTaskByProject(project, workLog.taskId);
+  if (deletedTask) {
+    return { label: deletedTask.title, deletedTask };
+  }
+
+  if (workLog.linkedTaskTitleSnapshot && workLog.linkedTaskDeleted) {
+    return { label: `${workLog.linkedTaskTitleSnapshot} (삭제됨)` };
+  }
+
+  return { label: "Linked Task 없음" };
 }
 
 export function getSortedTasksByDueDate(project: Project | undefined): Task[] {

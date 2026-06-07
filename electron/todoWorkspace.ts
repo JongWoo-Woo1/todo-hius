@@ -34,14 +34,20 @@ type Project = {
   periodStart?: string | null;
   periodEnd?: string | null;
   periodText?: string;
+  periodStatus?: string;
+  periodStartMonth?: string | null;
+  periodEndMonth?: string | null;
   color: string;
   tasks: Task[];
+  deletedTasks: Task[];
 };
 
 type WorkLog = {
   id: string;
   projectId: string;
   taskId?: string;
+  linkedTaskTitleSnapshot?: string;
+  linkedTaskDeleted?: boolean;
   date: string;
   type: string;
   content: string;

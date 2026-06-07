@@ -50,9 +50,9 @@ import {
   projectNameForm,
   projectNameInput,
   projectNumberInput,
-  projectPeriodEndInput,
-  projectPeriodStartInput,
-  projectPeriodTextInput,
+  projectPeriodEndMonthInput,
+  projectPeriodStartMonthInput,
+  projectPeriodStatusSelect,
   taskDueDateInput,
   taskForm,
   taskTitleInput,
@@ -272,8 +272,12 @@ addProjectButton.addEventListener("click", () => {
     periodStart: null,
     periodEnd: null,
     periodText: "",
+    periodStatus: "대기",
+    periodStartMonth: null,
+    periodEndMonth: null,
     color: getProjectColor(getState().projects.length),
     tasks: [],
+    deletedTasks: [],
   };
 
   addProject(project);
@@ -316,9 +320,10 @@ projectInfoForm.addEventListener("submit", (event) => {
   updateActiveProject({
     clientName: projectClientNameInput.value.trim(),
     projectNumber: projectNumberInput.value.trim(),
-    periodText: projectPeriodTextInput.value.trim(),
-    periodStart: projectPeriodStartInput.value || null,
-    periodEnd: projectPeriodEndInput.value || null,
+    periodText: "",
+    periodStatus: projectPeriodStatusSelect.value === "연도월" ? "연도월" : "대기",
+    periodStartMonth: projectPeriodStatusSelect.value === "연도월" ? projectPeriodStartMonthInput.value || null : null,
+    periodEndMonth: projectPeriodStatusSelect.value === "연도월" ? projectPeriodEndMonthInput.value || null : null,
   });
   showProjectInfoEditMode(false);
   render();
@@ -341,7 +346,6 @@ taskForm.addEventListener("submit", (event) => {
     progress: 0,
     workerComment: "",
     managerComment: "",
-    issueRisk: "",
     priority: "보통",
     memo: "",
     completed: false,
@@ -407,7 +411,8 @@ ledgerExportButton.addEventListener("click", async () => {
     import("./excel/downloadWorkbook"),
   ]);
   const workbook = createProjectLedgerWorkbook(getState());
-  await downloadWorkbook(workbook, `project-ledger-${toDateKey(new Date())}.xlsx`);
+  const exportDate = toDateKey(new Date()).slice(5).replace("-", "");
+  await downloadWorkbook(workbook, `진행 업무_DTS_${exportDate}.xlsx`);
 });
 
 calendarViewButton.addEventListener("click", () => {

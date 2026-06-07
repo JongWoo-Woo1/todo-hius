@@ -1,5 +1,6 @@
 import { getDefaultCalendarRangePreferences, type CalendarRangePreferences } from "../state/calendarPreferences";
 import type { WorkLogType } from "../types";
+import { getDefaultVisibleWeekDate } from "../utils/week";
 
 export type AppView = "projects" | "ledger" | "weekly" | "calendar";
 
@@ -18,6 +19,7 @@ export type UiState = {
   calendarRangePreferences: CalendarRangePreferences;
   expandedProjectWorkLogId: string | null;
   expandedTaskWorkLogIds: Set<string>;
+  expandedTaskTrashProjectId: string | null;
   selectedWorkLogId: string | null;
   isWorkLogEditing: boolean;
   isWorkLogCreating: boolean;
@@ -31,7 +33,7 @@ export const uiState: UiState = {
   isProjectInfoEditing: false,
   isProjectNameEditing: false,
   currentView: "calendar",
-  visibleWeekDate: new Date(),
+  visibleWeekDate: getDefaultVisibleWeekDate(),
   selectedCalendarProjectIds: null,
   selectedModalTaskId: null,
   isModalTaskEditing: false,
@@ -40,6 +42,7 @@ export const uiState: UiState = {
   calendarRangePreferences: getDefaultCalendarRangePreferences(),
   expandedProjectWorkLogId: null,
   expandedTaskWorkLogIds: new Set<string>(),
+  expandedTaskTrashProjectId: null,
   selectedWorkLogId: null,
   isWorkLogEditing: false,
   isWorkLogCreating: false,

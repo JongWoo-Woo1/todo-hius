@@ -9,7 +9,9 @@ import {
   deleteWorkLog,
   getActiveProject,
   getState,
+  permanentlyDeleteTask,
   reorderProjects,
+  restoreDeletedTask,
   selectProject,
   toggleTask,
   updateTask,
@@ -19,9 +21,9 @@ import { createId } from "../utils/id";
 import { toDateKey } from "../utils/calendar";
 import {
   findTaskWithProject,
+  getLinkedTaskDisplay,
   getProjectById,
   getSortedTasksByDueDate,
-  getTaskByProject,
   getWorkLogById,
 } from "../state/selectors";
 import type { Project, Task, WorkLogType } from "../types";
@@ -47,6 +49,7 @@ import { renderWeeklyView } from "./weeklyView";
 import { confirmDelete } from "./confirmDialog";
 import { renderEmptyProjectDetail, renderProjectDetailShell } from "./projectDetailView";
 import { clearTaskList, renderTaskList } from "./taskListView";
+import { clearTaskTrashView, renderTaskTrashView } from "./taskTrashView";
 import { renderViewVisibility } from "./navView";
 import { renderWorkLogDetailModalView } from "./workLogDetailView";
 
@@ -187,6 +190,15 @@ function renderCalendarDetailModal(): void {
       uiState.isModalTaskEditing = true;
       render();
     },
+    onDeleteTask: async (task) => {
+      if (!(await confirmDelete(`"${task.title}" 업무를 휴지통으로 이동하시겠습니까?\n연결된 주간 업무 기록은 유지됩니다.`))) {
+        return;
+      }
+
+      deleteTask(task.id);
+      closeCalendarDetailModal();
+      render();
+    },
     onCancelTaskEdit: () => {
       uiState.isModalTaskEditing = false;
       render();
@@ -235,12 +247,13 @@ function renderWorkLogDetailModal(): void {
   const isCreating = canShowWorkLogDetail && uiState.isWorkLogCreating;
   const workLog = canShowWorkLogDetail ? getWorkLogById(state, uiState.selectedWorkLogId) : undefined;
   const project = workLog ? getProjectById(state, workLog.projectId) : undefined;
-  const linkedTask = getTaskByProject(project, workLog?.taskId);
+  const linkedTaskDisplay = workLog ? getLinkedTaskDisplay(project, workLog) : null;
 
   renderWorkLogDetailModalView({
     workLog: workLog ?? null,
     project,
-    linkedTask,
+    linkedTaskLabel: linkedTaskDisplay?.label ?? "Linked Task 없음",
+    canOpenLinkedTask: Boolean(linkedTaskDisplay?.activeTask),
     projectTasks: project?.tasks ?? [],
     isEditing: uiState.isWorkLogEditing,
     isCreating,
@@ -260,8 +273,8 @@ function renderWorkLogDetailModal(): void {
       render();
     },
     onOpenTask: () => {
-      if (project && linkedTask) {
-        goToProjectTask(project.id, linkedTask.id);
+      if (project && linkedTaskDisplay?.activeTask) {
+        goToProjectTask(project.id, linkedTaskDisplay.activeTask.id);
       }
       closeWorkLogDetail();
       render();
@@ -289,9 +302,7 @@ function renderWorkLogDetailModal(): void {
       render();
     },
     onCreate: ({ projectId, date, type, taskId, content }) => {
-      // A linked task on its own signals intent to perform that task, so
-      // content is optional as long as either content or a task is provided.
-      if (!projectId || (!content && !taskId)) {
+      if (!projectId) {
         return;
       }
 
@@ -325,7 +336,7 @@ function renderTaskDetailView(task: Task): HTMLElement {
       render();
     },
     onDelete: async () => {
-      if (!(await confirmDelete(`"${task.title}" 업무를 삭제하시겠습니까?\n연결된 주간 업무 기록도 함께 삭제됩니다.`))) {
+      if (!(await confirmDelete(`"${task.title}" 업무를 휴지통으로 이동하시겠습니까?\n연결된 주간 업무 기록은 유지됩니다.`))) {
         return;
       }
 
@@ -349,7 +360,7 @@ function renderTaskEditForm(task: Task): HTMLElement {
       render();
     },
     onDelete: async () => {
-      if (!(await confirmDelete(`"${task.title}" 업무를 삭제하시겠습니까?\n연결된 주간 업무 기록도 함께 삭제됩니다.`))) {
+      if (!(await confirmDelete(`"${task.title}" 업무를 휴지통으로 이동하시겠습니까?\n연결된 주간 업무 기록은 유지됩니다.`))) {
         return;
       }
 
@@ -366,6 +377,7 @@ function renderTasks(): void {
 
   if (!activeProject) {
     clearTaskList();
+    clearTaskTrashView();
     renderEmptyProjectDetail();
     uiState.isProjectNameEditing = false;
     showProjectNameEditMode(false);
@@ -406,6 +418,28 @@ function renderTasks(): void {
       if (uiState.editingTaskId && uiState.editingTaskId !== taskId) {
         uiState.editingTaskId = null;
       }
+      render();
+    },
+  });
+
+  renderTaskTrashView({
+    deletedTasks: activeProject.deletedTasks,
+    expanded: uiState.expandedTaskTrashProjectId === activeProject.id,
+    onToggleExpanded: () => {
+      uiState.expandedTaskTrashProjectId =
+        uiState.expandedTaskTrashProjectId === activeProject.id ? null : activeProject.id;
+      render();
+    },
+    onRestoreTask: (taskId) => {
+      restoreDeletedTask(taskId);
+      render();
+    },
+    onPermanentlyDeleteTask: async (task) => {
+      if (!(await confirmDelete(`"${task.title}" 업무를 영구 삭제하시겠습니까?\n연결된 주간 업무 기록은 유지됩니다.`))) {
+        return;
+      }
+
+      permanentlyDeleteTask(task.id);
       render();
     },
   });
