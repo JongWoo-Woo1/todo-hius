@@ -131,10 +131,10 @@ function createAppMenu(mainWindow: BrowserWindow): Menu {
 
 function createMainWindow(): void {
   const mainWindow = new BrowserWindow({
-    width: 1440,
-    height: 960,
-    minWidth: 1180,
-    minHeight: 760,
+    width: 1400,
+    height: 1050,
+    minWidth: 1400,
+    minHeight: 1050,
     title: "HIUS Todo",
     show: false,
     webPreferences: {
@@ -175,7 +175,6 @@ function createMainWindow(): void {
 
   if (devServerUrl) {
     void mainWindow.loadURL(devServerUrl);
-    mainWindow.webContents.openDevTools({ mode: "detach" });
     return;
   }
 

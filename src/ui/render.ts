@@ -138,6 +138,10 @@ function renderCalendar(): void {
       uiState.isModalTaskEditing = false;
       render();
     },
+    onTaskDueDateChange: (task, dueDate) => {
+      updateTask(task.taskId, { dueDate });
+      render();
+    },
   });
 }
 

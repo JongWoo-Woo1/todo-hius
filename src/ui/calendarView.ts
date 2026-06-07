@@ -17,6 +17,7 @@ import {
 type CalendarTask = {
   projectId: string;
   taskId: string;
+  dueDate: string;
   clientName: string;
   projectName: string;
   title: string;
@@ -30,6 +31,7 @@ type CalendarViewOptions = {
   onSelectedProjectIdsChange: (selectedProjectIds: Set<string>) => void;
   onCalendarRangePreferencesChange: (preferences: CalendarRangePreferences) => void;
   onTaskSelect: (task: CalendarTask) => void;
+  onTaskDueDateChange: (task: CalendarTask, dueDate: string) => void;
 };
 
 const RANGE_CALENDAR_YEAR = 2026;
@@ -52,6 +54,7 @@ function getDueTasksByDate(state: AppState, selectedProjectIds: Set<string>): Ma
       items.push({
         projectId: project.id,
         taskId: task.id,
+        dueDate: task.dueDate,
         clientName: project.clientName,
         projectName: project.name,
         title: task.title,
@@ -68,13 +71,17 @@ function getDueTasksByDate(state: AppState, selectedProjectIds: Set<string>): Ma
 function appendMonthGrid({
   monthDate,
   dueTasksByDate,
+  tasksById,
   container,
   onTaskSelect,
+  onTaskDueDateChange,
 }: {
   monthDate: Date;
   dueTasksByDate: Map<string, CalendarTask[]>;
+  tasksById: Map<string, CalendarTask>;
   container: HTMLElement;
   onTaskSelect: (task: CalendarTask) => void;
+  onTaskDueDateChange: (task: CalendarTask, dueDate: string) => void;
 }): number {
   let itemCount = 0;
   const todayKey = toDateKey(new Date());
@@ -86,6 +93,34 @@ function appendMonthGrid({
     cell.className = "calendar-cell";
     cell.classList.toggle("outside-month", isOutsideMonth);
     cell.classList.toggle("today", dateKey === todayKey && !isOutsideMonth);
+    cell.addEventListener("dragover", (event) => {
+      if (!event.dataTransfer?.types.includes("application/x-hius-calendar-task")) {
+        return;
+      }
+
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      cell.classList.add("drag-over");
+    });
+    cell.addEventListener("dragleave", () => {
+      cell.classList.remove("drag-over");
+    });
+    cell.addEventListener("drop", (event) => {
+      const taskPayload = event.dataTransfer?.getData("application/x-hius-calendar-task");
+      if (!taskPayload) {
+        return;
+      }
+
+      event.preventDefault();
+      cell.classList.remove("drag-over");
+
+      const task = tasksById.get(taskPayload);
+      if (!task || task.dueDate === dateKey) {
+        return;
+      }
+
+      onTaskDueDateChange(task, dateKey);
+    });
 
     const dateLabel = document.createElement("p");
     dateLabel.className = "calendar-date";
@@ -96,6 +131,7 @@ function appendMonthGrid({
     tasks.forEach((task) => {
       const item = document.createElement("div");
       item.className = "calendar-item";
+      item.draggable = true;
       item.classList.toggle("completed", task.completed);
       item.style.setProperty("--project-color", task.color);
       const title = document.createElement("strong");
@@ -112,6 +148,17 @@ function appendMonthGrid({
       meta.append(client, projectName);
 
       item.append(title, meta);
+      item.addEventListener("dragstart", (event) => {
+        event.dataTransfer?.setData("application/x-hius-calendar-task", task.taskId);
+        event.dataTransfer?.setData("text/plain", task.title);
+        if (event.dataTransfer) {
+          event.dataTransfer.effectAllowed = "move";
+        }
+        item.classList.add("dragging");
+      });
+      item.addEventListener("dragend", () => {
+        item.classList.remove("dragging");
+      });
       item.addEventListener("click", () => {
         onTaskSelect(task);
       });
@@ -143,8 +190,10 @@ function appendWeekdays(container: HTMLElement): void {
 
 function renderRangeCalendar(
   dueTasksByDate: Map<string, CalendarTask[]>,
+  tasksById: Map<string, CalendarTask>,
   preferences: CalendarRangePreferences,
   onTaskSelect: (task: CalendarTask) => void,
+  onTaskDueDateChange: (task: CalendarTask, dueDate: string) => void,
 ): number {
   calendarMonthLabel.textContent = `${RANGE_CALENDAR_YEAR}`;
   calendarGrid.className = "calendar-range-grid";
@@ -165,8 +214,10 @@ function renderRangeCalendar(
     itemCount += appendMonthGrid({
       monthDate: new Date(RANGE_CALENDAR_YEAR, month - 1, 1),
       dueTasksByDate,
+      tasksById,
       container: monthGrid,
       onTaskSelect,
+      onTaskDueDateChange,
     });
     monthSection.append(monthGrid);
 
@@ -251,9 +302,20 @@ export function renderCalendarView(state: AppState, options: CalendarViewOptions
   renderCalendarFilters(state, options.selectedProjectIds, options.onSelectedProjectIdsChange);
 
   const dueTasksByDate = getDueTasksByDate(state, options.selectedProjectIds);
+  const tasksById = new Map(
+    Array.from(dueTasksByDate.values())
+      .flat()
+      .map((task) => [task.taskId, task]),
+  );
   calendarGrid.innerHTML = "";
   calendarRangeControls.hidden = false;
-  const itemCount = renderRangeCalendar(dueTasksByDate, preferences, options.onTaskSelect);
+  const itemCount = renderRangeCalendar(
+    dueTasksByDate,
+    tasksById,
+    preferences,
+    options.onTaskSelect,
+    options.onTaskDueDateChange,
+  );
 
   calendarEmptyState.hidden = itemCount > 0;
 }

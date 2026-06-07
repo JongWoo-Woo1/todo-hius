@@ -1040,6 +1040,12 @@ button {
   background: color-mix(in srgb, #2563eb 14%, white);
 }
 
+.calendar-cell.drag-over {
+  outline: 2px solid #2563eb;
+  outline-offset: -3px;
+  background: color-mix(in srgb, #2563eb 10%, white);
+}
+
 .calendar-date {
   margin: 0;
   font-weight: 600;
@@ -1052,7 +1058,15 @@ button {
   background: color-mix(in srgb, var(--project-color) 12%, white);
   padding: 7px 8px;
   font-size: 13px;
-  cursor: pointer;
+  cursor: grab;
+}
+
+.calendar-item:active {
+  cursor: grabbing;
+}
+
+.calendar-item.dragging {
+  opacity: 0.6;
 }
 
 .calendar-item strong,
