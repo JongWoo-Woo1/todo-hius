@@ -74,6 +74,7 @@ npm.cmd run build
 |  |  |- workLogDetailView.ts      # WorkLog detail/create modal rendering
 |  |  |- detailView.ts             # shared detail-row (dl/dt/dd) helpers
 |  |  |- confirmDialog.ts          # async confirm dialog
+|  |  |- startupDialog.ts          # startup workspace chooser dialog
 |  |  `- toast.ts                  # transient toast notifications
 |  |
 |  |- excel/
@@ -134,7 +135,8 @@ hius-dt-jw-todo/
 - `File > Save` or `Ctrl+S` saves the current workspace.
 - `File > Save As` chooses a new workspace path.
 - Unsaved changes trigger a save prompt on close.
-- During development, `hius-dt-jw-todo/hius-dt-jw.todo` opens automatically as the default workspace.
+- On startup, the app shows a workspace chooser with recent `.todo` workspaces, an option to open another `.todo` file, and an option to start a new unsaved project.
+- Recent workspaces are stored by Electron and missing/unreadable entries can be removed from the startup chooser.
 
 ## Design Notes
 
