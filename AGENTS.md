@@ -39,7 +39,9 @@ Use this map before broad searching:
 - Task detail / edit UI: `src/ui/taskView.ts`
 - Calendar UI: `src/ui/calendarView.ts`
 - Shared task-add modal UI (Calendar and Project): `src/ui/calendarAddView.ts`
-- Project Feed UI (Event, Weekly Log, and Task feed cards): `src/ui/projectMemoView.ts`
+- Global Feed UI (Event, Weekly, and Task feed cards): `src/ui/feedView.ts`
+- Project Feed UI (Event, Weekly, and Task feed cards): `src/ui/projectMemoView.ts`
+- Shared Feed helpers: `src/ui/feedShared.ts`
 - Event detail/create/edit modal UI: `src/ui/eventDetailView.ts`
 - Weekly UI: `src/ui/weeklyView.ts`
 - Ledger UI: `src/ui/ledgerView.ts`

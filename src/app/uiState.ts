@@ -2,7 +2,7 @@ import { getDefaultCalendarRangePreferences, type CalendarRangePreferences } fro
 import type { WorkLogType } from "../types";
 import { getDefaultVisibleWeekDate } from "../utils/week";
 
-export type AppView = "projects" | "ledger" | "weekly" | "calendar";
+export type AppView = "projects" | "ledger" | "weekly" | "calendar" | "feed";
 
 export type UiState = {
   selectedTaskId: string | null;
@@ -31,6 +31,11 @@ export type UiState = {
   isEventCreating: boolean;
   eventCreateDate: string | null;
   isCalendarTaskCreating: boolean;
+  isCalendarSettingsOpen: boolean;
+  selectedFeedProjectIds: Set<string> | null;
+  isFeedFutureExpanded: boolean;
+  isFeedPastExpanded: boolean;
+  isFeedSettingsOpen: boolean;
 };
 
 export const uiState: UiState = {
@@ -60,4 +65,9 @@ export const uiState: UiState = {
   isEventCreating: false,
   eventCreateDate: null,
   isCalendarTaskCreating: false,
+  isCalendarSettingsOpen: false,
+  selectedFeedProjectIds: null,
+  isFeedFutureExpanded: false,
+  isFeedPastExpanded: false,
+  isFeedSettingsOpen: false,
 };

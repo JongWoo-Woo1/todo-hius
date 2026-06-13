@@ -33,6 +33,7 @@ import {
   calendarEndMonthSelect,
   calendarStartMonthSelect,
   calendarViewButton,
+  feedViewButton,
   cancelProjectInfoButton,
   cancelProjectNameButton,
   deleteProjectButton,
@@ -67,11 +68,13 @@ import {
   includeCalendarProject,
   render,
   resetCalendarSelection,
+  resetFeedSelection,
   showLedgerView,
   showProjectInfoEditMode,
   showProjectNameEditMode,
   showProjectView,
   showWeeklyView,
+  showFeedView,
   toggleAllCalendarProjects,
   updateCalendarRangePreferences,
 } from "./ui/render";
@@ -116,6 +119,7 @@ function startNewProject(): void {
   setDirty(false);
   clearSelectedTask();
   resetCalendarSelection();
+  resetFeedSelection();
   render();
 }
 
@@ -141,6 +145,7 @@ async function openProjectByPath(workspacePath: string): Promise<boolean> {
     setDirty(false);
     clearSelectedTask();
     resetCalendarSelection();
+    resetFeedSelection();
     render();
     return true;
   } catch (error) {
@@ -204,6 +209,7 @@ async function openProject(): Promise<boolean> {
     setDirty(false);
     clearSelectedTask();
     resetCalendarSelection();
+    resetFeedSelection();
     render();
     return true;
   } catch (error) {
@@ -357,6 +363,11 @@ ledgerViewButton.addEventListener("click", () => {
 
 weeklyViewButton.addEventListener("click", () => {
   showWeeklyView();
+  render();
+});
+
+feedViewButton.addEventListener("click", () => {
+  showFeedView();
   render();
 });
 

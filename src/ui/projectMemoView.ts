@@ -6,7 +6,14 @@ import {
   getTaskByProject,
 } from "../state/selectors";
 import type { AppState, Project, ProjectEvent, Task, WorkLog } from "../types";
-import { formatDisplayDate, toDateKey } from "../utils/calendar";
+import { formatDisplayDate } from "../utils/calendar";
+import {
+  compareFeedItems,
+  getContentPreview,
+  makeFeedDateRange,
+  splitFeedByWindow,
+  type FeedDateRange,
+} from "./feedShared";
 import {
   addProjectEventButton,
   projectWorkLogCard,
@@ -32,47 +39,7 @@ type MemoFeedItem =
   | { kind: "event"; sortDateKey: string; event: ProjectEvent }
   | { kind: "task"; sortDateKey: string | null; task: Task };
 
-const RECENT_MEMO_BUSINESS_DAYS = 5;
-const UPCOMING_MEMO_BUSINESS_DAYS = 5;
 const DEFAULT_VISIBLE_MEMO_COUNT = 4;
-
-function isBusinessDay(date: Date): boolean {
-  const day = date.getDay();
-  return day !== 0 && day !== 6;
-}
-
-function getBusinessDateKey(offsetDays: number): string {
-  const date = new Date();
-  date.setHours(0, 0, 0, 0);
-
-  let remainingDays = Math.abs(offsetDays);
-  const direction = offsetDays < 0 ? -1 : 1;
-  while (remainingDays > 0) {
-    date.setDate(date.getDate() + direction);
-    if (isBusinessDay(date)) {
-      remainingDays -= 1;
-    }
-  }
-
-  return toDateKey(date);
-}
-
-function getRecentMemoCutoffKey(): string {
-  return getBusinessDateKey(-RECENT_MEMO_BUSINESS_DAYS);
-}
-
-function getUpcomingMemoCutoffKey(): string {
-  return getBusinessDateKey(UPCOMING_MEMO_BUSINESS_DAYS);
-}
-
-function getContentPreview(content: string): string {
-  const normalized = content.replace(/\s+/g, " ").trim();
-  if (normalized.length <= 160) {
-    return normalized;
-  }
-
-  return `${normalized.slice(0, 157)}...`;
-}
 
 function createMemoWorkLogCard(activeProject: Project, workLog: WorkLog, onSelect: () => void): HTMLElement {
   const card = document.createElement("article");
@@ -86,7 +53,7 @@ function createMemoWorkLogCard(activeProject: Project, workLog: WorkLog, onSelec
 
   const badge = document.createElement("span");
   badge.className = "project-memo-badge";
-  badge.textContent = "Weekly Log";
+  badge.textContent = "Weekly";
 
   const date = document.createElement("span");
   date.className = "project-memo-date";
@@ -251,6 +218,18 @@ function getMemoItemSortDateKey(item: MemoFeedItem): string | null {
   return item.sortDateKey;
 }
 
+function getMemoItemDateRange(item: MemoFeedItem): FeedDateRange {
+  if (item.kind === "workLog") {
+    return makeFeedDateRange(item.workLog.date, item.workLog.endDate);
+  }
+
+  if (item.kind === "event") {
+    return makeFeedDateRange(item.event.startDate, item.event.endDate);
+  }
+
+  return makeFeedDateRange(item.task.dueDate);
+}
+
 function getMemoItemKey(item: MemoFeedItem): string {
   if (item.kind === "workLog") {
     return `workLog:${item.workLog.id}`;
@@ -276,27 +255,7 @@ function getMemoItemLabel(item: MemoFeedItem): string {
 }
 
 function compareMemoItems(left: MemoFeedItem, right: MemoFeedItem): number {
-  const leftDateKey = getMemoItemSortDateKey(left);
-  const rightDateKey = getMemoItemSortDateKey(right);
-
-  if (!leftDateKey && !rightDateKey) {
-    return getMemoItemLabel(left).localeCompare(getMemoItemLabel(right));
-  }
-
-  if (!leftDateKey) {
-    return 1;
-  }
-
-  if (!rightDateKey) {
-    return -1;
-  }
-
-  const dateDiff = rightDateKey.localeCompare(leftDateKey);
-  if (dateDiff !== 0) {
-    return dateDiff;
-  }
-
-  return getMemoItemLabel(left).localeCompare(getMemoItemLabel(right));
+  return compareFeedItems(left, right, getMemoItemSortDateKey, getMemoItemLabel);
 }
 
 function getMemoFeedItems(state: AppState, activeProject: Project): MemoFeedItem[] {
@@ -324,40 +283,14 @@ function getMemoFeedVisibility(memoItems: MemoFeedItem[], showFutureItems: boole
   futureHiddenCount: number;
   pastHiddenCount: number;
 } {
-  const cutoffKey = getRecentMemoCutoffKey();
-  const upcomingCutoffKey = getUpcomingMemoCutoffKey();
-
-  const futureItems = memoItems.filter((item) => {
-    const dateKey = getMemoItemSortDateKey(item);
-    return Boolean(dateKey && dateKey > upcomingCutoffKey);
-  });
-  const defaultItems = memoItems
-    .filter((item) => {
-      const dateKey = getMemoItemSortDateKey(item);
-      return Boolean(dateKey && dateKey >= cutoffKey && dateKey <= upcomingCutoffKey);
-    })
-    .slice(0, DEFAULT_VISIBLE_MEMO_COUNT);
-
-  const futureItemKeys = new Set(futureItems.map(getMemoItemKey));
-  const defaultItemKeys = new Set(defaultItems.map(getMemoItemKey));
-  const pastItems = memoItems.filter((item) => {
-    const key = getMemoItemKey(item);
-    return !futureItemKeys.has(key) && !defaultItemKeys.has(key);
-  });
-  const pastItemKeys = new Set(pastItems.map(getMemoItemKey));
-
-  return {
-    visibleItems: memoItems.filter((item) => {
-      const key = getMemoItemKey(item);
-      return (
-        defaultItemKeys.has(key) ||
-        (showFutureItems && futureItemKeys.has(key)) ||
-        (showPastItems && pastItemKeys.has(key))
-      );
-    }),
-    futureHiddenCount: showFutureItems ? 0 : futureItems.length,
-    pastHiddenCount: showPastItems ? 0 : pastItems.length,
-  };
+  return splitFeedByWindow(
+    memoItems,
+    getMemoItemDateRange,
+    getMemoItemKey,
+    showFutureItems,
+    showPastItems,
+    DEFAULT_VISIBLE_MEMO_COUNT,
+  );
 }
 
 function createMemoMoreButton({

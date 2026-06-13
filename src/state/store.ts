@@ -297,13 +297,19 @@ function normalizeWorkLog(workLog: LegacyWorkLog, index: number): WorkLog | null
     return null;
   }
 
+  const date = workLog.date ?? new Date().toISOString().slice(0, 10);
+  // Only "계획" logs carry a range; keep endDate only when it is after the start.
+  const rawEndDate = typeof workLog.endDate === "string" && workLog.endDate ? workLog.endDate : null;
+  const endDate = type === "계획" && rawEndDate && rawEndDate > date ? rawEndDate : null;
+
   return {
     id: workLog.id ?? `work-log-${index}`,
     projectId,
     taskId: workLog.taskId ?? workLog.todoId,
     linkedTaskTitleSnapshot: workLog.linkedTaskTitleSnapshot,
     linkedTaskDeleted: workLog.linkedTaskDeleted === true,
-    date: workLog.date ?? new Date().toISOString().slice(0, 10),
+    date,
+    endDate,
     type,
     content: workLog.content ?? "",
   };

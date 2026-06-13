@@ -46,6 +46,8 @@ export type WorkLog = {
   linkedTaskTitleSnapshot?: string;
   linkedTaskDeleted?: boolean;
   date: string;
+  // End of the planned range. Only meaningful for "계획" logs; "수행" stays single-day (null).
+  endDate?: string | null;
   type: WorkLogType;
   content: string;
 };

@@ -49,6 +49,7 @@ type WorkLog = {
   linkedTaskTitleSnapshot?: string;
   linkedTaskDeleted?: boolean;
   date: string;
+  endDate?: string | null;
   type: string;
   content: string;
 };

@@ -35,6 +35,7 @@ import {
 } from "../state/selectors";
 import type { Project, ProjectEvent, Task, WorkLogType } from "../types";
 import { renderCalendarView } from "./calendarView";
+import { renderFeedView } from "./feedView";
 import { renderLedgerView } from "./ledgerView";
 import { renderCalendarDetailModalView } from "./modalView";
 import { renderProjectList } from "./projectListView";
@@ -73,6 +74,65 @@ function ensureCalendarSelection(): void {
 
   const existingSelection = uiState.selectedCalendarProjectIds;
   uiState.selectedCalendarProjectIds = new Set(projectIds.filter((projectId) => existingSelection.has(projectId)));
+}
+
+function ensureFeedSelection(): void {
+  const projectIds = getState().projects.map((project) => project.id);
+  if (!uiState.selectedFeedProjectIds) {
+    uiState.selectedFeedProjectIds = new Set(projectIds);
+    return;
+  }
+
+  const existingSelection = uiState.selectedFeedProjectIds;
+  uiState.selectedFeedProjectIds = new Set(projectIds.filter((projectId) => existingSelection.has(projectId)));
+}
+
+function renderFeed(): void {
+  ensureFeedSelection();
+  renderFeedView({
+    state: getState(),
+    selectedProjectIds: uiState.selectedFeedProjectIds ?? new Set<string>(),
+    showFutureItems: uiState.isFeedFutureExpanded,
+    showPastItems: uiState.isFeedPastExpanded,
+    isSettingsOpen: uiState.isFeedSettingsOpen,
+    onSelectWorkLog: (workLogId) => {
+      openWorkLogDetail(workLogId);
+      render();
+    },
+    onSelectEvent: (eventId) => {
+      openEventDetail(eventId);
+      render();
+    },
+    onSelectTask: (taskId) => {
+      uiState.selectedModalProjectId = null;
+      uiState.selectedModalTaskId = taskId;
+      uiState.isModalTaskEditing = false;
+      render();
+    },
+    onToggleFutureItems: (showFutureItems) => {
+      uiState.isFeedFutureExpanded = showFutureItems;
+      render();
+    },
+    onTogglePastItems: (showPastItems) => {
+      uiState.isFeedPastExpanded = showPastItems;
+      render();
+    },
+    onSelectedProjectIdsChange: (selectedProjectIds) => {
+      uiState.selectedFeedProjectIds = selectedProjectIds;
+      render();
+    },
+    onToggleAllProjects: () => {
+      const projectIds = getState().projects.map((project) => project.id);
+      const selected = uiState.selectedFeedProjectIds ?? new Set(projectIds);
+      const allSelected = projectIds.length > 0 && selected.size === projectIds.length;
+      uiState.selectedFeedProjectIds = allSelected ? new Set() : new Set(projectIds);
+      render();
+    },
+    onToggleSettings: (open) => {
+      uiState.isFeedSettingsOpen = open;
+      render();
+    },
+  });
 }
 
 function renderLedger(): void {
@@ -180,8 +240,9 @@ function renderCalendar(): void {
       openEventCreate();
       render();
     },
-    onAddTask: () => {
-      uiState.isCalendarTaskCreating = true;
+    isSettingsOpen: uiState.isCalendarSettingsOpen,
+    onToggleSettings: (open) => {
+      uiState.isCalendarSettingsOpen = open;
       render();
     },
   });
@@ -284,7 +345,8 @@ function openWorkLogCreate(date: string, type: WorkLogType): void {
 
 function renderWorkLogDetailModal(): void {
   const state = getState();
-  const canShowWorkLogDetail = uiState.currentView === "projects" || uiState.currentView === "weekly";
+  const canShowWorkLogDetail =
+    uiState.currentView === "projects" || uiState.currentView === "weekly" || uiState.currentView === "feed";
   const isCreating = canShowWorkLogDetail && uiState.isWorkLogCreating;
   const workLog = canShowWorkLogDetail ? getWorkLogById(state, uiState.selectedWorkLogId) : undefined;
   const project = workLog ? getProjectById(state, workLog.projectId) : undefined;
@@ -342,12 +404,12 @@ function renderWorkLogDetailModal(): void {
       closeWorkLogDetail();
       render();
     },
-    onCreate: ({ projectId, date, type, taskId, content }) => {
+    onCreate: ({ projectId, date, endDate, type, taskId, content }) => {
       if (!projectId) {
         return;
       }
 
-      addWorkLog({ id: createId(), projectId, date, type, taskId, content });
+      addWorkLog({ id: createId(), projectId, date, endDate, type, taskId, content });
       closeWorkLogDetail();
       render();
     },
@@ -407,7 +469,8 @@ function getEventLinkedTaskLabel(project: Project | undefined, event: ProjectEve
 
 function renderEventDetailModal(): void {
   const state = getState();
-  const canShowEventDetail = uiState.currentView === "projects" || uiState.currentView === "calendar";
+  const canShowEventDetail =
+    uiState.currentView === "projects" || uiState.currentView === "calendar" || uiState.currentView === "feed";
   const isCreating = canShowEventDetail && uiState.isEventCreating;
   const event = canShowEventDetail ? getEventById(state, uiState.selectedEventId) : undefined;
   const selectedProjectId = event?.projectId ?? (uiState.currentView === "projects" ? state.activeProjectId : null);
@@ -667,6 +730,10 @@ export function resetCalendarSelection(): void {
   closeCalendarDetailModal();
 }
 
+export function resetFeedSelection(): void {
+  uiState.selectedFeedProjectIds = null;
+}
+
 export function includeCalendarProject(projectId: string): void {
   if (!uiState.selectedCalendarProjectIds) {
     return;
@@ -694,6 +761,10 @@ export function showLedgerView(): void {
 
 export function showWeeklyView(): void {
   uiState.currentView = "weekly";
+}
+
+export function showFeedView(): void {
+  uiState.currentView = "feed";
 }
 
 export function activateCalendarButton(): void {
@@ -746,6 +817,7 @@ export function render(): void {
     },
   });
   renderCalendar();
+  renderFeed();
   renderCalendarDetailModal();
   renderWorkLogDetailModal();
   renderEventDetailModal();

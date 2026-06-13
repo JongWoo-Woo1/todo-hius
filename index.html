@@ -10,6 +10,7 @@
       <aside class="sidebar">
         <div class="view-switcher" aria-label="Workspace views">
           <button id="calendar-view-button" class="view-button" type="button">Calendar</button>
+          <button id="feed-view-button" class="view-button" type="button">Feed</button>
           <button id="weekly-view-button" class="view-button" type="button">Weekly</button>
           <button id="ledger-view-button" class="view-button" type="button">Ledger</button>
         </div>
@@ -21,7 +22,6 @@
       <section id="project-workspace" class="workspace">
         <header class="workspace-header">
           <div>
-            <p class="eyebrow">Current project</p>
             <button id="active-project-name-button" class="project-title-button" type="button">
               <span id="active-project-name">Add a project</span>
             </button>
@@ -113,8 +113,7 @@
       <section id="weekly-workspace" class="workspace" hidden>
         <header class="workspace-header">
           <div>
-            <p class="eyebrow">Weekly report</p>
-            <h2>주간업무 리포트</h2>
+            <h2>Weekly</h2>
           </div>
 
           <div class="weekly-header-actions">
@@ -136,8 +135,7 @@
       <section id="ledger-workspace" class="workspace" hidden>
         <header class="workspace-header">
           <div>
-            <p class="eyebrow">All work items</p>
-            <h2>프로젝트 원장</h2>
+            <h2>Ledger</h2>
           </div>
           <button id="ledger-export-button" type="button">프로젝트 원장 Excel Export</button>
         </header>
@@ -209,41 +207,113 @@
         <section id="calendar-workspace" class="workspace" hidden>
           <header class="calendar-header">
             <div>
-              <p class="eyebrow">All projects</p>
               <h2>Calendar</h2>
             </div>
 
           </header>
 
-        <section id="calendar-range-controls" class="calendar-range-controls">
-          <label>
-            Start
-            <select id="calendar-start-month"></select>
-          </label>
-          <label>
-            End
-            <select id="calendar-end-month"></select>
-          </label>
-          <label>
-            Columns
-            <select id="calendar-columns"></select>
-          </label>
-        </section>
-
-        <section class="calendar-filters">
-          <div class="calendar-filter-header">
-            <h3>Projects</h3>
-            <button id="toggle-all-projects-button" class="quiet-button" type="button">Clear all</button>
-          </div>
-          <div id="calendar-filter-list" class="calendar-filter-list"></div>
-        </section>
-
         <div id="calendar-grid" class="calendar-grid"></div>
         <p id="calendar-empty-state" class="empty-state">표시할 일정이 없습니다.</p>
         <div class="calendar-floating-actions">
           <button id="calendar-add-event-button" type="button">+Event</button>
-          <button id="calendar-add-task-button" type="button">+Task</button>
+          <button
+            id="calendar-settings-button"
+            class="calendar-settings-button"
+            type="button"
+            aria-label="Calendar 설정 열기"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="calendar-settings-panel"
+          >☰</button>
         </div>
+
+        <div id="calendar-settings-backdrop" class="calendar-settings-backdrop" hidden></div>
+        <aside
+          id="calendar-settings-panel"
+          class="calendar-settings-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Calendar 설정"
+          aria-hidden="true"
+          hidden
+        >
+          <div class="calendar-settings-header">
+            <h3>Calendar 설정</h3>
+            <button id="calendar-settings-close-button" class="quiet-button" type="button" aria-label="설정 닫기">✕</button>
+          </div>
+          <div class="calendar-settings-body">
+            <section id="calendar-range-controls" class="calendar-range-controls">
+              <label>
+                Start
+                <select id="calendar-start-month"></select>
+              </label>
+              <label>
+                End
+                <select id="calendar-end-month"></select>
+              </label>
+              <label>
+                Columns
+                <select id="calendar-columns"></select>
+              </label>
+            </section>
+
+            <section class="calendar-filters">
+              <div class="calendar-filter-header">
+                <h3>Projects</h3>
+                <button id="toggle-all-projects-button" class="quiet-button" type="button">Clear all</button>
+              </div>
+              <div id="calendar-filter-list" class="calendar-filter-list"></div>
+            </section>
+          </div>
+        </aside>
+      </section>
+
+      <section id="feed-workspace" class="workspace" hidden>
+        <header class="calendar-header">
+          <div>
+            <h2>Feed</h2>
+          </div>
+        </header>
+
+        <div id="feed-list" class="project-work-log-list project-memo-feed feed-list"></div>
+        <p id="feed-empty-state" class="empty-state">표시할 피드가 없습니다.</p>
+
+        <div class="calendar-floating-actions">
+          <button
+            id="feed-settings-button"
+            class="calendar-settings-button"
+            type="button"
+            aria-label="Feed 설정 열기"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="feed-settings-panel"
+          >☰</button>
+        </div>
+
+        <div id="feed-settings-backdrop" class="calendar-settings-backdrop" hidden></div>
+        <aside
+          id="feed-settings-panel"
+          class="calendar-settings-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Feed 설정"
+          aria-hidden="true"
+          hidden
+        >
+          <div class="calendar-settings-header">
+            <h3>Feed 설정</h3>
+            <button id="feed-settings-close-button" class="quiet-button" type="button" aria-label="설정 닫기">✕</button>
+          </div>
+          <div class="calendar-settings-body">
+            <section class="calendar-filters">
+              <div class="calendar-filter-header">
+                <h3>Projects</h3>
+                <button id="feed-toggle-all-projects-button" class="quiet-button" type="button">Clear all</button>
+              </div>
+              <div id="feed-filter-list" class="calendar-filter-list"></div>
+            </section>
+          </div>
+        </aside>
       </section>
 
       <div id="calendar-detail-modal" class="modal-backdrop" hidden>

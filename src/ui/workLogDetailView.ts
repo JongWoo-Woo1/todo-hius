@@ -19,6 +19,7 @@ function addTabIndent(textarea: HTMLTextAreaElement): void {
 export type WorkLogCreateInput = {
   projectId: string;
   date: string;
+  endDate: string | null;
   type: WorkLogType;
   taskId: string | undefined;
   content: string;
@@ -101,10 +102,14 @@ function renderWorkLogDetail(workLog: WorkLog, options: WorkLogDetailModalOption
 
   wrapper.append(createModalHeader(options.project, `${formatDisplayDate(workLog.date)} · ${workLog.type}`, options.onClose));
 
+  const dateText = workLog.endDate
+    ? `${formatDisplayDate(workLog.date)} ~ ${formatDisplayDate(workLog.endDate)}`
+    : formatDisplayDate(workLog.date);
+
   const list = document.createElement("dl");
   list.className = "todo-detail-list calendar-detail-list";
   list.append(
-    createDetailRow("날짜", getDetailValue(formatDisplayDate(workLog.date))),
+    createDetailRow("날짜", getDetailValue(dateText)),
     createDetailRow("구분", workLog.type),
     createDetailRow("연결 업무", options.linkedTaskLabel),
   );
@@ -162,6 +167,10 @@ function renderWorkLogEditForm(workLog: WorkLog, options: WorkLogDetailModalOpti
       날짜
       <input name="date" type="date" required />
     </label>
+    <label data-plan-only>
+      종료일
+      <input name="endDate" type="date" />
+    </label>
     <label>
       구분
       <select name="type">
@@ -184,23 +193,36 @@ function renderWorkLogEditForm(workLog: WorkLog, options: WorkLogDetailModalOpti
   `;
 
   const dateInput = form.querySelector<HTMLInputElement>('[name="date"]')!;
+  const endDateInput = form.querySelector<HTMLInputElement>('[name="endDate"]')!;
+  const endDateField = form.querySelector<HTMLElement>("[data-plan-only]")!;
   const typeSelect = form.querySelector<HTMLSelectElement>('[name="type"]')!;
   const taskSelect = form.querySelector<HTMLSelectElement>('[name="taskId"]')!;
   const contentInput = form.querySelector<HTMLTextAreaElement>('[name="content"]')!;
 
   dateInput.value = workLog.date;
+  endDateInput.value = workLog.endDate ?? "";
   typeSelect.value = workLog.type;
   setTaskOptions(taskSelect, options.projectTasks, workLog.taskId, options.linkedTaskLabel);
   contentInput.value = workLog.content;
   addTabIndent(contentInput);
+
+  const syncEndDateVisibility = (): void => {
+    endDateField.hidden = typeSelect.value !== "계획";
+    endDateInput.min = dateInput.value;
+  };
+  syncEndDateVisibility();
+  typeSelect.addEventListener("change", syncEndDateVisibility);
+  dateInput.addEventListener("change", syncEndDateVisibility);
 
   form.querySelector<HTMLButtonElement>('[data-action="close"]')!.addEventListener("click", options.onClose);
   form.querySelector<HTMLButtonElement>('[data-action="cancel"]')!.addEventListener("click", options.onCancelEdit);
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    const isPlan = typeSelect.value === "계획";
     options.onUpdate({
       date: dateInput.value,
+      endDate: isPlan && endDateInput.value ? endDateInput.value : null,
       type: typeSelect.value as WorkLogType,
       taskId: taskSelect.value || undefined,
       content: contentInput.value.trim(),
@@ -234,6 +256,10 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
       날짜
       <input name="date" type="date" required />
     </label>
+    <label data-plan-only>
+      종료일
+      <input name="endDate" type="date" />
+    </label>
     <label>
       구분
       <select name="type">
@@ -257,6 +283,8 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
 
   const projectSelect = form.querySelector<HTMLSelectElement>('[name="projectId"]')!;
   const dateInput = form.querySelector<HTMLInputElement>('[name="date"]')!;
+  const endDateInput = form.querySelector<HTMLInputElement>('[name="endDate"]')!;
+  const endDateField = form.querySelector<HTMLElement>("[data-plan-only]")!;
   const typeSelect = form.querySelector<HTMLSelectElement>('[name="type"]')!;
   const taskSelect = form.querySelector<HTMLSelectElement>('[name="taskId"]')!;
   const contentInput = form.querySelector<HTMLTextAreaElement>('[name="content"]')!;
@@ -265,6 +293,14 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
   typeSelect.value = options.defaultType;
   projectSelect.value = options.projects[0]?.id ?? "";
   addTabIndent(contentInput);
+
+  const syncEndDateVisibility = (): void => {
+    endDateField.hidden = typeSelect.value !== "계획";
+    endDateInput.min = dateInput.value;
+  };
+  syncEndDateVisibility();
+  typeSelect.addEventListener("change", syncEndDateVisibility);
+  dateInput.addEventListener("change", syncEndDateVisibility);
 
   const syncTaskOptions = (): void => {
     const project = options.projects.find((candidate) => candidate.id === projectSelect.value);
@@ -278,9 +314,11 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    const isPlan = typeSelect.value === "계획";
     options.onCreate({
       projectId: projectSelect.value,
       date: dateInput.value,
+      endDate: isPlan && endDateInput.value ? endDateInput.value : null,
       type: typeSelect.value as WorkLogType,
       taskId: taskSelect.value || undefined,
       content: contentInput.value.trim(),

@@ -1,5 +1,5 @@
 import { getLinkedTaskDisplay, getProjectById } from "../state/selectors";
-import type { AppState, WorkLogType } from "../types";
+import type { AppState, WorkLog, WorkLogType } from "../types";
 import { formatDisplayDate, toDateKey } from "../utils/calendar";
 import { getWeekRangeLabel, getWeekdays } from "../utils/week";
 import { weeklyEmptyState, weeklyGrid, weeklyRangeLabel } from "./dom";
@@ -15,28 +15,23 @@ type WeeklyItem = {
   color: string;
 };
 
+// A work log laid out as a bar spanning weekday columns of the visible week.
+// "수행" logs are single-day (startCol === endCol); "계획" logs may span a range.
+type WeeklyBar = WeeklyItem & {
+  startCol: number;
+  endCol: number;
+  lane: number;
+};
+
 type WeeklyViewOptions = {
   onSelectWorkLog: (workLogId: string) => void;
   onAddWorkLog: (date: string, type: WorkLogType) => void;
 };
 
 const WEEKLY_SECTIONS = [
-  { key: "plan", title: "업무 계획", workLogType: "계획" },
-  { key: "done", title: "업무 일지", workLogType: "수행" },
-] as const;
-
-function createWeeklyBuckets(visibleWeekDate: Date): Map<string, Record<(typeof WEEKLY_SECTIONS)[number]["key"], WeeklyItem[]>> {
-  const buckets = new Map<string, Record<(typeof WEEKLY_SECTIONS)[number]["key"], WeeklyItem[]>>();
-
-  getWeekdays(visibleWeekDate).forEach((date) => {
-    buckets.set(toDateKey(date), {
-      plan: [],
-      done: [],
-    });
-  });
-
-  return buckets;
-}
+  { key: "plan", title: "업무 계획", type: "계획" },
+  { key: "done", title: "업무 일지", type: "수행" },
+] as const satisfies readonly { key: string; title: string; type: WorkLogType }[];
 
 function makeActivatable(element: HTMLElement, activate: () => void): void {
   element.classList.add("clickable");
@@ -51,121 +46,172 @@ function makeActivatable(element: HTMLElement, activate: () => void): void {
   });
 }
 
-function renderWeeklyProjectGroup(groupItems: WeeklyItem[], options: WeeklyViewOptions): HTMLElement {
-  const firstItem = groupItems[0];
-  const isSingle = groupItems.length === 1;
+function toWeeklyItem(state: AppState, workLog: WorkLog): WeeklyItem {
+  const project = getProjectById(state, workLog.projectId);
+  const linkedTaskDisplay = getLinkedTaskDisplay(project, workLog);
+  const hasLinkedTask = Boolean(
+    linkedTaskDisplay.activeTask || linkedTaskDisplay.deletedTask || workLog.linkedTaskTitleSnapshot,
+  );
 
-  const group = document.createElement("div");
-  group.className = "weekly-project-group";
-  group.style.setProperty("--project-color", firstItem.color);
+  return {
+    id: workLog.id,
+    projectId: workLog.projectId,
+    taskId: workLog.taskId,
+    clientName: project?.clientName ?? "",
+    projectName: project?.name ?? "Unknown",
+    taskTitle: hasLinkedTask ? linkedTaskDisplay.label : undefined,
+    content: workLog.content,
+    color: project?.color ?? "#94a3b8",
+  };
+}
 
-  if (isSingle) {
-    makeActivatable(group, () => options.onSelectWorkLog(firstItem.id));
-  }
+// Shared card used by both the "계획" and "일지" rows. The only difference
+// between the two rows is the column span of the card (see createBar).
+function createWeeklyCard(item: WeeklyItem, options: WeeklyViewOptions): HTMLElement {
+  const card = document.createElement("div");
+  card.className = "weekly-card";
+  card.style.setProperty("--project-color", item.color);
+  makeActivatable(card, () => options.onSelectWorkLog(item.id));
 
   const meta = document.createElement("div");
   meta.className = "weekly-item-meta";
   const client = document.createElement("span");
   client.className = "weekly-client-chip";
-  client.textContent = firstItem.clientName || "No client";
+  client.textContent = item.clientName || "No client";
   const projectName = document.createElement("span");
   projectName.className = "weekly-project-name";
-  projectName.textContent = firstItem.projectName;
+  projectName.textContent = item.projectName;
   meta.append(client, projectName);
-  group.append(meta);
+  card.append(meta);
 
-  groupItems.forEach((item) => {
-    const entry = document.createElement("div");
-    entry.className = "weekly-group-entry";
-
-    if (!isSingle) {
-      makeActivatable(entry, () => options.onSelectWorkLog(item.id));
-    }
-
-    if (item.taskTitle) {
-      const linked = document.createElement("p");
-      linked.className = "weekly-linked-title";
-      linked.textContent = item.taskTitle;
-      entry.append(linked);
-    }
-
-    if (item.content) {
-      const content = document.createElement("p");
-      content.className = "weekly-item-content";
-      content.textContent = item.content;
-      entry.append(content);
-    }
-
-    group.append(entry);
-  });
-
-  return group;
-}
-
-function renderWeeklyItems(items: WeeklyItem[], options: WeeklyViewOptions): HTMLElement {
-  const body = document.createElement("div");
-  body.className = "weekly-table-cell-body";
-  if (items.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "weekly-empty";
-    empty.textContent = "No items yet.";
-    body.append(empty);
-    return body;
+  if (item.taskTitle) {
+    const linked = document.createElement("p");
+    linked.className = "weekly-linked-title";
+    linked.textContent = item.taskTitle;
+    card.append(linked);
   }
 
-  const groupMap = new Map<string, WeeklyItem[]>();
-  items.forEach((item) => {
-    if (!groupMap.has(item.projectId)) groupMap.set(item.projectId, []);
-    groupMap.get(item.projectId)!.push(item);
+  if (item.content) {
+    const content = document.createElement("p");
+    content.className = "weekly-item-content";
+    content.textContent = item.content;
+    card.append(content);
+  }
+
+  return card;
+}
+
+// Lays each log out as a bar over the weekday columns of the visible week.
+// Single-day logs ("수행", or "계획" without an endDate) span one column.
+function computeSectionBars(state: AppState, logs: WorkLog[], weekdayKeys: string[]): WeeklyBar[] {
+  const bars: WeeklyBar[] = [];
+  logs.forEach((workLog) => {
+    const start = workLog.date;
+    const end = workLog.endDate && workLog.endDate > workLog.date ? workLog.endDate : workLog.date;
+
+    let startCol = -1;
+    let endCol = -1;
+    weekdayKeys.forEach((key, index) => {
+      if (key >= start && key <= end) {
+        if (startCol === -1) {
+          startCol = index;
+        }
+        endCol = index;
+      }
+    });
+
+    if (startCol === -1) {
+      return; // range does not touch any weekday of the visible week
+    }
+
+    bars.push({ ...toWeeklyItem(state, workLog), startCol, endCol, lane: 0 });
   });
 
-  groupMap.forEach((groupItems) => {
-    body.append(renderWeeklyProjectGroup(groupItems, options));
+  bars.sort((left, right) => left.startCol - right.startCol || left.endCol - right.endCol);
+
+  // Greedy lane assignment so overlapping bars stack vertically.
+  const laneEndCols: number[] = [];
+  bars.forEach((bar) => {
+    let lane = laneEndCols.findIndex((endCol) => endCol < bar.startCol);
+    if (lane === -1) {
+      lane = laneEndCols.length;
+    }
+    laneEndCols[lane] = bar.endCol;
+    bar.lane = lane;
   });
 
-  return body;
+  return bars;
+}
+
+function createBar(bar: WeeklyBar, options: WeeklyViewOptions): HTMLElement {
+  const card = createWeeklyCard(bar, options);
+  card.classList.add("weekly-bar");
+  card.style.gridColumn = `${bar.startCol + 1} / ${bar.endCol + 2}`;
+  card.style.gridRow = String(bar.lane + 1);
+  return card;
+}
+
+// Renders one section row's cell: the spanning bars plus the per-day "+" add
+// buttons. Used identically for both the "계획" and "일지" rows.
+function renderSectionCell(
+  bars: WeeklyBar[],
+  weekdayKeys: string[],
+  type: WorkLogType,
+  options: WeeklyViewOptions,
+): HTMLTableCellElement {
+  const cell = document.createElement("td");
+  cell.colSpan = weekdayKeys.length;
+  cell.className = "weekly-section-cell";
+
+  // Background layer: per-day vertical separators.
+  const dayColumns = document.createElement("div");
+  dayColumns.className = "weekly-section-daycols";
+  weekdayKeys.forEach(() => {
+    const dayColumn = document.createElement("div");
+    dayColumn.className = "weekly-section-daycol";
+    dayColumns.append(dayColumn);
+  });
+
+  // Foreground layer: bars on top, with per-day "+" add buttons at the bottom.
+  const body = document.createElement("div");
+  body.className = "weekly-section-body";
+
+  const grid = document.createElement("div");
+  grid.className = "weekly-section-grid";
+  bars.forEach((bar) => grid.append(createBar(bar, options)));
+
+  const addRow = document.createElement("div");
+  addRow.className = "weekly-section-add-row";
+  weekdayKeys.forEach((dateKey) => {
+    const addButton = document.createElement("button");
+    addButton.type = "button";
+    addButton.className = "weekly-cell-add";
+    addButton.textContent = "+";
+    addButton.setAttribute("aria-label", "기록 추가");
+    addButton.addEventListener("click", () => options.onAddWorkLog(dateKey, type));
+    addRow.append(addButton);
+  });
+
+  body.append(grid, addRow);
+  cell.append(dayColumns, body);
+  return cell;
 }
 
 export function renderWeeklyView(state: AppState, visibleWeekDate: Date, options: WeeklyViewOptions): void {
   weeklyRangeLabel.textContent = getWeekRangeLabel(visibleWeekDate);
   weeklyGrid.innerHTML = "";
 
-  const buckets = createWeeklyBuckets(visibleWeekDate);
-  let weeklyItemCount = 0;
+  const weekdays = getWeekdays(visibleWeekDate);
+  const weekdayKeys = weekdays.map((date) => toDateKey(date));
 
+  const logsByType = new Map<WorkLogType, WorkLog[]>([
+    ["계획", []],
+    ["수행", []],
+  ]);
   state.workLogs.forEach((workLog) => {
-    const bucket = buckets.get(workLog.date);
-    if (!bucket) {
-      return;
-    }
-
-    const project = getProjectById(state, workLog.projectId);
-    const linkedTaskDisplay = getLinkedTaskDisplay(project, workLog);
-    const clientName = project?.clientName ?? "";
-    const projectName = project?.name ?? "Unknown";
-    const color = project?.color ?? "#94a3b8";
-    const item: WeeklyItem = {
-      id: workLog.id,
-      projectId: workLog.projectId,
-      taskId: workLog.taskId,
-      clientName,
-      projectName,
-      taskTitle: linkedTaskDisplay.label,
-      content: workLog.content,
-      color,
-    };
-
-    if (workLog.type === "계획") {
-      bucket.plan.push(item);
-    } else if (workLog.type === "수행") {
-      bucket.done.push(item);
-    } else {
-      return;
-    }
-    weeklyItemCount += 1;
+    logsByType.get(workLog.type)?.push(workLog);
   });
 
-  const weekdays = getWeekdays(visibleWeekDate);
   const table = document.createElement("table");
   table.className = "weekly-table";
 
@@ -200,28 +246,13 @@ export function renderWeeklyView(state: AppState, visibleWeekDate: Date, options
     rowHeader.textContent = section.title;
     row.append(rowHeader);
 
-    weekdays.forEach((date) => {
-      const dateKey = toDateKey(date);
-      const dayBuckets = buckets.get(dateKey)!;
-      const cell = document.createElement("td");
-      const body = renderWeeklyItems(dayBuckets[section.key], options);
-
-      const addButton = document.createElement("button");
-      addButton.type = "button";
-      addButton.className = "weekly-cell-add";
-      addButton.textContent = "+";
-      addButton.setAttribute("aria-label", "기록 추가");
-      addButton.addEventListener("click", () => options.onAddWorkLog(dateKey, section.workLogType));
-      body.append(addButton);
-
-      cell.append(body);
-      row.append(cell);
-    });
-
+    const bars = computeSectionBars(state, logsByType.get(section.type) ?? [], weekdayKeys);
+    row.append(renderSectionCell(bars, weekdayKeys, section.type, options));
     tbody.append(row);
   });
+
   table.append(tbody);
   weeklyGrid.append(table);
 
-  weeklyEmptyState.hidden = weeklyItemCount > 0;
+  weeklyEmptyState.hidden = true;
 }

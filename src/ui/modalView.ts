@@ -13,7 +13,7 @@ type TaskSelection = {
 type TaskUpdates = Partial<Task>;
 
 type ModalViewOptions = {
-  currentView: "projects" | "ledger" | "weekly" | "calendar";
+  currentView: "projects" | "ledger" | "weekly" | "calendar" | "feed";
   selectedProject: Project | null;
   selection: TaskSelection | null;
   isTaskEditing: boolean;
@@ -290,7 +290,11 @@ export function renderCalendarDetailModalView(options: ModalViewOptions): void {
     options.onClose();
   };
 
-  if (options.currentView !== "calendar" && options.currentView !== "ledger") {
+  if (
+    options.currentView !== "calendar" &&
+    options.currentView !== "ledger" &&
+    options.currentView !== "feed"
+  ) {
     calendarDetailModal.hidden = true;
     return;
   }

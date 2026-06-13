@@ -407,6 +407,27 @@ button {
   text-decoration: line-through;
 }
 
+.feed-list {
+  gap: 12px;
+}
+
+.feed-card-project {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.feed-card-project-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .work-log-entry {
   display: grid;
   gap: 8px;
@@ -479,6 +500,9 @@ button {
 
 .work-log-more-button.project-memo-more-button {
   justify-self: center;
+  margin-top: 0;
+  padding: 2px 6px;
+  font-size: 13px;
 }
 
 .section-header {
@@ -584,7 +608,7 @@ button {
 .task-trash-summary {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   padding: 0;
 }
 
@@ -774,6 +798,10 @@ button {
   gap: 8px;
   color: var(--muted);
   font-size: 14px;
+}
+
+.detail-form label[hidden] {
+  display: none;
 }
 
 .detail-form .full-field,
@@ -1177,6 +1205,79 @@ button {
   transform: translateY(-1px);
 }
 
+.calendar-floating-actions .calendar-settings-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.calendar-settings-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 13;
+  background: rgb(15 23 42 / 28%);
+}
+
+.calendar-settings-backdrop[hidden] {
+  display: none;
+}
+
+.calendar-settings-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 14;
+  display: flex;
+  flex-direction: column;
+  width: min(380px, 92vw);
+  height: 100%;
+  border-left: 1px solid var(--line);
+  background: var(--panel, #fff);
+  box-shadow: -18px 0 40px rgb(15 23 42 / 18%);
+  transform: translateX(100%);
+  transition: transform 0.2s ease;
+}
+
+.calendar-settings-panel.is-open {
+  transform: translateX(0);
+}
+
+.calendar-settings-panel[hidden] {
+  display: none;
+}
+
+.calendar-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 18px 20px;
+}
+
+.calendar-settings-header h3 {
+  margin: 0;
+}
+
+.calendar-settings-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.calendar-settings-body .calendar-range-controls {
+  grid-template-columns: 1fr 1fr;
+}
+
+.calendar-settings-body .calendar-filters {
+  margin-bottom: 0;
+}
+
 .calendar-month-panel {
   min-width: 0;
 }
@@ -1326,11 +1427,6 @@ button {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.calendar-range-card.completed {
-  border-left-color: #94a3b8;
-  background: #f8fafc;
 }
 
 .calendar-range-card.completed strong {
@@ -1516,33 +1612,9 @@ button {
   height: 260px;
 }
 
-.weekly-table-cell-body {
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  min-height: 100%;
-  min-width: 0;
-}
-
-.weekly-item {
+.weekly-card {
   display: grid;
   gap: 6px;
-  border: 1px solid color-mix(in srgb, var(--project-color) 18%, rgba(148, 163, 184, 0.26));
-  border-left: 3px solid var(--project-color);
-  background: color-mix(in srgb, var(--project-color) 12%, white);
-  padding: 9px 10px;
-  font-size: 13px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.weekly-item:hover {
-  border-color: color-mix(in srgb, var(--project-color) 32%, #cbd5e1);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
-}
-
-.weekly-project-group {
-  display: grid;
-  gap: 0;
   min-width: 0;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--project-color) 18%, rgba(148, 163, 184, 0.26));
@@ -1553,57 +1625,23 @@ button {
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
-.weekly-project-group.clickable {
+.weekly-card.clickable {
   cursor: pointer;
 }
 
-.weekly-project-group.clickable:hover {
+.weekly-card.clickable:hover {
   border-color: color-mix(in srgb, var(--project-color) 32%, #cbd5e1);
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }
 
-.weekly-project-group.clickable:focus-visible {
+.weekly-card.clickable:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 
-.weekly-group-entry {
-  padding-top: 6px;
-  margin-top: 6px;
-  border-top: 1px solid color-mix(in srgb, var(--project-color) 20%, rgba(148, 163, 184, 0.22));
-  min-width: 0;
-}
-
-.weekly-group-entry p {
+.weekly-card p {
   margin: 0;
   overflow-wrap: anywhere;
-}
-
-.weekly-group-entry:first-of-type {
-  padding-top: 4px;
-  margin-top: 4px;
-  border-top: none;
-}
-
-.weekly-group-entry.clickable {
-  cursor: pointer;
-  border-radius: 4px;
-  padding: 5px 6px;
-  margin: 4px -6px 0;
-  transition: background-color 120ms ease;
-}
-
-.weekly-group-entry.clickable:first-of-type {
-  margin-top: 4px;
-}
-
-.weekly-group-entry.clickable:hover {
-  background: color-mix(in srgb, var(--project-color) 20%, rgba(255, 255, 255, 0.7));
-}
-
-.weekly-group-entry.clickable:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
 }
 
 .weekly-cell-add {
@@ -1629,23 +1667,55 @@ button {
   color: var(--text);
 }
 
-.weekly-item.clickable {
-  cursor: pointer;
+.weekly-table td.weekly-section-cell {
+  position: relative;
+  padding: 0;
 }
 
-.weekly-item.clickable:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.weekly-item p {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.weekly-item-header {
+.weekly-section-daycols {
+  position: absolute;
+  inset: 0;
   display: grid;
-  gap: 4px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  pointer-events: none;
+}
+
+.weekly-section-daycol {
+  min-width: 0;
+  border-right: 1px solid var(--line);
+}
+
+.weekly-section-daycol:last-child {
+  border-right: none;
+}
+
+.weekly-section-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.weekly-section-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-rows: min-content;
+  align-content: start;
+  row-gap: 8px;
+  padding: 8px 0;
+}
+
+/* The bar reuses .weekly-card styling; this only handles grid placement and
+   the per-column inset so it lines up with the day columns. */
+.weekly-bar {
+  margin: 0 8px;
+}
+
+.weekly-section-add-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: auto;
 }
 
 .weekly-item-meta {
@@ -1692,13 +1762,6 @@ button {
   background: transparent;
   color: var(--danger);
   padding: 4px 0;
-}
-
-.weekly-empty {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  align-self: start;
 }
 
 @media (max-width: 760px) {

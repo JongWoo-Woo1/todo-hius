@@ -4,13 +4,16 @@ import type { AppState, ProjectEvent } from "../types";
 import { getMonthGridDates, toDateKey } from "../utils/calendar";
 import {
   calendarAddEventButton,
-  calendarAddTaskButton,
   calendarColumnSelect,
   calendarEmptyState,
   calendarEndMonthSelect,
   calendarFilterList,
   calendarGrid,
   calendarRangeControls,
+  calendarSettingsBackdrop,
+  calendarSettingsButton,
+  calendarSettingsCloseButton,
+  calendarSettingsPanel,
   calendarStartMonthSelect,
   toggleAllProjectsButton,
 } from "./dom";
@@ -60,7 +63,8 @@ type CalendarViewOptions = {
   onTaskSelect: (task: CalendarTask) => void;
   onEventSelect: (eventId: string) => void;
   onAddEvent: () => void;
-  onAddTask: () => void;
+  isSettingsOpen: boolean;
+  onToggleSettings: (open: boolean) => void;
 };
 
 const RANGE_CALENDAR_YEAR = 2026;
@@ -549,15 +553,26 @@ function renderRangeControls(preferences: CalendarRangePreferences): void {
   renderColumnOptions(preferences);
 }
 
+function renderSettingsPanel(isOpen: boolean, onToggleSettings: (open: boolean) => void): void {
+  calendarSettingsPanel.hidden = !isOpen;
+  calendarSettingsPanel.setAttribute("aria-hidden", String(!isOpen));
+  calendarSettingsPanel.classList.toggle("is-open", isOpen);
+  calendarSettingsBackdrop.hidden = !isOpen;
+  calendarSettingsButton.setAttribute("aria-expanded", String(isOpen));
+
+  calendarSettingsButton.onclick = () => onToggleSettings(!isOpen);
+  calendarSettingsCloseButton.onclick = () => onToggleSettings(false);
+  calendarSettingsBackdrop.onclick = () => onToggleSettings(false);
+}
+
 export function renderCalendarView(state: AppState, options: CalendarViewOptions): void {
   const preferences = normalizeCalendarRangePreferences(options.calendarRangePreferences);
   options.onCalendarRangePreferencesChange(preferences);
   renderRangeControls(preferences);
   renderCalendarFilters(state, options.selectedProjectIds, options.onSelectedProjectIdsChange);
   calendarAddEventButton.disabled = state.projects.length === 0;
-  calendarAddTaskButton.disabled = state.projects.length === 0;
   calendarAddEventButton.onclick = options.onAddEvent;
-  calendarAddTaskButton.onclick = options.onAddTask;
+  renderSettingsPanel(options.isSettingsOpen, options.onToggleSettings);
 
   const dueTasksByDate = getDueTasksByDate(state, options.selectedProjectIds);
   const events = getCalendarEvents(state, options.selectedProjectIds);

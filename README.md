@@ -2,7 +2,7 @@
 
 Vite + TypeScript + pure DOM 기반의 Electron 업무 관리 앱입니다.
 
-프로젝트별 Task를 관리하고, Calendar / Weekly / Ledger View로 일정과 진행 현황을 확인하며, 데이터를 `.todo` workspace 파일로 저장합니다.
+프로젝트별 Task를 관리하고, Feed / Calendar / Weekly / Ledger View로 일정과 진행 현황을 확인하며, 데이터를 `.todo` workspace 파일로 저장합니다.
 
 ## Run
 
@@ -59,7 +59,7 @@ npm.cmd run build
 |  |- ui/
 |  |  |- render.ts                 # render orchestration: wires state, UI actions, and view modules
 |  |  |- dom.ts                    # DOM element references
-|  |  |- navView.ts                # view (Projects/Calendar/Weekly/Ledger) visibility switching
+|  |  |- navView.ts                # view (Projects/Feed/Calendar/Weekly/Ledger) visibility switching
 |  |  |- projectListView.ts        # sidebar project list rendering and reordering
 |  |  |- projectView.ts            # Project header and project info rendering
 |  |  |- projectDetailView.ts      # Project detail shell / empty-state rendering
@@ -68,7 +68,9 @@ npm.cmd run build
 |  |  |- taskTrashView.ts          # Disabled Task restore/permanent-delete UI
 |  |  |- calendarView.ts           # Calendar filters, range controls, and Task/Event range-card grid
 |  |  |- calendarAddView.ts        # shared +Task modal rendering for Calendar and Project
-|  |  |- projectMemoView.ts        # Project Feed rendering for Event, Weekly Log, and Task cards
+|  |  |- feedView.ts               # global Feed rendering for Event, Weekly, and Task cards
+|  |  |- feedShared.ts             # shared Feed sorting, preview, and date-window helpers
+|  |  |- projectMemoView.ts        # Project Feed rendering for Event, Weekly, and Task cards
 |  |  |- eventDetailView.ts        # Event detail/create/edit modal rendering
 |  |  |- ledgerView.ts             # Ledger filters and table rendering
 |  |  |- weeklyView.ts             # Weekly report view rendering
@@ -148,7 +150,7 @@ hius-dt-jw-todo/
 - Project Events are stored in AppState and persisted per project JSON, following the same workspace style as WorkLogs.
 - Calendar renders Tasks as one-day cards and Events as date-range cards.
 - Calendar limits crowded day cells with a `+N more` card after the visible card lanes.
-- Project Feed combines Events, Weekly Logs, and Tasks, sorts by feed date, and uses business-day windows with separate latest/past more controls.
+- Feed and Project Feed combine Events, Weekly entries, and Tasks, sort by feed date, and use business-day windows with separate latest/past more controls.
 - Project Task uses the shared +Task modal and keeps disabled Tasks in a lightweight restore/permanent-delete section.
 
 ## Design Notes
