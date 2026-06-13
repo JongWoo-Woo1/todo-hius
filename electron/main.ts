@@ -8,16 +8,25 @@ const devServerUrl = process.env.VITE_DEV_SERVER_URL;
 const DEFAULT_WORKSPACE_FILE_NAME = "hius-dt-jw.todo";
 const DEVELOPMENT_WORKSPACE_DIRECTORY_NAME = "hius-dt-jw-todo";
 const PACKAGED_WORKSPACE_DIRECTORY_NAME = "HIUS Todo";
-const MAIN_WINDOW_WIDTH = 1400;
-const MAIN_WINDOW_MIN_WIDTH = 1400;
-const MAIN_WINDOW_MIN_HEIGHT = 900;
-const MAIN_WINDOW_HEIGHT = MAIN_WINDOW_MIN_HEIGHT;
-const SIDEBAR_WIDTH = 280;
-const WORKSPACE_WINDOW_MIN_WIDTH = MAIN_WINDOW_MIN_WIDTH - SIDEBAR_WIDTH;
-const WORKSPACE_WINDOW_MIN_HEIGHT = MAIN_WINDOW_MIN_HEIGHT;
-const WORKSPACE_WINDOW_WIDTH = WORKSPACE_WINDOW_MIN_WIDTH;
-const WORKSPACE_WINDOW_HEIGHT = WORKSPACE_WINDOW_MIN_HEIGHT;
+// The renderer is built against a fixed CSS-pixel layout that is intended to be viewed at
+// 100% physical pixel density (the look of the 125% exe window, whose 0.8 zoom cancels the
+// OS scale). To reproduce that look on every display scale and in both dev and packaged
+// builds, each window cancels the OS display scale via the zoom factor (zoom = 1 / scale)
+// and couples its DIP size to that zoom. The result: CSS viewport stays a constant design
+// size, and effective device px per CSS px (scaleFactor * zoom) stays 1.0 everywhere, so the
+// window renders at the same layout and the same physical size regardless of OS scale.
+const REFERENCE_SCALE_FACTOR = 1.0;
+// Design sizes are in CSS px (the renderer's own coordinate space). The main window's design
+// matches the original 1400x900 DIP window at the ideal 125% / 0.8-zoom look (1400 / 0.8 =
+// 1750, 900 / 0.8 = 1125). These are comfortably above the content minimums (calendar/ledger
+// need ~1460-1470 CSS incl. the 280px sidebar), so the layout never horizontally scrolls.
+const MAIN_WINDOW_DESIGN_WIDTH = 1750;
+const MAIN_WINDOW_DESIGN_HEIGHT = 1125;
+// Child workspace windows hide the sidebar; mirror the original (1400 - 280) DIP / 0.8 width.
+const WORKSPACE_WINDOW_DESIGN_WIDTH = 1400;
+const WORKSPACE_WINDOW_DESIGN_HEIGHT = 1125;
 const MIN_RENDERER_ZOOM_FACTOR = 0.25;
+// Cap at 1 so a 100% display renders at native 1:1 instead of being upscaled (which blurs).
 const MAX_RENDERER_ZOOM_FACTOR = 1;
 let isProjectDirty = false;
 let saveRequestCount = 0;
@@ -137,31 +146,65 @@ function getWorkspaceWindowInitialTitle(windowKey: string): string {
   return "HIUS Todo - Project";
 }
 
-function getDefaultRendererZoomFactor(window: BrowserWindow): number {
-  if (!app.isPackaged) {
-    return 1;
+interface WindowDesignSize {
+  width: number;
+  height: number;
+}
+
+const windowDesignSizes = new WeakMap<BrowserWindow, WindowDesignSize>();
+const windowAppliedScaleFactors = new WeakMap<BrowserWindow, number>();
+
+function getDisplayScaleFactor(window: BrowserWindow): number {
+  return screen.getDisplayMatching(window.getBounds()).scaleFactor || 1;
+}
+
+function getRendererZoomFactor(scaleFactor: number): number {
+  return Math.min(
+    MAX_RENDERER_ZOOM_FACTOR,
+    Math.max(MIN_RENDERER_ZOOM_FACTOR, REFERENCE_SCALE_FACTOR / scaleFactor),
+  );
+}
+
+// Pin the window's effective scale (zoom) to the reference for the display it is on, and
+// size its DIP minimum to match, so the renderer always lays out the same CSS-pixel design
+// regardless of OS display scale and without introducing horizontal scroll.
+function applyWindowScale(window: BrowserWindow, force = false): void {
+  if (window.isDestroyed()) {
+    return;
   }
 
-  const scaleFactor = screen.getDisplayMatching(window.getBounds()).scaleFactor || 1;
-  return Math.min(MAX_RENDERER_ZOOM_FACTOR, Math.max(MIN_RENDERER_ZOOM_FACTOR, 1 / scaleFactor));
+  const design = windowDesignSizes.get(window);
+  if (!design) {
+    return;
+  }
+
+  const scaleFactor = getDisplayScaleFactor(window);
+  if (!force && windowAppliedScaleFactors.get(window) === scaleFactor) {
+    return;
+  }
+  windowAppliedScaleFactors.set(window, scaleFactor);
+
+  const zoom = getRendererZoomFactor(scaleFactor);
+  window.webContents.setZoomFactor(zoom);
+  window.setMinimumSize(Math.round(design.width * zoom), Math.round(design.height * zoom));
 }
 
-function setDefaultRendererZoom(window: BrowserWindow): void {
-  window.webContents.setZoomFactor(getDefaultRendererZoomFactor(window));
+function getInitialWindowSize(designWidth: number, designHeight: number): { width: number; height: number } {
+  const zoom = getRendererZoomFactor(screen.getPrimaryDisplay().scaleFactor || 1);
+  return { width: Math.round(designWidth * zoom), height: Math.round(designHeight * zoom) };
 }
 
-function applyDefaultWebContentsScale(window: BrowserWindow): void {
-  setDefaultRendererZoom(window);
+function registerAdaptiveWindowScale(window: BrowserWindow, designWidth: number, designHeight: number): void {
+  windowDesignSizes.set(window, { width: designWidth, height: designHeight });
+  applyWindowScale(window, true);
   window.webContents.on("did-finish-load", () => {
-    setDefaultRendererZoom(window);
+    applyWindowScale(window, true);
   });
-
+  // Only the display scale matters, so recompute when the window may have moved to another
+  // monitor. A plain resize keeps the same scale and is intentionally ignored to avoid a
+  // setMinimumSize -> resize feedback loop.
   window.on("move", () => {
-    setDefaultRendererZoom(window);
-  });
-
-  window.on("resize", () => {
-    setDefaultRendererZoom(window);
+    applyWindowScale(window, false);
   });
 }
 
@@ -196,11 +239,12 @@ async function openWorkspaceWindow(windowKey: string): Promise<string[]> {
 
   workspaceWindows.delete(windowKey);
 
+  const workspaceInitialSize = getInitialWindowSize(WORKSPACE_WINDOW_DESIGN_WIDTH, WORKSPACE_WINDOW_DESIGN_HEIGHT);
   const childWindow = new BrowserWindow({
-    width: WORKSPACE_WINDOW_WIDTH,
-    height: WORKSPACE_WINDOW_HEIGHT,
-    minWidth: WORKSPACE_WINDOW_MIN_WIDTH,
-    minHeight: WORKSPACE_WINDOW_MIN_HEIGHT,
+    width: workspaceInitialSize.width,
+    height: workspaceInitialSize.height,
+    minWidth: workspaceInitialSize.width,
+    minHeight: workspaceInitialSize.height,
     parent: mainWindowRef && !mainWindowRef.isDestroyed() ? mainWindowRef : undefined,
     modal: false,
     minimizable: true,
@@ -215,7 +259,7 @@ async function openWorkspaceWindow(windowKey: string): Promise<string[]> {
     },
   });
 
-  applyDefaultWebContentsScale(childWindow);
+  registerAdaptiveWindowScale(childWindow, WORKSPACE_WINDOW_DESIGN_WIDTH, WORKSPACE_WINDOW_DESIGN_HEIGHT);
   workspaceWindows.set(windowKey, childWindow);
   sendWorkspaceWindowKeys();
 
@@ -356,7 +400,7 @@ function createAppMenu(mainWindow: BrowserWindow): Menu {
           click: () => {
             const focusedWindow = BrowserWindow.getFocusedWindow();
             if (focusedWindow && !focusedWindow.isDestroyed()) {
-              setDefaultRendererZoom(focusedWindow);
+              applyWindowScale(focusedWindow, true);
             }
           },
         },
@@ -368,11 +412,12 @@ function createAppMenu(mainWindow: BrowserWindow): Menu {
 }
 
 function createMainWindow(): void {
+  const mainInitialSize = getInitialWindowSize(MAIN_WINDOW_DESIGN_WIDTH, MAIN_WINDOW_DESIGN_HEIGHT);
   const mainWindow = new BrowserWindow({
-    width: MAIN_WINDOW_WIDTH,
-    height: MAIN_WINDOW_HEIGHT,
-    minWidth: MAIN_WINDOW_MIN_WIDTH,
-    minHeight: MAIN_WINDOW_MIN_HEIGHT,
+    width: mainInitialSize.width,
+    height: mainInitialSize.height,
+    minWidth: mainInitialSize.width,
+    minHeight: mainInitialSize.height,
     title: "HIUS Todo",
     show: false,
     webPreferences: {
@@ -383,7 +428,7 @@ function createMainWindow(): void {
     },
   });
   mainWindowRef = mainWindow;
-  applyDefaultWebContentsScale(mainWindow);
+  registerAdaptiveWindowScale(mainWindow, MAIN_WINDOW_DESIGN_WIDTH, MAIN_WINDOW_DESIGN_HEIGHT);
 
   registerTodoWorkspaceHandlers(mainWindow, {
     defaultWorkspacePath: getDefaultWorkspacePath(),

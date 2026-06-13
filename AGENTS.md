@@ -54,7 +54,7 @@ Use this map before broad searching:
 - Toast UI: `src/ui/toast.ts`
 - Excel export: `src/excel/`
 - Date/week/task/project helpers: `src/utils/`
-- Electron app shell / menu / dirty state / packaged DPI zoom: `electron/main.ts`
+- Electron app shell / menu / dirty state / display-scale zoom + window min/initial sizing: `electron/main.ts`
 - Renderer bridge: `electron/preload.ts`
 - Workspace open/save: `electron/todoWorkspace.ts`
 - Sample/default data: `src/data/sampleProjects.ts`

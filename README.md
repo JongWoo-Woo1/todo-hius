@@ -43,7 +43,7 @@ The installer registers `.todo` files as `HIUS Todo Workspace` files. Double-cli
 
 HIUS Todo runs as a single app instance. If the app is already open and another `.todo` file is double-clicked, the existing main window is focused and opens the selected workspace after the usual unsaved-changes confirmation.
 
-Packaged Windows builds normalize the renderer zoom against the current display DPI scale so the installed app keeps the same visual scale as `npm.cmd run dev:electron`.
+Every window cancels the current display's DPI scale through the renderer zoom factor (`zoom = 1 / displayScale`) and couples its minimum/initial window size to that zoom. This keeps the fixed-pixel layout at a constant CSS viewport and a constant physical size across display scales (for example 125% and 150%) and across `npm.cmd run dev:electron` and the packaged installer. Zoom and minimum size are recomputed when a window moves to a monitor with a different scale.
 
 ## Release Flow
 
