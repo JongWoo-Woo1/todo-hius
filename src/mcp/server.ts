@@ -1,7 +1,6 @@
 // HIUS Todo stdio MCP server.
 //
 // Tool groups:
-// - File-based tools read saved `.todo` workspaces from disk.
 // - Live-state tools read the running Electron app memory through the local AI bridge.
 // - App-control tools drive navigation and create actions through the local AI bridge.
 //
@@ -11,14 +10,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerAppControlTools } from "./tools/appControlTools";
-import { registerFileTools } from "./tools/fileTools";
 import { registerLiveTools } from "./tools/liveTools";
 
 const SERVER_NAME = "hius-todo";
 const SERVER_VERSION = "0.1.0";
 
 const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });
-registerFileTools(server);
 registerLiveTools(server);
 registerAppControlTools(server);
 

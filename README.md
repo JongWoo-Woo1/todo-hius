@@ -23,7 +23,6 @@ npm.cmd run dist:installer
 - `npm run preview`: preview production build
 - `npm run typecheck`: TypeScript check without emit
 - `npm run mcp:server`: start the stdio MCP server for Claude Code/Codex
-- `npm run mcp:smoke`: run a read-only MCP workspace smoke test
 - `npm run mcp:bridge-test`: verify the running Electron app AI bridge
 - `npm run prepare:logs`: create the ignored local `log/` folder
 - `npm run clean:logs`: remove local runtime log files
@@ -90,8 +89,9 @@ Manual release checks:
 |- tsconfig.electron.json          # Electron main-process TypeScript config
 |- vite.config.ts                  # Vite config
 |- AGENTS.md                       # coding-agent working rules
-|- MCP.md                          # MCP / AI bridge setup and operating notes
 |- README.md                       # project map and usage
+|- docs/
+|  `- MCP.md                       # MCP / AI bridge setup and operating notes
 |
 |- electron/
 |  |- main.ts                      # Electron window, menu, dirty state, close prompt
@@ -204,9 +204,9 @@ Renderer code should not access Node filesystem APIs directly. Electron filesyst
 
 ## MCP / AI Bridge
 
-Claude Code / Codex can use the stdio MCP server to read saved `.todo` files, read the running app's live state, and drive selected app actions through the local AI bridge.
+Claude Code / Codex can use the stdio MCP server to read the running app's live state and drive selected app actions through the local AI bridge.
 
-See `MCP.md` for process roles, tool groups, safe testing, and setup commands.
+See `docs/MCP.md` for process roles, tool groups, safe testing, and setup commands.
 
 ## Electron Workspace Files
 

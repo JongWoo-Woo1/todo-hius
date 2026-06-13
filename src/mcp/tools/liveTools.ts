@@ -19,7 +19,7 @@ export function registerLiveTools(server: McpServer): void {
     "get_live_app_info",
     {
       title: "Get live app info",
-      description: "Live-app read: compact status from the running Electron app memory via the local bridge, not the saved .todo file.",
+      description: "Live-app read: compact status from the running Electron app memory via the local bridge.",
       inputSchema: { ...bridgeUrlSchema },
     },
     async ({ bridgeUrl }) => bridgeTool("get_app_info", {}, bridgeUrl),
@@ -29,7 +29,7 @@ export function registerLiveTools(server: McpServer): void {
     "list_live_projects",
     {
       title: "List live projects",
-      description: "Live-app read: compact project list from the running Electron app memory, not the saved .todo file.",
+      description: "Live-app read: compact project list from the running Electron app memory.",
       inputSchema: { ...liveListSchema },
     },
     async ({ bridgeUrl, limit, offset, detailLevel }) =>
@@ -94,7 +94,7 @@ export function registerLiveTools(server: McpServer): void {
     "get_live_today_schedule",
     {
       title: "Get live today's schedule",
-      description: "Live-app read: compact schedule for one day from the running Electron app memory, not the saved .todo file.",
+      description: "Live-app read: compact schedule for one day from the running Electron app memory.",
       inputSchema: { ...liveListSchema },
     },
     async ({ bridgeUrl, date, includeCompleted, detailLevel }) =>
@@ -105,7 +105,7 @@ export function registerLiveTools(server: McpServer): void {
     "get_live_week_schedule",
     {
       title: "Get live week schedule",
-      description: "Live-app read: compact week schedule from the running Electron app memory, not the saved .todo file.",
+      description: "Live-app read: compact week schedule from the running Electron app memory.",
       inputSchema: { ...liveListSchema },
     },
     async ({ bridgeUrl, weekDate, includeCompleted, detailLevel }) =>

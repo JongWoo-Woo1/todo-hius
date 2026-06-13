@@ -10,10 +10,6 @@ export function jsonResult(value: unknown, options: { pretty?: boolean } = {}): 
   return { content: [{ type: "text", text: JSON.stringify(value, null, options.pretty === false ? undefined : 2) }] };
 }
 
-export function textResult(text: string): ToolResult {
-  return { content: [{ type: "text", text }] };
-}
-
 export function errorResult(message: string): ToolResult {
   return { content: [{ type: "text", text: message }], isError: true };
 }
@@ -26,16 +22,6 @@ export async function runTool(run: () => Promise<ToolResult>): Promise<ToolResul
   } catch (error) {
     return errorResult(error instanceof Error ? error.message : String(error));
   }
-}
-
-// Parse an optional YYYY-MM-DD argument into a local Date, defaulting to today.
-export function parseDateArg(value?: string): Date {
-  if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    const [year, month, day] = value.split("-").map(Number);
-    return new Date(year, month - 1, day);
-  }
-
-  return new Date();
 }
 
 export const bridgeUrlSchema = {

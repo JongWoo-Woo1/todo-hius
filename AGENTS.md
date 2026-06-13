@@ -8,7 +8,7 @@ Do not migrate the app to React unless the user explicitly asks. Do not reintrod
 
 ## Efficient Context Rules
 
-Read `MCP.md` before MCP / AI bridge work. Keep MCP operating documentation consolidated in root `MCP.md`; do not create parallel MCP setup docs.
+Read `docs/MCP.md` before MCP / AI bridge work. Keep MCP operating documentation consolidated there; do not create parallel MCP setup docs.
 
 Read `AGENTS.md` first. `README.md` is human-facing documentation — read it only when the task needs project structure, scripts, or user-facing behavior, not at the start of every task.
 
@@ -56,9 +56,8 @@ Use this map before broad searching:
 - Confirm dialog UI: `src/ui/confirmDialog.ts`
 - Toast UI: `src/ui/toast.ts`
 - Excel export: `src/excel/`
-- MCP stdio server and file/live tools: `src/mcp/server.ts`
+- MCP stdio server and live/app-control tools: `src/mcp/server.ts`
 - MCP bridge smoke test: `src/mcp/bridgeSmokeTest.ts`
-- MCP file workspace reader/query helpers: `src/mcp/core/`
 - Date/week/task/project helpers: `src/utils/`
 - Electron app shell / menu / dirty state / display-scale zoom + window min/initial sizing: `electron/main.ts`
 - Electron local AI bridge: `electron/aiBridge.ts`
@@ -88,7 +87,7 @@ For a specific button, menu, form, or event:
 - View files must not mutate AppState arbitrarily — pass intent up through callbacks into the `render.ts`/`store` flow.
 - View files must not call Electron IPC directly — use `src/platform/todoFileClient.ts` and the existing `src/main.ts` wiring.
 - Persist with `.todo` workspace files, not localStorage.
-- File-based MCP tools read saved `.todo` files through `src/mcp/core/`; live MCP tools call the running app through `electron/aiBridge.ts` and `src/app/aiActions.ts`.
+- MCP tools call the running app through `electron/aiBridge.ts` and `src/app/aiActions.ts`; keep MCP bridge-only.
 - Live-state MCP responses should stay token-efficient: compact by default, paginated lists, no full `AppState`, and detail only when `detailLevel: "detail"` is requested.
 - Detailed MCP tool schema and descriptions belong in `src/mcp/server.ts` `registerTool` metadata, which is the source of truth.
 - Do not add delete tools to the MCP/AI bridge unless explicitly requested.

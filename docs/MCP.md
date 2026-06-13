@@ -2,7 +2,7 @@
 
 ## Purpose
 
-- Claude Code / Codex can use MCP and the local AI bridge to read or drive todo-hius.
+- Claude Code / Codex can use MCP and the local AI bridge to read or drive the running todo-hius app.
 - ChatGPT Developer Mode HTTP MCP is a separate future step.
 
 ## Processes
@@ -14,18 +14,12 @@
 - `npm.cmd run mcp:server`
   - Starts the stdio MCP server for Claude Code / Codex.
   - This is the process Claude/Codex should launch from MCP configuration.
-- `npm.cmd run mcp:smoke`
-  - Tests reading a saved `.todo` file.
 - `npm.cmd run mcp:bridge-test`
   - Tests the running app bridge.
   - Can create test Task/Event records in the active project.
 
 ## Tool Groups
 
-- File-based tools
-  - Read saved `.todo` files.
-  - Can use `workspacePath`.
-  - Examples: `list_projects`, `search_projects`, `search_tasks`, `get_week_schedule`, `summarize_week`.
 - Live-state tools
   - Read the running Electron app memory.
   - Require the local bridge.
@@ -46,12 +40,12 @@
 ## Save Behavior
 
 - `create_*` tools change the running app state.
-- Permanent `.todo` file persistence still requires `Ctrl+S` or `File > Save`.
+- Permanent `.todo` file persistence still requires `Ctrl+S` or `File > Save` in the app.
 
 ## Safety
 
 - Delete tools are not provided.
-- Test with a copied `.todo` workspace before using real work files.
+- Test with a copied workspace before using real work data.
 - `mcp:bridge-test` can create test Task/Event records.
 
 ## Claude / Codex Setup
