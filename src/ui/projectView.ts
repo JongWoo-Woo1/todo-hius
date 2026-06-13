@@ -26,8 +26,8 @@ function syncProjectPeriodInputs(): void {
 
 projectPeriodStatusSelect.addEventListener("change", syncProjectPeriodInputs);
 
-export function renderEmptyProjectHeader(): void {
-  activeProjectName.textContent = "Add a project";
+export function renderEmptyProjectHeader(title = "Add a project"): void {
+  activeProjectName.textContent = title;
   activeProjectNameButton.disabled = true;
   projectInfoView.hidden = true;
 }

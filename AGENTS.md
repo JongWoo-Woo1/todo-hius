@@ -16,7 +16,7 @@ On Windows/PowerShell, prefer `rg` or focused file reads over `Get-Content | Sel
 
 ## File Access Rules
 
-Respect `.gitignore`. Do not inspect or edit generated/dependency/build folders unless explicitly requested: `node_modules/`, `dist/`, `dist-electron/`, `build/`.
+Respect `.gitignore`. Do not inspect or edit generated/dependency/build/runtime-output folders unless explicitly requested: `node_modules/`, `dist/`, `dist-electron/`, `release/`, `build/`, `log/`.
 
 ## Task Routing
 
@@ -54,7 +54,7 @@ Use this map before broad searching:
 - Toast UI: `src/ui/toast.ts`
 - Excel export: `src/excel/`
 - Date/week/task/project helpers: `src/utils/`
-- Electron app shell / menu / dirty state: `electron/main.ts`
+- Electron app shell / menu / dirty state / packaged DPI zoom: `electron/main.ts`
 - Renderer bridge: `electron/preload.ts`
 - Workspace open/save: `electron/todoWorkspace.ts`
 - Sample/default data: `src/data/sampleProjects.ts`

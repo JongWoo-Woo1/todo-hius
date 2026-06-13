@@ -46,12 +46,21 @@ declare global {
       openDefaultWorkspace: () => Promise<DefaultTodoWorkspaceResult>;
       openWorkspace: () => Promise<OpenTodoWorkspaceResult>;
       openWorkspacePath: (workspacePath: string) => Promise<OpenTodoWorkspaceResult>;
+      getStartupWorkspacePath: () => Promise<string | null>;
       listRecents: () => Promise<RecentWorkspacesResult>;
       removeRecent: (workspacePath: string) => Promise<RecentWorkspacesResult>;
       saveWorkspace: (state: AppState, workspacePath?: string) => Promise<SaveTodoWorkspaceResult>;
       saveWorkspaceAs: (state: AppState) => Promise<SaveTodoWorkspaceResult>;
       setDirty: (isDirty: boolean) => void;
+      publishAppState: (state: AppState) => void;
+      getLatestAppState: () => Promise<AppState | null>;
+      onAppStateChange: (callback: (state: AppState) => void) => () => void;
+      onDirtyChange: (callback: (isDirty: boolean) => void) => () => void;
+      openWorkspaceWindow: (windowKey: string) => Promise<string[]>;
+      listWorkspaceWindows: () => Promise<string[]>;
+      onWorkspaceWindowsChange: (callback: (windowKeys: string[]) => void) => () => void;
       onMenuCommand: (callback: (command: TodoFileMenuCommand) => void) => () => void;
+      onOpenWorkspacePathRequest: (callback: (workspacePath: string) => void) => () => void;
       onSaveRequest: (callback: (requestId: string, saveAs: boolean) => Promise<boolean>) => () => void;
     };
   }

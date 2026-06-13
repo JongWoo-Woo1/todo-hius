@@ -36,6 +36,9 @@ export type UiState = {
   isFeedFutureExpanded: boolean;
   isFeedPastExpanded: boolean;
   isFeedSettingsOpen: boolean;
+  isLedgerSettingsOpen: boolean;
+  openedWorkspaceWindowKeys: Set<string>;
+  workspaceWindowKey: string | null;
 };
 
 export const uiState: UiState = {
@@ -70,4 +73,7 @@ export const uiState: UiState = {
   isFeedFutureExpanded: false,
   isFeedPastExpanded: false,
   isFeedSettingsOpen: false,
+  isLedgerSettingsOpen: false,
+  openedWorkspaceWindowKeys: new Set<string>(),
+  workspaceWindowKey: null,
 };

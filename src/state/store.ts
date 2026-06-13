@@ -468,6 +468,15 @@ export function selectProject(projectId: string): void {
   saveState();
 }
 
+export function selectProjectForView(projectId: string): void {
+  if (!state.projects.some((project) => project.id === projectId)) {
+    state.activeProjectId = null;
+    return;
+  }
+
+  state.activeProjectId = projectId;
+}
+
 export function reorderProjects(sourceProjectId: string, targetProjectId: string): void {
   if (sourceProjectId === targetProjectId) {
     return;
@@ -685,5 +694,14 @@ export function replaceState(rawState: unknown): boolean {
 
   state = migrateState(rawState);
   saveState();
+  return true;
+}
+
+export function replaceStateFromSync(rawState: unknown): boolean {
+  if (!isImportableState(rawState)) {
+    return false;
+  }
+
+  state = migrateState(rawState);
   return true;
 }

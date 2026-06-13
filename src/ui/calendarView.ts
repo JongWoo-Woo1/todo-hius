@@ -136,13 +136,17 @@ function clampDateKey(dateKey: string, minKey: string, maxKey: string): string {
 function createCalendarCardMeta(clientName: string, projectName: string): HTMLElement {
   const meta = document.createElement("div");
   meta.className = "calendar-item-meta";
-  const client = document.createElement("span");
-  client.className = "calendar-client-chip";
-  client.textContent = clientName || "No client";
+  if (clientName) {
+    const client = document.createElement("span");
+    client.className = "calendar-client-chip";
+    client.textContent = clientName;
+    meta.append(client);
+  }
+
   const project = document.createElement("span");
   project.className = "calendar-project-name";
   project.textContent = projectName;
-  meta.append(client, project);
+  meta.append(project);
   return meta;
 }
 

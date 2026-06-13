@@ -2,22 +2,33 @@ import "./styles.css";
 
 import {
   isTodoFileClientAvailable,
+  getLatestTodoAppState,
+  getStartupTodoWorkspacePath,
+  openDefaultTodoWorkspace,
+  listWorkspaceWindows,
   listRecentTodoWorkspaces,
+  onTodoAppStateChange,
+  onTodoDirtyChange,
+  onOpenTodoWorkspacePathRequest,
+  onWorkspaceWindowsChange,
   onTodoFileMenuCommand,
   onTodoFileSaveRequest,
   openTodoWorkspace,
   openTodoWorkspacePath,
+  publishTodoAppState,
   removeRecentTodoWorkspace,
   saveTodoWorkspace,
   saveTodoWorkspaceAs,
   setTodoFileDirty,
 } from "./platform/todoFileClient";
+import { uiState } from "./app/uiState";
 import {
   addProject,
   deleteActiveProject,
   getActiveProject,
   getState,
   replaceState,
+  replaceStateFromSync,
   setStateChangeListener,
   updateActiveProject,
   updateActiveProjectColor,
@@ -33,7 +44,9 @@ import {
   calendarEndMonthSelect,
   calendarStartMonthSelect,
   calendarViewButton,
+  calendarWindowButton,
   feedViewButton,
+  feedWindowButton,
   cancelProjectInfoButton,
   cancelProjectNameButton,
   deleteProjectButton,
@@ -44,6 +57,7 @@ import {
   ledgerOverdueOnlyInput,
   ledgerStatusFilter,
   ledgerViewButton,
+  ledgerWindowButton,
   projectClientNameInput,
   projectColorInput,
   projectInfoForm,
@@ -58,6 +72,7 @@ import {
   previousWeekButton,
   weeklyExportButton,
   weeklyViewButton,
+  weeklyWindowButton,
 } from "./ui/dom";
 import {
   activateCalendarButton,
@@ -66,9 +81,11 @@ import {
   goToPreviousWeek,
   getVisibleWeekDate,
   includeCalendarProject,
+  openWorkspaceWindowKey,
   render,
   resetCalendarSelection,
   resetFeedSelection,
+  setOpenedWorkspaceWindowKeys,
   showLedgerView,
   showProjectInfoEditMode,
   showProjectNameEditMode,
@@ -84,6 +101,13 @@ import { closeStartupDialog, openStartupDialog } from "./ui/startupDialog";
 
 let currentTodoWorkspacePath: string | undefined;
 let isDirty = false;
+const workspaceWindowKey = getWorkspaceWindowKey();
+let isApplyingSyncedState = false;
+
+function getWorkspaceWindowKey(): string | null {
+  const windowKey = new URLSearchParams(window.location.search).get("windowKey")?.trim();
+  return windowKey || null;
+}
 
 function createUniqueProjectName(): string {
   const baseName = "new project";
@@ -109,8 +133,28 @@ function setDirty(value: boolean): void {
   setTodoFileDirty(value);
 }
 
+function publishCurrentState(): void {
+  publishTodoAppState(getState());
+}
+
 function markDirty(): void {
+  if (isApplyingSyncedState) {
+    return;
+  }
+
   setDirty(true);
+  publishCurrentState();
+}
+
+function applySyncedState(state: unknown): boolean {
+  isApplyingSyncedState = true;
+  const replaced = replaceStateFromSync(state);
+  isApplyingSyncedState = false;
+  if (replaced) {
+    render();
+  }
+
+  return replaced;
 }
 
 function startNewProject(): void {
@@ -143,6 +187,7 @@ async function openProjectByPath(workspacePath: string): Promise<boolean> {
 
     updateTodoWorkspacePath(result.workspacePath);
     setDirty(false);
+    publishCurrentState();
     clearSelectedTask();
     resetCalendarSelection();
     resetFeedSelection();
@@ -207,6 +252,7 @@ async function openProject(): Promise<boolean> {
 
     updateTodoWorkspacePath(result.workspacePath);
     setDirty(false);
+    publishCurrentState();
     clearSelectedTask();
     resetCalendarSelection();
     resetFeedSelection();
@@ -234,6 +280,7 @@ async function saveProject({ saveAs = false }: { saveAs?: boolean } = {}): Promi
 
     updateTodoWorkspacePath(result.workspacePath);
     setDirty(false);
+    publishCurrentState();
     showToast(
       result.workspacePath
         ? `프로젝트가 저장되었습니다.\n${result.workspacePath}`
@@ -265,6 +312,30 @@ onTodoFileMenuCommand((command) => {
 });
 
 onTodoFileSaveRequest(async (_requestId, saveAs) => saveProject({ saveAs }));
+
+onOpenTodoWorkspacePathRequest((workspacePath) => {
+  void openProjectByPath(workspacePath);
+});
+
+onTodoAppStateChange((state) => {
+  applySyncedState(state);
+});
+
+onTodoDirtyChange((value) => {
+  isDirty = value;
+});
+
+if (!workspaceWindowKey) {
+  onWorkspaceWindowsChange((windowKeys) => {
+    setOpenedWorkspaceWindowKeys(windowKeys);
+  });
+}
+
+if (!workspaceWindowKey && isTodoFileClientAvailable()) {
+  void listWorkspaceWindows().then(setOpenedWorkspaceWindowKeys).catch((error) => {
+    console.error(error);
+  });
+}
 
 addProjectButton.addEventListener("click", () => {
   const project: Project = {
@@ -361,14 +432,26 @@ ledgerViewButton.addEventListener("click", () => {
   render();
 });
 
+ledgerWindowButton.addEventListener("click", () => {
+  void openWorkspaceWindowKey("view:ledger");
+});
+
 weeklyViewButton.addEventListener("click", () => {
   showWeeklyView();
   render();
 });
 
+weeklyWindowButton.addEventListener("click", () => {
+  void openWorkspaceWindowKey("view:weekly");
+});
+
 feedViewButton.addEventListener("click", () => {
   showFeedView();
   render();
+});
+
+feedWindowButton.addEventListener("click", () => {
+  void openWorkspaceWindowKey("view:feed");
 });
 
 ledgerStatusFilter.addEventListener("change", () => {
@@ -400,6 +483,10 @@ ledgerExportButton.addEventListener("click", async () => {
 calendarViewButton.addEventListener("click", () => {
   activateCalendarButton();
   render();
+});
+
+calendarWindowButton.addEventListener("click", () => {
+  void openWorkspaceWindowKey("view:calendar");
 });
 
 calendarStartMonthSelect.addEventListener("change", () => {
@@ -448,7 +535,57 @@ toggleAllProjectsButton.addEventListener("click", () => {
   render();
 });
 
-render();
+async function initializeWorkspaceWindow(): Promise<void> {
+  document.body.classList.add("child-window-mode");
+  uiState.workspaceWindowKey = workspaceWindowKey;
 
-setStateChangeListener(markDirty);
-void showStartupChooser();
+  if (isTodoFileClientAvailable()) {
+    try {
+      const latestState = await getLatestTodoAppState();
+      if (latestState) {
+        applySyncedState(latestState);
+      } else {
+        const result = await openDefaultTodoWorkspace();
+        if (result.found) {
+          applySyncedState(result.state);
+          updateTodoWorkspacePath(result.workspacePath);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  clearSelectedTask();
+  resetCalendarSelection();
+  resetFeedSelection();
+  render();
+}
+
+async function initializeMainWindow(): Promise<void> {
+  render();
+  setStateChangeListener(markDirty);
+
+  if (isTodoFileClientAvailable()) {
+    try {
+      const startupWorkspacePath = await getStartupTodoWorkspacePath();
+      if (startupWorkspacePath) {
+        const opened = await openProjectByPath(startupWorkspacePath);
+        if (opened) {
+          return;
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  void showStartupChooser();
+}
+
+if (workspaceWindowKey) {
+  setStateChangeListener(markDirty);
+  void initializeWorkspaceWindow();
+} else {
+  void initializeMainWindow();
+}

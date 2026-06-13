@@ -3,6 +3,7 @@ package-lock.json
 dist/
 dist-electron/
 build/
+log/
 
 # electron-builder packaged output
 release/

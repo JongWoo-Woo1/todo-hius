@@ -10,6 +10,7 @@ Vite + TypeScript + pure DOM 기반의 Electron 업무 관리 앱입니다.
 npm.cmd run dev:electron
 npm.cmd run typecheck
 npm.cmd run build
+npm.cmd run dist:installer
 ```
 
 ## Scripts
@@ -21,6 +22,60 @@ npm.cmd run build
 - `npm run build:electron`: build only Electron main process
 - `npm run preview`: preview production build
 - `npm run typecheck`: TypeScript check without emit
+- `npm run prepare:logs`: create the ignored local `log/` folder
+- `npm run clean:logs`: remove local runtime log files
+- `npm run clean:dist`: remove all generated build/release output folders
+- `npm run clean:release`: remove the local release output folder
+- `npm run clean:release-extras`: remove non-upload installer build leftovers from the local release output folder
+- `npm run dist:installer`: build the Windows NSIS installer
+
+## Windows Installer
+
+HIUS Todo is distributed as a Windows installer by default. The app release version is the `version` field in `package.json`.
+
+```powershell
+npm.cmd run dist:installer
+```
+
+The installer uses NSIS, installs per user by default, allows changing the install directory, and creates Start Menu and Desktop shortcuts.
+
+The installer registers `.todo` files as `HIUS Todo Workspace` files. Double-clicking a `.todo` file launches HIUS Todo and opens that workspace.
+
+HIUS Todo runs as a single app instance. If the app is already open and another `.todo` file is double-clicked, the existing main window is focused and opens the selected workspace after the usual unsaved-changes confirmation.
+
+Packaged Windows builds normalize the renderer zoom against the current display DPI scale so the installed app keeps the same visual scale as `npm.cmd run dev:electron`.
+
+## Release Flow
+
+Use `package.json` `version` as the release source of truth.
+
+1. Update `package.json` `version`.
+2. Run the release checks:
+
+```powershell
+npm.cmd run typecheck
+npm.cmd run dist:installer
+```
+
+3. Create a Git tag that matches the app version, for example `v1.0.0` or `v1.0.1`.
+4. Create a GitHub Release on `JongWoo-Woo1/todo-hius` using the matching tag.
+5. Upload the files generated in `dist/release/`. The installer build removes local-only build leftovers, so `dist/release/` should contain only the uploadable installer/update artifacts.
+
+Expected installer/update artifacts:
+
+- `HIUS-Todo-Setup-<version>-x64.exe`
+- `HIUS-Todo-Setup-<version>-x64.exe.blockmap`
+- `latest.yml`
+
+The electron-builder `publish` setting is prepared for GitHub Releases. This step does not add automatic update code yet; for now, users update by downloading the new installer and reinstalling. `.todo` workspace files are user data and remain separate from app installation/update files.
+
+Manual release checks:
+
+- App launches after install
+- `.todo` double-click opens the workspace
+- Legacy folder-style `.todo + projects/` workspace opens
+- New `.todo` ZIP workspace saves and reopens
+- Install and uninstall work as expected
 
 ## Project Structure
 
@@ -105,9 +160,15 @@ npm.cmd run build
 |  `- templates/
 |     `- weekly-report-template.xlsx
 |
+|- dist/
+|  |- renderer/                    # Vite build output: index.html and browser assets
+|  |- electron/                    # compiled Electron main/preload files
+|  `- release/                     # installer and update metadata artifacts
+|
+|- log/                            # ignored local runtime logs
+|
 `- hius-dt-jw-todo/
-   |- hius-dt-jw.todo              # development default workspace manifest
-   `- projects/                    # project JSON files for the workspace
+   `- hius-dt-jw.todo              # development default workspace file
 ```
 
 ## Architecture
@@ -127,19 +188,21 @@ Renderer code should not access Node filesystem APIs directly. Electron filesyst
 
 ## Electron Workspace Files
 
-Data is stored through `.todo` workspace files.
+Data is stored through `.todo` workspace files. New saves use a single-file ZIP container so copying the `.todo` file moves the full workspace.
 
 ```txt
-hius-dt-jw-todo/
-|- hius-dt-jw.todo        # workspace manifest
+hius-dt-jw.todo
+|- manifest.json
 `- projects/
-   |- <project>.json      # one JSON file per project
+   |- <projectId>.json
    `- ...
 ```
 
-- `File > Open` opens a workspace manifest.
-- `File > Save` or `Ctrl+S` saves the current workspace.
-- `File > Save As` chooses a new workspace path.
+- `manifest.json` stores the `.todo` container `formatVersion`, app version, AppState `schemaVersion`, project order, active project id, and created/updated timestamps.
+- `projects/<projectId>.json` stores each project with its related WorkLogs and Events.
+- `File > Open` opens both new ZIP `.todo` files and legacy folder-style `.todo + projects/` workspaces.
+- `File > Save` or `Ctrl+S` saves the current workspace as the single `.todo` ZIP format.
+- `File > Save As` chooses a new workspace path and writes the single `.todo` ZIP format.
 - Unsaved changes trigger a save prompt on close.
 - On startup, the app shows a workspace chooser with recent `.todo` workspaces, an option to open another `.todo` file, and an option to start a new unsaved project.
 - Recent workspaces are stored by Electron and missing/unreadable entries can be removed from the startup chooser.
@@ -147,7 +210,7 @@ hius-dt-jw-todo/
 ## Data Model Notes
 
 - AppState uses an explicit `schemaVersion`. Missing versions are treated as v1 and migrated to the current schema.
-- Project Events are stored in AppState and persisted per project JSON, following the same workspace style as WorkLogs.
+- Project Events are stored in AppState and persisted in each project's JSON file, following the same workspace style as WorkLogs.
 - Calendar renders Tasks as one-day cards and Events as date-range cards.
 - Calendar limits crowded day cells with a `+N more` card after the visible card lanes.
 - Feed and Project Feed combine Events, Weekly entries, and Tasks, sort by feed date, and use business-day windows with separate latest/past more controls.

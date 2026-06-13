@@ -5,7 +5,9 @@ import { projectList } from "./dom";
 export interface ProjectListHandlers {
   onSelectProject: (projectId: string) => void;
   onReorderProjects: (sourceProjectId: string, targetProjectId: string) => void;
+  onOpenWorkspaceWindow: (windowKey: string) => void;
   onRender: () => void;
+  openedWindowKeys: Set<string>;
 }
 
 function toSingleLineText(value: string): string {
@@ -16,10 +18,15 @@ export function renderProjectList(handlers: ProjectListHandlers): void {
   projectList.innerHTML = "";
 
   getState().projects.forEach((project) => {
+    const windowKey = `project:${project.id}`;
+    const card = document.createElement("div");
+    card.className = "project-card";
+    card.draggable = true;
+    card.dataset.projectId = project.id;
+
     const button = document.createElement("button");
     button.type = "button";
     button.className = "project-button";
-    button.draggable = true;
     button.dataset.projectId = project.id;
     button.classList.toggle("active", uiState.currentView === "projects" && project.id === getState().activeProjectId);
 
@@ -36,12 +43,28 @@ export function renderProjectList(handlers: ProjectListHandlers): void {
     label.textContent = toSingleLineText(project.name);
     name.append(swatch, label);
 
-    const client = document.createElement("span");
-    client.className = "project-client";
-    client.textContent = toSingleLineText(project.clientName) || "No client";
-    client.title = project.clientName || "No client";
+    button.append(name);
+    const clientName = toSingleLineText(project.clientName);
+    if (clientName) {
+      const client = document.createElement("span");
+      client.className = "project-client";
+      client.textContent = clientName;
+      client.title = clientName;
+      button.append(client);
+    }
 
-    button.append(name, client);
+    const openButton = document.createElement("button");
+    openButton.type = "button";
+    openButton.className = "workspace-window-button project-window-button";
+    openButton.textContent = "[]";
+    openButton.setAttribute("aria-label", `Open ${project.name} in new window`);
+    openButton.classList.toggle("active", handlers.openedWindowKeys.has(windowKey));
+    openButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      handlers.onOpenWorkspaceWindow(windowKey);
+    });
+
+    card.append(button, openButton);
     button.addEventListener("click", () => {
       handlers.onSelectProject(project.id);
       uiState.isProjectInfoEditing = false;
@@ -49,30 +72,30 @@ export function renderProjectList(handlers: ProjectListHandlers): void {
       uiState.currentView = "projects";
       handlers.onRender();
     });
-    button.addEventListener("dragstart", (event) => {
+    card.addEventListener("dragstart", (event) => {
       uiState.draggedProjectId = project.id;
-      button.classList.add("dragging");
+      card.classList.add("dragging");
       event.dataTransfer?.setData("text/plain", project.id);
-      event.dataTransfer?.setDragImage(button, 12, 20);
+      event.dataTransfer?.setDragImage(card, 12, 20);
     });
-    button.addEventListener("dragend", () => {
+    card.addEventListener("dragend", () => {
       uiState.draggedProjectId = null;
-      button.classList.remove("dragging");
+      card.classList.remove("dragging");
     });
-    button.addEventListener("dragover", (event) => {
+    card.addEventListener("dragover", (event) => {
       if (!uiState.draggedProjectId || uiState.draggedProjectId === project.id) {
         return;
       }
 
       event.preventDefault();
-      button.classList.add("drag-over");
+      card.classList.add("drag-over");
     });
-    button.addEventListener("dragleave", () => {
-      button.classList.remove("drag-over");
+    card.addEventListener("dragleave", () => {
+      card.classList.remove("drag-over");
     });
-    button.addEventListener("drop", (event) => {
+    card.addEventListener("drop", (event) => {
       event.preventDefault();
-      button.classList.remove("drag-over");
+      card.classList.remove("drag-over");
       const sourceProjectId = uiState.draggedProjectId ?? event.dataTransfer?.getData("text/plain");
       if (!sourceProjectId) {
         return;
@@ -82,6 +105,6 @@ export function renderProjectList(handlers: ProjectListHandlers): void {
       uiState.draggedProjectId = null;
       handlers.onRender();
     });
-    projectList.append(button);
+    projectList.append(card);
   });
 }

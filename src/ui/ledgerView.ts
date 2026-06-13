@@ -7,6 +7,10 @@ import {
   ledgerEmptyState,
   ledgerHideCompletedInput,
   ledgerOverdueOnlyInput,
+  ledgerSettingsBackdrop,
+  ledgerSettingsButton,
+  ledgerSettingsCloseButton,
+  ledgerSettingsPanel,
   ledgerStatusFilter,
   ledgerTableBody,
 } from "./dom";
@@ -14,6 +18,8 @@ import {
 type LedgerViewOptions = {
   onProjectSelect: (project: Project) => void;
   onTaskSelect: (task: Task) => void;
+  isSettingsOpen: boolean;
+  onToggleSettings: (open: boolean) => void;
 };
 
 function createLedgerCell(className: string, text: string): HTMLTableCellElement {
@@ -102,8 +108,24 @@ function renderLedgerClientOptions(state: AppState): void {
   ledgerClientFilter.value = clients.includes(currentValue) ? currentValue : "전체";
 }
 
-export function renderLedgerView(state: AppState, { onProjectSelect, onTaskSelect }: LedgerViewOptions): void {
+function renderLedgerSettingsPanel(isOpen: boolean, onToggleSettings: (open: boolean) => void): void {
+  ledgerSettingsPanel.hidden = !isOpen;
+  ledgerSettingsPanel.setAttribute("aria-hidden", String(!isOpen));
+  ledgerSettingsPanel.classList.toggle("is-open", isOpen);
+  ledgerSettingsBackdrop.hidden = !isOpen;
+  ledgerSettingsButton.setAttribute("aria-expanded", String(isOpen));
+
+  ledgerSettingsButton.onclick = () => onToggleSettings(!isOpen);
+  ledgerSettingsCloseButton.onclick = () => onToggleSettings(false);
+  ledgerSettingsBackdrop.onclick = () => onToggleSettings(false);
+}
+
+export function renderLedgerView(
+  state: AppState,
+  { onProjectSelect, onTaskSelect, isSettingsOpen, onToggleSettings }: LedgerViewOptions,
+): void {
   renderLedgerClientOptions(state);
+  renderLedgerSettingsPanel(isSettingsOpen, onToggleSettings);
   ledgerTableBody.innerHTML = "";
 
   const statusFilter = ledgerStatusFilter.value || "전체";

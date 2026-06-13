@@ -9,10 +9,22 @@
     <main class="app-shell">
       <aside class="sidebar">
         <div class="view-switcher" aria-label="Workspace views">
-          <button id="calendar-view-button" class="view-button" type="button">Calendar</button>
-          <button id="feed-view-button" class="view-button" type="button">Feed</button>
-          <button id="weekly-view-button" class="view-button" type="button">Weekly</button>
-          <button id="ledger-view-button" class="view-button" type="button">Ledger</button>
+          <div class="view-switcher-item">
+            <button id="calendar-view-button" class="view-button" type="button">Calendar</button>
+            <button id="calendar-window-button" class="workspace-window-button" type="button" aria-label="Open Calendar in new window">[]</button>
+          </div>
+          <div class="view-switcher-item">
+            <button id="feed-view-button" class="view-button" type="button">Feed</button>
+            <button id="feed-window-button" class="workspace-window-button" type="button" aria-label="Open Feed in new window">[]</button>
+          </div>
+          <div class="view-switcher-item">
+            <button id="weekly-view-button" class="view-button" type="button">Weekly</button>
+            <button id="weekly-window-button" class="workspace-window-button" type="button" aria-label="Open Weekly in new window">[]</button>
+          </div>
+          <div class="view-switcher-item">
+            <button id="ledger-view-button" class="view-button" type="button">Ledger</button>
+            <button id="ledger-window-button" class="workspace-window-button" type="button" aria-label="Open Ledger in new window">[]</button>
+          </div>
         </div>
 
         <nav id="project-list" class="project-list" aria-label="Project list"></nav>
@@ -129,7 +141,7 @@
         </header>
 
         <section id="weekly-grid" class="weekly-grid"></section>
-        <p id="weekly-empty-state" class="empty-state">이번 주 업무 기록이 없습니다.</p>
+        <p id="weekly-empty-state" class="empty-state"></p>
       </section>
 
       <section id="ledger-workspace" class="workspace" hidden>
@@ -139,36 +151,6 @@
           </div>
           <button id="ledger-export-button" type="button">프로젝트 원장 Excel Export</button>
         </header>
-
-        <section class="ledger-filter-card">
-          <label>
-            Status
-            <select id="ledger-status-filter">
-              <option value="전체">전체</option>
-              <option value="대기">대기</option>
-              <option value="진행중">진행중</option>
-              <option value="검토대기">검토대기</option>
-              <option value="완료">완료</option>
-            </select>
-          </label>
-
-          <label>
-            고객사
-            <select id="ledger-client-filter">
-              <option value="전체">전체</option>
-            </select>
-          </label>
-
-          <label class="checkbox-field">
-            <input id="ledger-hide-completed" type="checkbox" />
-            Hide completed
-          </label>
-
-          <label class="checkbox-field">
-            <input id="ledger-overdue-only" type="checkbox" />
-            Overdue only
-          </label>
-        </section>
 
         <section class="ledger-table-wrap">
           <table class="ledger-table">
@@ -202,6 +184,65 @@
           </table>
           <p id="ledger-empty-state" class="empty-state">조건에 맞는 업무가 없습니다.</p>
         </section>
+
+        <div class="calendar-floating-actions">
+          <button
+            id="ledger-settings-button"
+            class="calendar-settings-button"
+            type="button"
+            aria-label="Ledger 설정 열기"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="ledger-settings-panel"
+          >⚙</button>
+        </div>
+
+        <div id="ledger-settings-backdrop" class="calendar-settings-backdrop" hidden></div>
+        <aside
+          id="ledger-settings-panel"
+          class="calendar-settings-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Ledger 설정"
+          aria-hidden="true"
+          hidden
+        >
+          <div class="calendar-settings-header">
+            <h3>Ledger 설정</h3>
+            <button id="ledger-settings-close-button" class="quiet-button" type="button" aria-label="설정 닫기">✕</button>
+          </div>
+          <div class="calendar-settings-body">
+            <section class="ledger-filter-card">
+              <label>
+                Status
+                <select id="ledger-status-filter">
+                  <option value="전체">전체</option>
+                  <option value="대기">대기</option>
+                  <option value="진행중">진행중</option>
+                  <option value="검토대기">검토대기</option>
+                  <option value="완료">완료</option>
+                </select>
+              </label>
+
+              <label>
+                고객사
+                <select id="ledger-client-filter">
+                  <option value="전체">전체</option>
+                </select>
+              </label>
+
+              <label class="checkbox-field">
+                <input id="ledger-hide-completed" type="checkbox" />
+                Hide completed
+              </label>
+
+              <label class="checkbox-field">
+                <input id="ledger-overdue-only" type="checkbox" />
+                Overdue only
+              </label>
+            </section>
+          </div>
+        </aside>
       </section>
 
         <section id="calendar-workspace" class="workspace" hidden>

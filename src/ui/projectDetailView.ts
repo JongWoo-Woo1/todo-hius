@@ -2,10 +2,16 @@ import { deleteProjectButton, emptyState, projectAddTaskButton, projectWorkLogCa
 import { renderEmptyProjectHeader } from "./projectView";
 
 // Project-detail surface shown when no project is selected.
-export function renderEmptyProjectDetail(): void {
-  renderEmptyProjectHeader();
+export function renderEmptyProjectDetail({
+  title = "Add a project",
+  message = "Create a project first.",
+}: {
+  title?: string;
+  message?: string;
+} = {}): void {
+  renderEmptyProjectHeader(title);
   taskCount.textContent = "0 items";
-  emptyState.textContent = "Create a project first.";
+  emptyState.textContent = message;
   emptyState.hidden = false;
   projectAddTaskButton.hidden = true;
   projectWorkLogCard.hidden = true;

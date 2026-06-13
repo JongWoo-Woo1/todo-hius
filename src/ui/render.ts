@@ -3,6 +3,7 @@ import {
   type CalendarRangePreferences,
 } from "../state/calendarPreferences";
 import { uiState } from "../app/uiState";
+import { openWorkspaceWindow } from "../platform/todoFileClient";
 import {
   addEvent,
   addTaskToProject,
@@ -16,6 +17,7 @@ import {
   reorderProjects,
   restoreDeletedTask,
   selectProject,
+  selectProjectForView,
   toggleTask,
   updateTask,
   updateEvent,
@@ -62,8 +64,95 @@ import { renderViewVisibility } from "./navView";
 import { renderWorkLogDetailModalView } from "./workLogDetailView";
 import { renderEventDetailModalView, type EventInput } from "./eventDetailView";
 import { renderCalendarTaskAddModalView } from "./calendarAddView";
+import { showToast } from "./toast";
 
 // Shared helpers
+
+export function setOpenedWorkspaceWindowKeys(windowKeys: string[]): void {
+  uiState.openedWorkspaceWindowKeys = new Set(windowKeys);
+  render();
+}
+
+function getWorkspaceWindowProjectId(): string | null {
+  const windowKey = uiState.workspaceWindowKey;
+  if (!windowKey?.startsWith("project:")) {
+    return null;
+  }
+
+  return windowKey.slice("project:".length) || null;
+}
+
+export function getWorkspaceWindowTitle(): string {
+  const windowKey = uiState.workspaceWindowKey;
+  if (windowKey === "view:calendar") {
+    return "Calendar";
+  }
+
+  if (windowKey === "view:feed") {
+    return "Feed";
+  }
+
+  if (windowKey === "view:weekly") {
+    return "Weekly";
+  }
+
+  if (windowKey === "view:ledger") {
+    return "Ledger";
+  }
+
+  const projectId = getWorkspaceWindowProjectId();
+  if (projectId) {
+    return getProjectById(getState(), projectId)?.name ?? "Project";
+  }
+
+  return "HIUS Todo";
+}
+
+export function applyWorkspaceWindowRoute(): void {
+  const windowKey = uiState.workspaceWindowKey;
+  if (!windowKey) {
+    return;
+  }
+
+  if (windowKey === "view:calendar") {
+    activateCalendarButton();
+    return;
+  }
+
+  if (windowKey === "view:feed") {
+    showFeedView();
+    return;
+  }
+
+  if (windowKey === "view:weekly") {
+    showWeeklyView();
+    return;
+  }
+
+  if (windowKey === "view:ledger") {
+    showLedgerView();
+    return;
+  }
+
+  const projectId = getWorkspaceWindowProjectId();
+  if (projectId) {
+    selectProjectForView(projectId);
+    showProjectView();
+    return;
+  }
+
+  showProjectView();
+}
+
+export async function openWorkspaceWindowKey(windowKey: string): Promise<void> {
+  try {
+    const windowKeys = await openWorkspaceWindow(windowKey);
+    setOpenedWorkspaceWindowKeys(windowKeys);
+  } catch (error) {
+    console.error(error);
+    showToast("새창을 여는 데 실패했습니다.", "error");
+  }
+}
 
 function ensureCalendarSelection(): void {
   const projectIds = getState().projects.map((project) => project.id);
@@ -137,6 +226,7 @@ function renderFeed(): void {
 
 function renderLedger(): void {
   renderLedgerView(getState(), {
+    isSettingsOpen: uiState.isLedgerSettingsOpen,
     onProjectSelect: (project) => {
       uiState.selectedModalProjectId = project.id;
       uiState.selectedModalTaskId = null;
@@ -147,6 +237,10 @@ function renderLedger(): void {
       uiState.selectedModalProjectId = null;
       uiState.selectedModalTaskId = task.id;
       uiState.isModalTaskEditing = false;
+      render();
+    },
+    onToggleSettings: (open) => {
+      uiState.isLedgerSettingsOpen = open;
       render();
     },
   });
@@ -645,7 +739,12 @@ function renderTasks(): void {
   if (!activeProject) {
     clearTaskList();
     clearTaskTrashView();
-    renderEmptyProjectDetail();
+    const isChildProjectWindow = Boolean(getWorkspaceWindowProjectId());
+    renderEmptyProjectDetail(
+      isChildProjectWindow
+        ? { title: "Project not found", message: "Project not found." }
+        : undefined,
+    );
     uiState.isProjectNameEditing = false;
     showProjectNameEditMode(false);
     uiState.isProjectInfoEditing = false;
@@ -803,7 +902,20 @@ export function updateCalendarRangePreferences(updates: Partial<CalendarRangePre
 }
 
 export function render(): void {
-  renderProjectList({ onSelectProject: selectProject, onReorderProjects: reorderProjects, onRender: render });
+  if (uiState.workspaceWindowKey) {
+    applyWorkspaceWindowRoute();
+    document.title = `HIUS Todo - ${getWorkspaceWindowTitle()}`;
+  }
+
+  renderProjectList({
+    onSelectProject: selectProject,
+    onReorderProjects: reorderProjects,
+    onOpenWorkspaceWindow: (windowKey) => {
+      void openWorkspaceWindowKey(windowKey);
+    },
+    onRender: render,
+    openedWindowKeys: uiState.openedWorkspaceWindowKeys,
+  });
   renderTasks();
   renderLedger();
   renderWeeklyView(getState(), uiState.visibleWeekDate, {
@@ -822,5 +934,5 @@ export function render(): void {
   renderWorkLogDetailModal();
   renderEventDetailModal();
   renderCalendarTaskAddModal();
-  renderViewVisibility(uiState.currentView);
+  renderViewVisibility(uiState.currentView, uiState.openedWorkspaceWindowKeys);
 }

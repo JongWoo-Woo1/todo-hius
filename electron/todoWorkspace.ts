@@ -1,5 +1,6 @@
 import { app, dialog, ipcMain, type BrowserWindow } from "electron";
 import fs from "node:fs/promises";
+import JSZip from "jszip";
 import path from "node:path";
 
 const RECENTS_FILE_NAME = "recent-workspaces.json";
@@ -85,6 +86,16 @@ type TodoWorkspaceManifest = {
   events?: ProjectEvent[];
 };
 
+type TodoZipManifest = {
+  formatVersion: 1;
+  appVersion: string;
+  schemaVersion?: AppSchemaVersion;
+  projectOrder: string[];
+  activeProjectId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 type TodoProjectFile = {
   kind: "hius.todo.project";
   version: 1;
@@ -126,6 +137,9 @@ type TodoWorkspacePaths = {
 
 const WORKSPACE_KIND = "hius.todo.workspace";
 const PROJECT_KIND = "hius.todo.project";
+const TODO_ZIP_FORMAT_VERSION = 1;
+const TODO_ZIP_MANIFEST_FILE = "manifest.json";
+const TODO_ZIP_PROJECTS_DIRECTORY = "projects";
 const DEFAULT_WORKSPACE_FILE_NAME = "hius-dt-jw.todo";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -144,22 +158,19 @@ function assertProjectFile(value: unknown): asserts value is TodoProjectFile {
   }
 }
 
-function sanitizeFileName(value: string): string {
-  return (
-    value
-      .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
-      .replace(/\s+/g, " ")
-      .trim() || "untitled-project"
-  );
+function assertZipManifest(value: unknown): asserts value is TodoZipManifest {
+  if (
+    !isRecord(value) ||
+    value.formatVersion !== TODO_ZIP_FORMAT_VERSION ||
+    !Array.isArray(value.projectOrder) ||
+    typeof value.activeProjectId !== "string" && value.activeProjectId !== null
+  ) {
+    throw new Error("Invalid .todo ZIP manifest.");
+  }
 }
 
 async function readJsonFile(filePath: string): Promise<unknown> {
   return JSON.parse(await fs.readFile(filePath, "utf8"));
-}
-
-async function writeJsonFile(filePath: string, value: unknown): Promise<void> {
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
 async function pathExists(filePath: string): Promise<boolean> {
@@ -217,8 +228,57 @@ async function listRecentWorkspaces(): Promise<RecentEntry[]> {
   );
 }
 
-async function openWorkspaceFile(workspacePath: string): Promise<AppState> {
-  const manifest = await readJsonFile(workspacePath);
+function parseJson(value: string, description: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    throw new Error(`Invalid ${description}.`);
+  }
+}
+
+function isZipWorkspaceBuffer(buffer: Buffer): boolean {
+  if (buffer.length < 4) {
+    return false;
+  }
+
+  return buffer[0] === 0x50 && buffer[1] === 0x4b;
+}
+
+function createProjectFile(project: Project, workLogs: WorkLog[], events: ProjectEvent[]): TodoProjectFile {
+  return {
+    kind: PROJECT_KIND,
+    version: 1,
+    schemaVersion: 2,
+    project,
+    workLogs,
+    events,
+  };
+}
+
+function stateFromProjectFiles(
+  schemaVersion: AppSchemaVersion,
+  activeProjectId: string | null,
+  projectFiles: TodoProjectFile[],
+  manifestWorkLogs: WorkLog[] = [],
+  manifestEvents: ProjectEvent[] = [],
+): AppState {
+  return {
+    schemaVersion,
+    projects: projectFiles.map((projectFile) => projectFile.project),
+    activeProjectId,
+    workLogs: [
+      ...manifestWorkLogs,
+      ...projectFiles.flatMap((projectFile) => (Array.isArray(projectFile.workLogs) ? projectFile.workLogs : [])),
+    ],
+    events: [
+      ...manifestEvents,
+      ...projectFiles.flatMap((projectFile) => (Array.isArray(projectFile.events) ? projectFile.events : [])),
+    ],
+  };
+}
+
+async function openLegacyWorkspaceFile(workspacePath: string, workspaceContent: string): Promise<AppState> {
+  const manifest = parseJson(workspaceContent, ".todo workspace file");
   assertWorkspaceManifest(manifest);
 
   const workspaceDirectory = path.dirname(workspacePath);
@@ -231,32 +291,56 @@ async function openWorkspaceFile(workspacePath: string): Promise<AppState> {
     }),
   );
 
-  return {
-    schemaVersion: manifest.schemaVersion === 2 ? 2 : 1,
-    projects: projectFiles.map((projectFile) => projectFile.project),
-    activeProjectId: manifest.activeProjectId,
-    workLogs: [
-      ...(Array.isArray(manifest.workLogs) ? manifest.workLogs : []),
-      ...projectFiles.flatMap((projectFile) => (Array.isArray(projectFile.workLogs) ? projectFile.workLogs : [])),
-    ],
-    events: [
-      ...(Array.isArray(manifest.events) ? manifest.events : []),
-      ...projectFiles.flatMap((projectFile) => (Array.isArray(projectFile.events) ? projectFile.events : [])),
-    ],
-  };
+  return stateFromProjectFiles(
+    manifest.schemaVersion === 2 ? 2 : 1,
+    manifest.activeProjectId,
+    projectFiles,
+    Array.isArray(manifest.workLogs) ? manifest.workLogs : [],
+    Array.isArray(manifest.events) ? manifest.events : [],
+  );
 }
 
-async function saveWorkspaceFile(workspacePath: string, state: AppState): Promise<void> {
-  const workspaceDirectory = path.dirname(workspacePath);
-  const projectsDirectory = path.join(workspaceDirectory, "projects");
-  const workspaceBaseName = path.basename(workspacePath);
-  const saveId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const temporaryWorkspaceDirectory = path.join(workspaceDirectory, `.todo-save-${saveId}`);
-  const temporaryProjectsDirectory = path.join(temporaryWorkspaceDirectory, "projects");
-  const temporaryWorkspacePath = path.join(temporaryWorkspaceDirectory, workspaceBaseName);
-  const backupProjectsDirectory = path.join(workspaceDirectory, `.projects-backup-${saveId}`);
-  const usedFileNames = new Set<string>();
-  const projectFiles: string[] = [];
+async function readZipText(zip: JSZip, fileName: string): Promise<string> {
+  const file = zip.file(fileName);
+  if (!file) {
+    throw new Error(`Missing ${fileName} in .todo workspace.`);
+  }
+
+  return file.async("string");
+}
+
+async function openZipWorkspaceFile(workspaceBuffer: Buffer): Promise<AppState> {
+  const zip = await JSZip.loadAsync(workspaceBuffer);
+  const manifestData = parseJson(await readZipText(zip, TODO_ZIP_MANIFEST_FILE), "ZIP manifest.json");
+  assertZipManifest(manifestData);
+
+  const projectIds = manifestData.projectOrder.filter((projectId): projectId is string => typeof projectId === "string");
+  const projectFiles = await Promise.all(
+    projectIds.map(async (projectId) => {
+      const projectJson = await readZipText(zip, `${TODO_ZIP_PROJECTS_DIRECTORY}/${projectId}.json`);
+      const projectData = parseJson(projectJson, `ZIP project ${projectId}`);
+      assertProjectFile(projectData);
+      return projectData;
+    }),
+  );
+
+  return stateFromProjectFiles(manifestData.schemaVersion === 2 ? 2 : 1, manifestData.activeProjectId, projectFiles);
+}
+
+async function openWorkspaceFile(workspacePath: string): Promise<AppState> {
+  const workspaceBuffer = await fs.readFile(workspacePath);
+
+  if (isZipWorkspaceBuffer(workspaceBuffer)) {
+    return openZipWorkspaceFile(workspaceBuffer);
+  }
+
+  return openLegacyWorkspaceFile(workspacePath, workspaceBuffer.toString("utf8"));
+}
+
+function groupWorkspaceItemsByProject(state: AppState): {
+  workLogsByProjectId: Map<string, WorkLog[]>;
+  eventsByProjectId: Map<string, ProjectEvent[]>;
+} {
   const workLogsByProjectId = new Map<string, WorkLog[]>();
   const eventsByProjectId = new Map<string, ProjectEvent[]>();
 
@@ -272,64 +356,92 @@ async function saveWorkspaceFile(workspacePath: string, state: AppState): Promis
     eventsByProjectId.set(event.projectId, projectEvents);
   });
 
-  await fs.rm(temporaryWorkspaceDirectory, { recursive: true, force: true });
-  await fs.mkdir(temporaryProjectsDirectory, { recursive: true });
+  return { workLogsByProjectId, eventsByProjectId };
+}
 
-  for (const project of state.projects) {
-    const baseFileName = sanitizeFileName(project.name);
-    let fileName = `${baseFileName}.json`;
-    let count = 1;
-    while (usedFileNames.has(fileName.toLowerCase())) {
-      fileName = `${baseFileName} ${count}.json`;
-      count += 1;
+async function readExistingZipCreatedAt(workspacePath: string): Promise<string | null> {
+  try {
+    const buffer = await fs.readFile(workspacePath);
+    if (!isZipWorkspaceBuffer(buffer)) {
+      return null;
     }
-    usedFileNames.add(fileName.toLowerCase());
 
-    const projectFile = path.join("projects", fileName);
-    projectFiles.push(projectFile.replace(/\\/g, "/"));
-    await writeJsonFile(path.join(temporaryWorkspaceDirectory, projectFile), {
-      kind: PROJECT_KIND,
-      version: 1,
-      schemaVersion: 2,
-      project,
-      workLogs: workLogsByProjectId.get(project.id) ?? [],
-      events: eventsByProjectId.get(project.id) ?? [],
-    } satisfies TodoProjectFile);
+    const zip = await JSZip.loadAsync(buffer);
+    const manifest = parseJson(await readZipText(zip, TODO_ZIP_MANIFEST_FILE), "ZIP manifest.json");
+    if (isRecord(manifest) && typeof manifest.createdAt === "string") {
+      return manifest.createdAt;
+    }
+  } catch {
+    // Legacy or unreadable files get a fresh container timestamp on the next successful save.
   }
 
-  const manifest: TodoWorkspaceManifest = {
-    kind: WORKSPACE_KIND,
-    version: 1,
-    schemaVersion: 2,
-    name: path.basename(workspacePath, ".todo"),
-    activeProjectId: state.activeProjectId,
-    projectFiles,
-  };
+  return null;
+}
 
-  await writeJsonFile(temporaryWorkspacePath, manifest);
-
-  const hadProjectsDirectory = await pathExists(projectsDirectory);
+async function replaceFileWithTemporary(workspacePath: string, temporaryWorkspacePath: string): Promise<void> {
+  const backupWorkspacePath = `${workspacePath}.bak-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const hadWorkspaceFile = await pathExists(workspacePath);
 
   try {
-    if (hadProjectsDirectory) {
-      await fs.rm(backupProjectsDirectory, { recursive: true, force: true });
-      await fs.rename(projectsDirectory, backupProjectsDirectory);
+    if (hadWorkspaceFile) {
+      await fs.rename(workspacePath, backupWorkspacePath);
     }
 
-    await fs.rename(temporaryProjectsDirectory, projectsDirectory);
-    await fs.copyFile(temporaryWorkspacePath, workspacePath);
+    await fs.rename(temporaryWorkspacePath, workspacePath);
 
-    if (hadProjectsDirectory) {
-      await fs.rm(backupProjectsDirectory, { recursive: true, force: true });
+    if (hadWorkspaceFile) {
+      await fs.rm(backupWorkspacePath, { force: true });
     }
   } catch (error) {
-    await fs.rm(projectsDirectory, { recursive: true, force: true });
-    if (hadProjectsDirectory && (await pathExists(backupProjectsDirectory))) {
-      await fs.rename(backupProjectsDirectory, projectsDirectory);
+    await fs.rm(workspacePath, { force: true });
+    if (hadWorkspaceFile && (await pathExists(backupWorkspacePath))) {
+      await fs.rename(backupWorkspacePath, workspacePath);
     }
     throw error;
   } finally {
-    await fs.rm(temporaryWorkspaceDirectory, { recursive: true, force: true });
+    await fs.rm(temporaryWorkspacePath, { force: true });
+  }
+}
+
+async function saveWorkspaceFile(workspacePath: string, state: AppState): Promise<void> {
+  const now = new Date().toISOString();
+  const createdAt = (await readExistingZipCreatedAt(workspacePath)) ?? now;
+  const zip = new JSZip();
+  const { workLogsByProjectId, eventsByProjectId } = groupWorkspaceItemsByProject(state);
+  const manifest: TodoZipManifest = {
+    formatVersion: TODO_ZIP_FORMAT_VERSION,
+    appVersion: app.getVersion(),
+    schemaVersion: 2,
+    projectOrder: state.projects.map((project) => project.id),
+    activeProjectId: state.activeProjectId,
+    createdAt,
+    updatedAt: now,
+  };
+
+  zip.file(TODO_ZIP_MANIFEST_FILE, `${JSON.stringify(manifest, null, 2)}\n`);
+  for (const project of state.projects) {
+    const projectFile = createProjectFile(
+      project,
+      workLogsByProjectId.get(project.id) ?? [],
+      eventsByProjectId.get(project.id) ?? [],
+    );
+    zip.file(`${TODO_ZIP_PROJECTS_DIRECTORY}/${project.id}.json`, `${JSON.stringify(projectFile, null, 2)}\n`);
+  }
+
+  const temporaryWorkspacePath = `${workspacePath}.tmp`;
+  const zipBuffer = await zip.generateAsync({
+    type: "nodebuffer",
+    compression: "DEFLATE",
+    compressionOptions: { level: 6 },
+  });
+
+  await fs.mkdir(path.dirname(workspacePath), { recursive: true });
+  await fs.rm(temporaryWorkspacePath, { force: true });
+  await fs.writeFile(temporaryWorkspacePath, zipBuffer);
+  try {
+    await replaceFileWithTemporary(workspacePath, temporaryWorkspacePath);
+  } finally {
+    await fs.rm(temporaryWorkspacePath, { force: true });
   }
 }
 
