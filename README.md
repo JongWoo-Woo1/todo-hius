@@ -15,18 +15,13 @@ npm.cmd run dist:installer
 
 ## Scripts
 
-- `npm run dev`: Vite development server
 - `npm run dev:electron`: Vite + Electron development mode
+- `npm run dev:electron:bridge`: Vite + Electron bridge-test mode with a temp template workspace
 - `npm run build`: build Vite web assets and Electron main process
-- `npm run build:web`: build only Vite web assets
-- `npm run build:electron`: build only Electron main process
-- `npm run preview`: preview production build
 - `npm run typecheck`: TypeScript check without emit
 - `npm run mcp:server`: start the stdio MCP server for Claude Code/Codex
 - `npm run mcp:bridge-test`: verify the running Electron app AI bridge
 - `npm run prepare:logs`: create the ignored local `log/` folder
-- `npm run clean:logs`: remove local runtime log files
-- `npm run clean:dist`: remove all generated build/release output folders
 - `npm run clean:release`: remove the local release output folder
 - `npm run clean:release-extras`: remove non-upload installer build leftovers from the local release output folder
 - `npm run dist:installer`: build the Windows NSIS installer
@@ -96,6 +91,7 @@ Manual release checks:
 |- electron/
 |  |- main.ts                      # Electron window, menu, dirty state, close prompt
 |  |- aiBridge.ts                  # local HTTP bridge for MCP app-control tools
+|  |- bridgeTestWorkspace.ts       # temp .todo workspace preparation for bridge tests
 |  |- preload.ts                   # safe renderer bridge for file APIs
 |  `- todoWorkspace.ts             # .todo workspace open/save handlers
 |

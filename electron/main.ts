@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { registerTodoWorkspaceHandlers } from "./todoWorkspace.js";
 import { startAiBridge } from "./aiBridge.js";
+import { prepareBridgeTestWorkspace } from "./bridgeTestWorkspace.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const devServerUrl = process.env.VITE_DEV_SERVER_URL;
@@ -35,6 +36,10 @@ let mainWindowRef: BrowserWindow | null = null;
 let latestAppState: unknown = null;
 let startupWorkspacePath: string | null = findTodoWorkspacePath(process.argv);
 const workspaceWindows = new Map<string, BrowserWindow>();
+
+function isBridgeTestWorkspaceEnabled(): boolean {
+  return process.env.HIUS_BRIDGE_TEST_WORKSPACE === "1";
+}
 
 function getManagedWindows(): BrowserWindow[] {
   return BrowserWindow.getAllWindows().filter((window) => !window.isDestroyed());
@@ -518,7 +523,11 @@ if (!gotSingleInstanceLock) {
     focusMainWindow();
   });
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
+    if (isBridgeTestWorkspaceEnabled()) {
+      startupWorkspacePath = await prepareBridgeTestWorkspace();
+    }
+
     createMainWindow();
     // Local AI control bridge (development free mode). Forwards actions to the main window.
     startAiBridge(() => mainWindowRef);

@@ -5,21 +5,15 @@
   "type": "module",
   "main": "dist/electron/main.js",
   "scripts": {
-    "dev": "vite",
     "dev:electron": "npm run prepare:logs && concurrently -k \"vite --host 127.0.0.1 --strictPort\" \"tsc -p tsconfig.electron.json --watch --preserveWatchOutput\" \"wait-on tcp:5173 file:dist/electron/main.js file:dist/electron/preload.js && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electronmon dist/electron/main.js\"",
+    "dev:electron:bridge": "npm run prepare:logs && concurrently -k \"vite --host 127.0.0.1 --strictPort\" \"tsc -p tsconfig.electron.json --watch --preserveWatchOutput\" \"wait-on tcp:5173 file:dist/electron/main.js file:dist/electron/preload.js && cross-env HIUS_BRIDGE_TEST_WORKSPACE=1 VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electronmon dist/electron/main.js\"",
     "build": "vite build && tsc -p tsconfig.electron.json",
-    "build:web": "vite build",
-    "build:electron": "tsc -p tsconfig.electron.json",
-    "preview": "vite preview",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit && tsc -p tsconfig.mcp.json",
     "mcp:server": "tsx src/mcp/server.ts",
     "mcp:bridge-test": "tsx src/mcp/bridgeSmokeTest.ts",
     "prepare:logs": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"New-Item -ItemType Directory -Force -Path log | Out-Null\"",
-    "clean:logs": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path log) { Remove-Item -LiteralPath log -Recurse -Force }\"",
-    "clean:dist": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"foreach ($p in @('dist','dist-electron','release')) { if (Test-Path $p) { Remove-Item -LiteralPath $p -Recurse -Force } }\"",
     "clean:release": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path dist\\\\release) { Remove-Item -LiteralPath dist\\\\release -Recurse -Force }\"",
     "clean:release-extras": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path dist\\\\release\\\\win-unpacked) { Remove-Item -LiteralPath dist\\\\release\\\\win-unpacked -Recurse -Force }; if (Test-Path dist\\\\release\\\\builder-debug.yml) { Remove-Item -LiteralPath dist\\\\release\\\\builder-debug.yml -Force }\"",
-    "dist:dir": "npm run build && electron-builder --dir",
     "dist:installer": "npm run clean:release && npm run build && electron-builder --win nsis && npm run clean:release-extras"
   },
   "devDependencies": {

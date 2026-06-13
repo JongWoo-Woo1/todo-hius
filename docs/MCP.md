@@ -11,6 +11,10 @@
   - Runs the Electron app.
   - Starts the local AI bridge.
   - Targets the running app memory for live-state reads and app-control actions.
+- `npm.cmd run dev:electron:bridge`
+  - Runs the Electron app for bridge smoke tests.
+  - Copies `public/templates/empty-project-workspace.todo` to the OS temp directory and opens that copy.
+  - Overwrites the temp copy on each start; the template file is not modified.
 - `npm.cmd run mcp:server`
   - Starts the stdio MCP server for Claude Code / Codex.
   - This is the process Claude/Codex should launch from MCP configuration.
@@ -47,6 +51,13 @@
 - Delete tools are not provided.
 - Test with a copied workspace before using real work data.
 - `mcp:bridge-test` can create test Task/Event records.
+
+Bridge test flow:
+
+```powershell
+npm.cmd run dev:electron:bridge
+npm.cmd run mcp:bridge-test
+```
 
 ## Claude / Codex Setup
 

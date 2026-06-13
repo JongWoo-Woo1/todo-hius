@@ -61,6 +61,7 @@ Use this map before broad searching:
 - Date/week/task/project helpers: `src/utils/`
 - Electron app shell / menu / dirty state / display-scale zoom + window min/initial sizing: `electron/main.ts`
 - Electron local AI bridge: `electron/aiBridge.ts`
+- Electron bridge-test temp workspace setup: `electron/bridgeTestWorkspace.ts`
 - Renderer bridge: `electron/preload.ts`
 - Workspace open/save: `electron/todoWorkspace.ts`
 - Sample/default data: `src/data/sampleProjects.ts`
