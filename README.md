@@ -22,6 +22,9 @@ npm.cmd run dist:installer
 - `npm run build:electron`: build only Electron main process
 - `npm run preview`: preview production build
 - `npm run typecheck`: TypeScript check without emit
+- `npm run mcp:server`: start the stdio MCP server for Claude Code/Codex
+- `npm run mcp:smoke`: run a read-only MCP workspace smoke test
+- `npm run mcp:bridge-test`: verify the running Electron app AI bridge
 - `npm run prepare:logs`: create the ignored local `log/` folder
 - `npm run clean:logs`: remove local runtime log files
 - `npm run clean:dist`: remove all generated build/release output folders
@@ -88,9 +91,12 @@ Manual release checks:
 |- vite.config.ts                  # Vite config
 |- AGENTS.md                       # coding-agent working rules
 |- README.md                       # project map and usage
+|- docs/
+|  `- mcp-setup.md                 # MCP setup and smoke-test guide
 |
 |- electron/
 |  |- main.ts                      # Electron window, menu, dirty state, close prompt
+|  |- aiBridge.ts                  # local HTTP bridge for MCP app-control tools
 |  |- preload.ts                   # safe renderer bridge for file APIs
 |  `- todoWorkspace.ts             # .todo workspace open/save handlers
 |
@@ -153,12 +159,19 @@ Manual release checks:
 |  |  |- task.ts                   # task status/progress/overdue helpers
 |  |  `- week.ts                   # Monday-Friday week helpers
 |  |
+|  |- mcp/
+|  |  |- server.ts                 # stdio MCP server for workspace reads and app bridge tools
+|  |  |- smokeTest.ts              # read-only MCP smoke test
+|  |  `- bridgeSmokeTest.ts        # Electron bridge smoke test
+|  |
 |  `- data/
 |     `- sampleProjects.ts         # initial/sample project data
 |
 |- public/
 |  `- templates/
-|     `- weekly-report-template.xlsx
+|     |- weekly-report-template.xlsx
+|     |- empty-workspace.todo
+|     `- empty-project-workspace.todo
 |
 |- dist/
 |  |- renderer/                    # Vite build output: index.html and browser assets
@@ -182,9 +195,15 @@ Manual release checks:
 - `src/ui/*View.ts` files own feature-specific DOM rendering for the project list, project header/info/detail, task list and task cards, Calendar, Ledger, Weekly, WorkLog surfaces, and modals.
 - `src/platform/todoFileClient.ts` wraps `window.hiusTodoFile` for renderer-side file API access.
 - `src/excel/` owns Excel workbook generation and download helpers.
+- `src/mcp/` owns the stdio MCP server, read-only workspace queries, and app-control bridge tools.
 - `electron/` owns desktop shell behavior, menus, preload bridge, and filesystem-backed workspace persistence.
+- `electron/aiBridge.ts` exposes a localhost-only development bridge that lets MCP tools drive the running app.
 
 Renderer code should not access Node filesystem APIs directly. Electron filesystem work should go through the preload bridge and `electron/todoWorkspace.ts`.
+
+## MCP Setup
+
+See `docs/mcp-setup.md` for Claude Code/Codex MCP connection commands, `.todo` workspace path handling, bridge checks, safe test-data guidance, and the final smoke scenario.
 
 ## Electron Workspace Files
 

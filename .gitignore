@@ -12,6 +12,7 @@ release/
 
 # personal .todo workspace data (treated as user files outside the repo)
 *.todo
+!public/templates/*.todo
 hius-dt-jw-todo/
 
 # runtime .todo workspace save artifacts
