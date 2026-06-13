@@ -3,6 +3,7 @@ import {
   type CalendarRangePreferences,
 } from "../state/calendarPreferences";
 import { uiState } from "../app/uiState";
+import { recordNavigation } from "../app/navigationHistory";
 import { openWorkspaceWindow } from "../platform/todoFileClient";
 import {
   addEvent,
@@ -935,4 +936,9 @@ export function render(): void {
   renderEventDetailModal();
   renderCalendarTaskAddModal();
   renderViewVisibility(uiState.currentView, uiState.openedWorkspaceWindowKeys);
+
+  // Record this screen in the per-window navigation history. recordNavigation only
+  // appends when the navigation context actually changed, so plain re-renders, state
+  // sync, dirty changes and input edits do not create history entries.
+  recordNavigation();
 }

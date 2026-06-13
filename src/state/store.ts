@@ -477,6 +477,17 @@ export function selectProjectForView(projectId: string): void {
   state.activeProjectId = projectId;
 }
 
+// Set the active project without persisting (no saveState). Used by navigation history
+// restore so back/forward does not mark the workspace dirty. Missing ids fall back to null.
+export function setActiveProjectId(projectId: string | null): void {
+  if (projectId !== null && !state.projects.some((project) => project.id === projectId)) {
+    state.activeProjectId = null;
+    return;
+  }
+
+  state.activeProjectId = projectId;
+}
+
 export function reorderProjects(sourceProjectId: string, targetProjectId: string): void {
   if (sourceProjectId === targetProjectId) {
     return;
@@ -704,4 +715,15 @@ export function replaceStateFromSync(rawState: unknown): boolean {
 
   state = migrateState(rawState);
   return true;
+}
+
+// Pure schema migration with no side effects: validates and migrates a raw state to the
+// current AppState without touching the active store or persisting. Used by read-only
+// consumers (e.g. the MCP workspace reader) so they share the exact same migration as the app.
+export function migrateRawState(rawState: unknown): AppState | null {
+  if (!isImportableState(rawState)) {
+    return null;
+  }
+
+  return migrateState(rawState);
 }

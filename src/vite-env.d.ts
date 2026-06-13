@@ -63,5 +63,11 @@ declare global {
       onOpenWorkspacePathRequest: (callback: (workspacePath: string) => void) => () => void;
       onSaveRequest: (callback: (requestId: string, saveAs: boolean) => Promise<boolean>) => () => void;
     };
+    hiusTodoAi?: {
+      onAiActionRequest: (
+        callback: (requestId: string, action: string, payload: unknown) => void,
+      ) => () => void;
+      sendAiActionResult: (requestId: string, result: unknown) => void;
+    };
   }
 }

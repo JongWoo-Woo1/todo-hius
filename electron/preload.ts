@@ -73,3 +73,20 @@ contextBridge.exposeInMainWorld("hiusTodoFile", {
     };
   },
 });
+
+// AI control bridge: receive action requests forwarded from the local HTTP bridge and send
+// back results. See electron/aiBridge.ts and src/app/aiActions.ts.
+contextBridge.exposeInMainWorld("hiusTodoAi", {
+  onAiActionRequest: (callback: (requestId: string, action: string, payload: unknown) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, requestId: string, action: string, payload: unknown) => {
+      callback(requestId, action, payload);
+    };
+    ipcRenderer.on("ai-action:request", listener);
+    return () => {
+      ipcRenderer.removeListener("ai-action:request", listener);
+    };
+  },
+  sendAiActionResult: (requestId: string, result: unknown) => {
+    ipcRenderer.send("ai-action:result", requestId, result);
+  },
+});

@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, screen, shell } from "electr
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { registerTodoWorkspaceHandlers } from "./todoWorkspace.js";
+import { startAiBridge } from "./aiBridge.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const devServerUrl = process.env.VITE_DEV_SERVER_URL;
@@ -519,6 +520,8 @@ if (!gotSingleInstanceLock) {
 
   app.whenReady().then(() => {
     createMainWindow();
+    // Local AI control bridge (development free mode). Forwards actions to the main window.
+    startAiBridge(() => mainWindowRef);
 
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) {

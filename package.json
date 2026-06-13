@@ -11,7 +11,10 @@
     "build:web": "vite build",
     "build:electron": "tsc -p tsconfig.electron.json",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit && tsc -p tsconfig.mcp.json",
+    "mcp:smoke": "tsx src/mcp/smokeTest.ts",
+    "mcp:server": "tsx src/mcp/server.ts",
+    "mcp:bridge-test": "tsx src/mcp/bridgeSmokeTest.ts",
     "prepare:logs": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"New-Item -ItemType Directory -Force -Path log | Out-Null\"",
     "clean:logs": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path log) { Remove-Item -LiteralPath log -Recurse -Force }\"",
     "clean:dist": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"foreach ($p in @('dist','dist-electron','release')) { if (Test-Path $p) { Remove-Item -LiteralPath $p -Recurse -Force } }\"",
@@ -21,15 +24,18 @@
     "dist:installer": "npm run clean:release && npm run build && electron-builder --win nsis && npm run clean:release-extras"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@types/node": "^25.9.1",
     "concurrently": "^10.0.3",
     "cross-env": "^10.1.0",
     "electron": "^42.3.3",
     "electron-builder": "^26.15.0",
     "electronmon": "^2.0.4",
+    "tsx": "^4.22.4",
     "typescript": "^5.8.3",
     "vite": "^7.1.0",
-    "wait-on": "^9.0.10"
+    "wait-on": "^9.0.10",
+    "zod": "^4.4.3"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

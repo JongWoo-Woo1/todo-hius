@@ -23,6 +23,14 @@ import {
 } from "./platform/todoFileClient";
 import { uiState } from "./app/uiState";
 import {
+  navigateBack,
+  navigateForward,
+  resetNavigationHistory,
+  runWithoutNavigationRecording,
+  setNavigationRenderer,
+} from "./app/navigationHistory";
+import { registerAiActionHandler } from "./app/aiActions";
+import {
   addProject,
   deleteActiveProject,
   getActiveProject,
@@ -151,7 +159,8 @@ function applySyncedState(state: unknown): boolean {
   const replaced = replaceStateFromSync(state);
   isApplyingSyncedState = false;
   if (replaced) {
-    render();
+    // Cross-window state sync is not a user navigation, so don't record it.
+    runWithoutNavigationRecording(render);
   }
 
   return replaced;
@@ -165,6 +174,7 @@ function startNewProject(): void {
   resetCalendarSelection();
   resetFeedSelection();
   render();
+  resetNavigationHistory();
 }
 
 async function openProjectByPath(workspacePath: string): Promise<boolean> {
@@ -192,6 +202,7 @@ async function openProjectByPath(workspacePath: string): Promise<boolean> {
     resetCalendarSelection();
     resetFeedSelection();
     render();
+    resetNavigationHistory();
     return true;
   } catch (error) {
     console.error(error);
@@ -257,6 +268,7 @@ async function openProject(): Promise<boolean> {
     resetCalendarSelection();
     resetFeedSelection();
     render();
+    resetNavigationHistory();
     return true;
   } catch (error) {
     console.error(error);
@@ -583,9 +595,51 @@ async function initializeMainWindow(): Promise<void> {
   void showStartupChooser();
 }
 
+setNavigationRenderer(render);
+
+// Mouse back/forward buttons drive the per-window navigation history. Chromium reports
+// the back button as event.button === 3 and the forward button as event.button === 4.
+function handleNavigationMouseDown(event: MouseEvent): void {
+  if (event.button === 3 || event.button === 4) {
+    // Prevent the default browser back/forward navigation; we handle it ourselves.
+    event.preventDefault();
+  }
+}
+
+function handleNavigationMouseUp(event: MouseEvent): void {
+  if (event.button === 3) {
+    event.preventDefault();
+    navigateBack();
+  } else if (event.button === 4) {
+    event.preventDefault();
+    navigateForward();
+  }
+}
+
+// Alt+Left / Alt+Right mirror the mouse buttons.
+function handleNavigationKeyDown(event: KeyboardEvent): void {
+  if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+    return;
+  }
+
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    navigateBack();
+  } else if (event.key === "ArrowRight") {
+    event.preventDefault();
+    navigateForward();
+  }
+}
+
+window.addEventListener("mousedown", handleNavigationMouseDown);
+window.addEventListener("mouseup", handleNavigationMouseUp);
+window.addEventListener("keydown", handleNavigationKeyDown);
+
 if (workspaceWindowKey) {
   setStateChangeListener(markDirty);
   void initializeWorkspaceWindow();
 } else {
+  // The AI control bridge forwards actions to the main window only.
+  registerAiActionHandler();
   void initializeMainWindow();
 }
