@@ -1,4 +1,4 @@
-import type { AppState, Project, Task, WorkLog } from "../types";
+import type { AppState, Project, ProjectEvent, Task, WorkLog } from "../types";
 
 export type TaskWithProject = {
   project: Project;
@@ -79,10 +79,24 @@ export function getWorkLogById(state: AppState, workLogId: string | null): WorkL
   return state.workLogs.find((workLog) => workLog.id === workLogId);
 }
 
+export function getEventById(state: AppState, eventId: string | null): ProjectEvent | undefined {
+  if (!eventId) {
+    return undefined;
+  }
+
+  return state.events.find((event) => event.id === eventId);
+}
+
 export function getProjectWorkLogs(state: AppState, projectId: string): WorkLog[] {
   return state.workLogs
     .filter((workLog) => workLog.projectId === projectId)
     .sort((left, right) => right.date.localeCompare(left.date));
+}
+
+export function getProjectEvents(state: AppState, projectId: string): ProjectEvent[] {
+  return state.events
+    .filter((event) => event.projectId === projectId)
+    .sort((left, right) => (right.endDate ?? right.startDate).localeCompare(left.endDate ?? left.startDate));
 }
 
 export function getTaskWorkLogs(state: AppState, taskId: string): WorkLog[] {

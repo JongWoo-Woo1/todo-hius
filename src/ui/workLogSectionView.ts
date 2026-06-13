@@ -1,16 +1,10 @@
 import {
   getLinkedTaskDisplay,
   getProjectById,
-  getProjectWorkLogs,
   getTaskWorkLogs,
 } from "../state/selectors";
-import type { AppState, Project, WorkLog } from "../types";
+import type { AppState, WorkLog } from "../types";
 import { toDateKey } from "../utils/calendar";
-import {
-  projectWorkLogCard,
-  projectWorkLogEmpty,
-  projectWorkLogList,
-} from "./dom";
 import {
   createWorkLogEntry as createWorkLogEntryElement,
   createWorkLogMoreButton,
@@ -20,13 +14,6 @@ const RECENT_WORK_LOG_DAYS = 7;
 
 type WorkLogEntryHandlers = {
   onSelectWorkLog: (workLogId: string) => void;
-};
-
-export type ProjectWorkLogSectionParams = WorkLogEntryHandlers & {
-  state: AppState;
-  activeProject: Project | null;
-  expandedProjectWorkLogId: string | null;
-  onToggleExpand: (nextExpandedId: string | null) => void;
 };
 
 export type TaskWorkLogSummaryParams = WorkLogEntryHandlers & {
@@ -66,51 +53,6 @@ function createWorkLogEntry(
     linkedTaskLabel: linkedTaskDisplay.label,
     onSelect: () => handlers.onSelectWorkLog(workLog.id),
   });
-}
-
-export function renderProjectWorkLogSection(params: ProjectWorkLogSectionParams): void {
-  const { state, activeProject, expandedProjectWorkLogId, onToggleExpand } = params;
-  projectWorkLogList.innerHTML = "";
-
-  if (!activeProject) {
-    projectWorkLogCard.hidden = true;
-    projectWorkLogEmpty.hidden = true;
-    return;
-  }
-
-  const workLogs = getProjectWorkLogs(state, activeProject.id);
-  const showAll = expandedProjectWorkLogId === activeProject.id;
-  const visibleWorkLogs = getVisibleWorkLogs(workLogs, showAll);
-  projectWorkLogCard.hidden = false;
-  projectWorkLogEmpty.hidden = workLogs.length > 0;
-
-  visibleWorkLogs.forEach((workLog) => {
-    projectWorkLogList.append(createWorkLogEntry(state, workLog, params));
-  });
-
-  if (visibleWorkLogs.length !== workLogs.length) {
-    projectWorkLogList.append(
-      createWorkLogMoreButton({
-        visibleCount: visibleWorkLogs.length,
-        totalCount: workLogs.length,
-        expanded: showAll,
-        onToggle: () => {
-          onToggleExpand(activeProject.id);
-        },
-      }),
-    );
-  } else if (showAll && workLogs.length > 0) {
-    projectWorkLogList.append(
-      createWorkLogMoreButton({
-        visibleCount: visibleWorkLogs.length,
-        totalCount: workLogs.length,
-        expanded: showAll,
-        onToggle: () => {
-          onToggleExpand(null);
-        },
-      }),
-    );
-  }
 }
 
 export function renderTaskWorkLogSummary(params: TaskWorkLogSummaryParams): HTMLElement {

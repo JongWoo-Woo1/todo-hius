@@ -79,10 +79,11 @@
 
         <section id="project-work-log-card" class="project-work-log-card">
           <div class="section-header">
-            <h3>Weekly Logs</h3>
+            <h3>Memo</h3>
+            <button id="add-project-event-button" class="quiet-button" type="button">+ Event</button>
           </div>
-          <div id="project-work-log-list" class="project-work-log-list"></div>
-          <p id="project-work-log-empty" class="empty-state">No weekly logs for this project yet.</p>
+          <div id="project-work-log-list" class="project-work-log-list project-memo-feed"></div>
+          <p id="project-work-log-empty" class="empty-state">No memo cards for this project yet.</p>
         </section>
 
         <form id="todo-form" class="todo-form">
@@ -216,15 +217,14 @@
         </section>
       </section>
 
-      <section id="calendar-workspace" class="workspace" hidden>
-        <header class="calendar-header">
-          <div>
-            <p class="eyebrow">All projects</p>
-            <h2>Calendar</h2>
-          </div>
+        <section id="calendar-workspace" class="workspace" hidden>
+          <header class="calendar-header">
+            <div>
+              <p class="eyebrow">All projects</p>
+              <h2>Calendar</h2>
+            </div>
 
-          <strong id="calendar-month-label" class="calendar-range-label"></strong>
-        </header>
+          </header>
 
         <section id="calendar-range-controls" class="calendar-range-controls">
           <label>
@@ -251,6 +251,10 @@
 
         <div id="calendar-grid" class="calendar-grid"></div>
         <p id="calendar-empty-state" class="empty-state">표시할 일정이 없습니다.</p>
+        <div class="calendar-floating-actions">
+          <button id="calendar-add-event-button" type="button">+Event</button>
+          <button id="calendar-add-task-button" type="button">+Task</button>
+        </div>
       </section>
 
       <div id="calendar-detail-modal" class="modal-backdrop" hidden>
@@ -262,6 +266,18 @@
       <div id="work-log-detail-modal" class="modal-backdrop" hidden>
         <section class="modal-card work-log-detail-card" role="dialog" aria-modal="true" aria-labelledby="work-log-detail-title">
           <div id="work-log-detail-content"></div>
+        </section>
+      </div>
+
+      <div id="event-detail-modal" class="modal-backdrop" hidden>
+        <section class="modal-card work-log-detail-card" role="dialog" aria-modal="true" aria-labelledby="event-detail-title">
+          <div id="event-detail-content"></div>
+        </section>
+      </div>
+
+      <div id="calendar-add-modal" class="modal-backdrop" hidden>
+        <section class="modal-card work-log-detail-card" role="dialog" aria-modal="true" aria-labelledby="calendar-add-title">
+          <div id="calendar-add-content"></div>
         </section>
       </div>
 

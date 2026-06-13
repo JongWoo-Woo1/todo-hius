@@ -42,7 +42,7 @@ npm.cmd run build
 |- src/
 |  |- main.ts                      # renderer entry, DOM events, app wiring
 |  |- styles.css                   # app-wide styles
-|  |- types.ts                     # shared AppState, Project, Task, WorkLog types
+|  |- types.ts                     # shared AppState, Project, Task, WorkLog, ProjectEvent types
 |  |- vite-env.d.ts                # Vite and Electron bridge declarations
 |  |
 |  |- app/
@@ -54,7 +54,7 @@ npm.cmd run build
 |  |- state/
 |  |  |- calendarPreferences.ts    # calendar range preference normalization
 |  |  |- selectors.ts              # AppState-derived lookup helpers
-|  |  `- store.ts                  # AppState migration and mutations
+|  |  `- store.ts                  # AppState schema migration and mutations
 |  |
 |  |- ui/
 |  |  |- render.ts                 # render orchestration: wires state, UI actions, and view modules
@@ -66,7 +66,10 @@ npm.cmd run build
 |  |  |- taskListView.ts           # Task list rendering within a project
 |  |  |- taskView.ts               # Task detail card and Task edit form
 |  |  |- taskTrashView.ts          # deleted Task restore/permanent-delete UI
-|  |  |- calendarView.ts           # Calendar filters, range controls, and grid rendering
+|  |  |- calendarView.ts           # Calendar filters, range controls, and Task/Event range-card grid
+|  |  |- calendarAddView.ts        # Calendar +Task modal rendering
+|  |  |- projectMemoView.ts        # Project Memo feed rendering
+|  |  |- eventDetailView.ts        # Event detail/create/edit modal rendering
 |  |  |- ledgerView.ts             # Ledger filters and table rendering
 |  |  |- weeklyView.ts             # Weekly report view rendering
 |  |  |- modalView.ts              # Calendar/Ledger task & project detail modal rendering
@@ -138,6 +141,12 @@ hius-dt-jw-todo/
 - Unsaved changes trigger a save prompt on close.
 - On startup, the app shows a workspace chooser with recent `.todo` workspaces, an option to open another `.todo` file, and an option to start a new unsaved project.
 - Recent workspaces are stored by Electron and missing/unreadable entries can be removed from the startup chooser.
+
+## Data Model Notes
+
+- AppState uses an explicit `schemaVersion`. Missing versions are treated as v1 and migrated to the current schema.
+- Project Events are stored in AppState and persisted per project JSON, following the same workspace style as WorkLogs.
+- Calendar renders Tasks as one-day cards and Events as date-range cards.
 
 ## Design Notes
 

@@ -4,7 +4,10 @@ import {
 } from "../state/calendarPreferences";
 import { uiState } from "../app/uiState";
 import {
+  addEvent,
+  addTaskToProject,
   addWorkLog,
+  deleteEvent,
   deleteTask,
   deleteWorkLog,
   getActiveProject,
@@ -15,18 +18,22 @@ import {
   selectProject,
   toggleTask,
   updateTask,
+  updateEvent,
   updateWorkLog,
 } from "../state/store";
 import { createId } from "../utils/id";
 import { toDateKey } from "../utils/calendar";
 import {
   findTaskWithProject,
+  getDeletedTaskByProject,
+  getEventById,
   getLinkedTaskDisplay,
   getProjectById,
   getSortedTasksByDueDate,
+  getTaskByProject,
   getWorkLogById,
 } from "../state/selectors";
-import type { Project, Task, WorkLogType } from "../types";
+import type { Project, ProjectEvent, Task, WorkLogType } from "../types";
 import { renderCalendarView } from "./calendarView";
 import { renderLedgerView } from "./ledgerView";
 import { renderCalendarDetailModalView } from "./modalView";
@@ -42,9 +49,9 @@ import {
   createTaskEditForm,
 } from "./taskView";
 import {
-  renderProjectWorkLogSection,
   renderTaskWorkLogSummary as renderTaskWorkLogSummarySection,
 } from "./workLogSectionView";
+import { renderProjectMemoView } from "./projectMemoView";
 import { renderWeeklyView } from "./weeklyView";
 import { confirmDelete } from "./confirmDialog";
 import { renderEmptyProjectDetail, renderProjectDetailShell } from "./projectDetailView";
@@ -52,6 +59,8 @@ import { clearTaskList, renderTaskList } from "./taskListView";
 import { clearTaskTrashView, renderTaskTrashView } from "./taskTrashView";
 import { renderViewVisibility } from "./navView";
 import { renderWorkLogDetailModalView } from "./workLogDetailView";
+import { renderEventDetailModalView, type EventInput } from "./eventDetailView";
+import { renderCalendarTaskAddModalView } from "./calendarAddView";
 
 // Shared helpers
 
@@ -85,17 +94,20 @@ function renderLedger(): void {
 
 // WorkLog
 
-function renderProjectWorkLogs(): void {
-  renderProjectWorkLogSection({
+function renderProjectMemo(): void {
+  renderProjectMemoView({
     state: getState(),
     activeProject: getActiveProject() ?? null,
-    expandedProjectWorkLogId: uiState.expandedProjectWorkLogId,
     onSelectWorkLog: (workLogId) => {
       openWorkLogDetail(workLogId);
       render();
     },
-    onToggleExpand: (nextExpandedId) => {
-      uiState.expandedProjectWorkLogId = nextExpandedId;
+    onSelectEvent: (eventId) => {
+      openEventDetail(eventId);
+      render();
+    },
+    onAddEvent: () => {
+      openEventCreate();
       render();
     },
   });
@@ -141,8 +153,16 @@ function renderCalendar(): void {
       uiState.isModalTaskEditing = false;
       render();
     },
-    onTaskDueDateChange: (task, dueDate) => {
-      updateTask(task.taskId, { dueDate });
+    onEventSelect: (eventId) => {
+      openEventDetail(eventId);
+      render();
+    },
+    onAddEvent: () => {
+      openEventCreate();
+      render();
+    },
+    onAddTask: () => {
+      uiState.isCalendarTaskCreating = true;
       render();
     },
   });
@@ -223,6 +243,7 @@ function openWorkLogDetail(workLogId: string): void {
   uiState.selectedWorkLogId = workLogId;
   uiState.isWorkLogEditing = false;
   uiState.isWorkLogCreating = false;
+  closeEventDetail();
 }
 
 function closeWorkLogDetail(): void {
@@ -239,6 +260,7 @@ function openWorkLogCreate(date: string, type: WorkLogType): void {
   uiState.isWorkLogEditing = false;
   uiState.workLogCreateDate = date;
   uiState.workLogCreateType = type;
+  closeEventDetail();
 }
 
 function renderWorkLogDetailModal(): void {
@@ -308,6 +330,169 @@ function renderWorkLogDetailModal(): void {
 
       addWorkLog({ id: createId(), projectId, date, type, taskId, content });
       closeWorkLogDetail();
+      render();
+    },
+  });
+}
+
+// Event detail modal
+
+function openEventDetail(eventId: string): void {
+  uiState.selectedEventId = eventId;
+  uiState.isEventEditing = false;
+  uiState.isEventCreating = false;
+  closeWorkLogDetail();
+}
+
+function closeEventDetail(): void {
+  uiState.selectedEventId = null;
+  uiState.isEventEditing = false;
+  uiState.isEventCreating = false;
+  uiState.eventCreateDate = null;
+}
+
+function openEventCreate(date?: string): void {
+  uiState.isEventCreating = true;
+  uiState.selectedEventId = null;
+  uiState.isEventEditing = false;
+  uiState.eventCreateDate = date ?? null;
+  uiState.isCalendarTaskCreating = false;
+  closeWorkLogDetail();
+}
+
+function getEventLinkedTask(project: Project | undefined, event: ProjectEvent | null): Task | undefined {
+  if (!event) {
+    return undefined;
+  }
+
+  return getTaskByProject(project, event.taskId);
+}
+
+function getEventLinkedTaskLabel(project: Project | undefined, event: ProjectEvent | null): string | null {
+  if (!event || !event.taskId) {
+    return null;
+  }
+
+  const activeTask = getTaskByProject(project, event.taskId);
+  if (activeTask) {
+    return activeTask.title;
+  }
+
+  const deletedTask = getDeletedTaskByProject(project, event.taskId);
+  if (deletedTask) {
+    return `${deletedTask.title} (삭제됨)`;
+  }
+
+  return null;
+}
+
+function renderEventDetailModal(): void {
+  const state = getState();
+  const canShowEventDetail = uiState.currentView === "projects" || uiState.currentView === "calendar";
+  const isCreating = canShowEventDetail && uiState.isEventCreating;
+  const event = canShowEventDetail ? getEventById(state, uiState.selectedEventId) : undefined;
+  const selectedProjectId = event?.projectId ?? (uiState.currentView === "projects" ? state.activeProjectId : null);
+  const project = selectedProjectId ? getProjectById(state, selectedProjectId) : undefined;
+  const linkedTask = getEventLinkedTask(project, event ?? null);
+  const linkedTaskLabel = getEventLinkedTaskLabel(project, event ?? null);
+
+  renderEventDetailModalView({
+    event: event ?? null,
+    project,
+    projects: state.projects,
+    selectedProjectId,
+    lockProjectSelect: uiState.currentView === "projects" || Boolean(event),
+    linkedTaskLabel,
+    canOpenLinkedTask: Boolean(linkedTask),
+    projectTasks: project?.tasks ?? [],
+    isEditing: uiState.isEventEditing,
+    isCreating,
+    defaultStartDate: uiState.eventCreateDate ?? toDateKey(new Date()),
+    onClose: () => {
+      closeEventDetail();
+      render();
+    },
+    onEdit: () => {
+      uiState.isEventEditing = true;
+      render();
+    },
+    onCancelEdit: () => {
+      uiState.isEventEditing = false;
+      render();
+    },
+    onOpenTask: () => {
+      if (project && linkedTask) {
+        goToProjectTask(project.id, linkedTask.id);
+      }
+      closeEventDetail();
+      render();
+    },
+    onUpdate: (updates) => {
+      if (!event) {
+        return;
+      }
+
+      updateEvent(event.id, updates);
+      uiState.isEventEditing = false;
+      render();
+    },
+    onDelete: async () => {
+      if (!event) {
+        return;
+      }
+
+      if (!(await confirmDelete("선택한 Event를 삭제하시겠습니까?"))) {
+        return;
+      }
+
+      deleteEvent(event.id);
+      closeEventDetail();
+      render();
+    },
+    onCreate: (input: EventInput) => {
+      if (!input.projectId) {
+        return;
+      }
+
+      addEvent({ id: createId(), ...input });
+      closeEventDetail();
+      render();
+    },
+  });
+}
+
+function closeCalendarTaskAddModal(): void {
+  uiState.isCalendarTaskCreating = false;
+}
+
+function renderCalendarTaskAddModal(): void {
+  renderCalendarTaskAddModalView({
+    isOpen: uiState.currentView === "calendar" && uiState.isCalendarTaskCreating,
+    projects: getState().projects,
+    activeProjectId: getState().activeProjectId,
+    onClose: () => {
+      closeCalendarTaskAddModal();
+      render();
+    },
+    onCreateTask: ({ projectId, title, dueDate }) => {
+      if (!projectId || !title) {
+        return;
+      }
+
+      addTaskToProject(projectId, {
+        id: createId(),
+        title,
+        dueDate,
+        estimate: "",
+        status: "대기",
+        progress: 0,
+        workerComment: "",
+        managerComment: "",
+        priority: "보통",
+        memo: "",
+        completed: false,
+      });
+      closeCalendarTaskAddModal();
       render();
     },
   });
@@ -393,7 +578,7 @@ function renderTasks(): void {
   showProjectNameEditMode(uiState.isProjectNameEditing);
   renderProjectInfo(activeProject);
   showProjectInfoEditMode(uiState.isProjectInfoEditing);
-  renderProjectWorkLogs();
+  renderProjectMemo();
   renderProjectDetailShell(sortedTasks.length);
 
   renderTaskList({
@@ -525,5 +710,7 @@ export function render(): void {
   renderCalendar();
   renderCalendarDetailModal();
   renderWorkLogDetailModal();
+  renderEventDetailModal();
+  renderCalendarTaskAddModal();
   renderViewVisibility(uiState.currentView);
 }

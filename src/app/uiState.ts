@@ -25,6 +25,11 @@ export type UiState = {
   isWorkLogCreating: boolean;
   workLogCreateDate: string | null;
   workLogCreateType: WorkLogType | null;
+  selectedEventId: string | null;
+  isEventEditing: boolean;
+  isEventCreating: boolean;
+  eventCreateDate: string | null;
+  isCalendarTaskCreating: boolean;
 };
 
 export const uiState: UiState = {
@@ -48,4 +53,9 @@ export const uiState: UiState = {
   isWorkLogCreating: false,
   workLogCreateDate: null,
   workLogCreateType: null,
+  selectedEventId: null,
+  isEventEditing: false,
+  isEventCreating: false,
+  eventCreateDate: null,
+  isCalendarTaskCreating: false,
 };

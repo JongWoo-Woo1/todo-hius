@@ -1,6 +1,8 @@
 import type {
   AppState,
+  AppSchemaVersion,
   Project,
+  ProjectEvent,
   ProjectPeriodStatus,
   Task,
   TaskPriority,
@@ -10,11 +12,15 @@ import type {
 } from "../types";
 import { getProjectColor } from "../utils/projectColor";
 
+const CURRENT_SCHEMA_VERSION: AppSchemaVersion = 2;
+
 function createEmptyState(): AppState {
   return {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     projects: [],
     activeProjectId: null,
     workLogs: [],
+    events: [],
   };
 }
 
@@ -35,9 +41,13 @@ type LegacyWorkLog = Partial<WorkLog> & {
   todoId?: string;
 };
 
+type LegacyProjectEvent = Partial<ProjectEvent>;
+
 type LegacyAppState = Partial<AppState> & {
+  schemaVersion?: unknown;
   projects?: LegacyProject[];
   workLogs?: LegacyWorkLog[];
+  events?: LegacyProjectEvent[];
 };
 
 const TASK_STATUSES: TaskStatus[] = ["대기", "진행중", "검토대기", "완료"];
@@ -299,6 +309,23 @@ function normalizeWorkLog(workLog: LegacyWorkLog, index: number): WorkLog | null
   };
 }
 
+function normalizeProjectEvent(event: LegacyProjectEvent, index: number): ProjectEvent | null {
+  const projectId = normalizeWorkLogProjectId(event.projectId);
+  if (projectId === null) {
+    return null;
+  }
+
+  return {
+    id: event.id ?? `project-event-${index}`,
+    projectId,
+    title: event.title ?? "Untitled event",
+    startDate: event.startDate ?? new Date().toISOString().slice(0, 10),
+    endDate: event.endDate ?? null,
+    content: event.content ?? "",
+    taskId: typeof event.taskId === "string" ? event.taskId : undefined,
+  };
+}
+
 function shouldKeepProject(project: Project): boolean {
   return !REMOVED_PROJECT_IDS.has(project.id);
 }
@@ -338,7 +365,11 @@ function mergeDuplicateProjects(projects: Project[]): Project[] {
   return mergedProjects;
 }
 
-function migrateState(rawState: LegacyAppState): AppState {
+function getSchemaVersion(rawState: LegacyAppState): AppSchemaVersion {
+  return rawState.schemaVersion === 2 ? 2 : 1;
+}
+
+function normalizeV1State(rawState: LegacyAppState): AppState {
   const projects = mergeDuplicateProjects((rawState.projects ?? []).map(normalizeProject));
   const requestedActiveProjectId =
     typeof rawState.activeProjectId === "string" ? normalizeWorkLogProjectId(rawState.activeProjectId) : null;
@@ -348,10 +379,33 @@ function migrateState(rawState: LegacyAppState): AppState {
       : projects[0]?.id ?? null;
 
   return {
+    schemaVersion: 1,
     projects,
     activeProjectId,
     workLogs: (rawState.workLogs ?? []).map(normalizeWorkLog).filter((workLog): workLog is WorkLog => workLog !== null),
+    events: [],
   };
+}
+
+function migrateV1ToV2(v1State: AppState, rawState: LegacyAppState): AppState {
+  const rawEvents = Array.isArray(rawState.events) ? rawState.events : [];
+
+  return {
+    ...v1State,
+    schemaVersion: 2,
+    events: rawEvents.map(normalizeProjectEvent).filter((event): event is ProjectEvent => event !== null),
+  };
+}
+
+function migrateState(rawState: LegacyAppState): AppState {
+  const schemaVersion = getSchemaVersion(rawState);
+  let migratedState = normalizeV1State(rawState);
+
+  if (schemaVersion === 1 || schemaVersion === 2) {
+    migratedState = migrateV1ToV2(migratedState, rawState);
+  }
+
+  return migratedState;
 }
 
 function saveState(): void {
@@ -433,6 +487,7 @@ export function deleteActiveProject(): void {
   state.projects = state.projects.filter((project) => project.id !== activeProject.id);
   state.activeProjectId = state.projects[0]?.id ?? null;
   state.workLogs = state.workLogs.filter((workLog) => workLog.projectId !== activeProject.id);
+  state.events = state.events.filter((event) => event.projectId !== activeProject.id);
   saveState();
 }
 
@@ -443,6 +498,16 @@ export function addTask(task: Task): void {
   }
 
   activeProject.tasks.push(normalizeTask(task, activeProject.tasks.length));
+  saveState();
+}
+
+export function addTaskToProject(projectId: string, task: Task): void {
+  const project = state.projects.find((item) => item.id === projectId);
+  if (!project) {
+    return;
+  }
+
+  project.tasks.push(normalizeTask(task, project.tasks.length));
   saveState();
 }
 
@@ -568,6 +633,42 @@ export function updateWorkLog(workLogId: string, updates: Partial<WorkLog>): voi
 
 export function deleteWorkLog(workLogId: string): void {
   state.workLogs = state.workLogs.filter((workLog) => workLog.id !== workLogId);
+  saveState();
+}
+
+export function addEvent(event: ProjectEvent): void {
+  const normalizedEvent = normalizeProjectEvent(event, state.events.length);
+  if (!normalizedEvent) {
+    return;
+  }
+
+  state.events.push(normalizedEvent);
+  saveState();
+}
+
+export function updateEvent(eventId: string, updates: Partial<ProjectEvent>): void {
+  const eventIndex = state.events.findIndex((event) => event.id === eventId);
+  if (eventIndex < 0) {
+    return;
+  }
+
+  const normalizedEvent = normalizeProjectEvent(
+    {
+      ...state.events[eventIndex],
+      ...updates,
+    },
+    eventIndex,
+  );
+  if (!normalizedEvent) {
+    state.events.splice(eventIndex, 1);
+  } else {
+    state.events[eventIndex] = normalizedEvent;
+  }
+  saveState();
+}
+
+export function deleteEvent(eventId: string): void {
+  state.events = state.events.filter((event) => event.id !== eventId);
   saveState();
 }
 

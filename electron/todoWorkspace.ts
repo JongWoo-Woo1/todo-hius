@@ -53,26 +53,44 @@ type WorkLog = {
   content: string;
 };
 
+type AppSchemaVersion = 1 | 2;
+
+type ProjectEvent = {
+  id: string;
+  projectId: string;
+  title: string;
+  startDate: string;
+  endDate?: string | null;
+  content: string;
+  taskId?: string;
+};
+
 type AppState = {
+  schemaVersion: AppSchemaVersion;
   projects: Project[];
   activeProjectId: string | null;
   workLogs: WorkLog[];
+  events: ProjectEvent[];
 };
 
 type TodoWorkspaceManifest = {
   kind: "hius.todo.workspace";
   version: 1;
+  schemaVersion?: AppSchemaVersion;
   name: string;
   activeProjectId: string | null;
   projectFiles: string[];
   workLogs?: WorkLog[];
+  events?: ProjectEvent[];
 };
 
 type TodoProjectFile = {
   kind: "hius.todo.project";
   version: 1;
+  schemaVersion?: AppSchemaVersion;
   project: Project;
   workLogs?: WorkLog[];
+  events?: ProjectEvent[];
 };
 
 type OpenWorkspaceResult =
@@ -213,11 +231,16 @@ async function openWorkspaceFile(workspacePath: string): Promise<AppState> {
   );
 
   return {
+    schemaVersion: manifest.schemaVersion === 2 ? 2 : 1,
     projects: projectFiles.map((projectFile) => projectFile.project),
     activeProjectId: manifest.activeProjectId,
     workLogs: [
       ...(Array.isArray(manifest.workLogs) ? manifest.workLogs : []),
       ...projectFiles.flatMap((projectFile) => (Array.isArray(projectFile.workLogs) ? projectFile.workLogs : [])),
+    ],
+    events: [
+      ...(Array.isArray(manifest.events) ? manifest.events : []),
+      ...projectFiles.flatMap((projectFile) => (Array.isArray(projectFile.events) ? projectFile.events : [])),
     ],
   };
 }
@@ -234,11 +257,18 @@ async function saveWorkspaceFile(workspacePath: string, state: AppState): Promis
   const usedFileNames = new Set<string>();
   const projectFiles: string[] = [];
   const workLogsByProjectId = new Map<string, WorkLog[]>();
+  const eventsByProjectId = new Map<string, ProjectEvent[]>();
 
-  state.workLogs.forEach((workLog) => {
+  (state.workLogs ?? []).forEach((workLog) => {
     const projectWorkLogs = workLogsByProjectId.get(workLog.projectId) ?? [];
     projectWorkLogs.push(workLog);
     workLogsByProjectId.set(workLog.projectId, projectWorkLogs);
+  });
+
+  (state.events ?? []).forEach((event) => {
+    const projectEvents = eventsByProjectId.get(event.projectId) ?? [];
+    projectEvents.push(event);
+    eventsByProjectId.set(event.projectId, projectEvents);
   });
 
   await fs.rm(temporaryWorkspaceDirectory, { recursive: true, force: true });
@@ -259,14 +289,17 @@ async function saveWorkspaceFile(workspacePath: string, state: AppState): Promis
     await writeJsonFile(path.join(temporaryWorkspaceDirectory, projectFile), {
       kind: PROJECT_KIND,
       version: 1,
+      schemaVersion: 2,
       project,
       workLogs: workLogsByProjectId.get(project.id) ?? [],
+      events: eventsByProjectId.get(project.id) ?? [],
     } satisfies TodoProjectFile);
   }
 
   const manifest: TodoWorkspaceManifest = {
     kind: WORKSPACE_KIND,
     version: 1,
+    schemaVersion: 2,
     name: path.basename(workspacePath, ".todo"),
     activeProjectId: state.activeProjectId,
     projectFiles,

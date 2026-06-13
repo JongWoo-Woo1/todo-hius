@@ -1,14 +1,15 @@
 import type { CalendarRangePreferences } from "../state/calendarPreferences";
 import { normalizeCalendarRangePreferences } from "../state/calendarPreferences";
-import type { AppState } from "../types";
+import type { AppState, ProjectEvent } from "../types";
 import { getMonthGridDates, toDateKey } from "../utils/calendar";
 import {
+  calendarAddEventButton,
+  calendarAddTaskButton,
   calendarColumnSelect,
   calendarEmptyState,
   calendarEndMonthSelect,
   calendarFilterList,
   calendarGrid,
-  calendarMonthLabel,
   calendarRangeControls,
   calendarStartMonthSelect,
   toggleAllProjectsButton,
@@ -25,13 +26,41 @@ type CalendarTask = {
   color: string;
 };
 
+type CalendarEvent = ProjectEvent & {
+  clientName: string;
+  projectName: string;
+  color: string;
+};
+
+type CalendarRangeCard = {
+  id: string;
+  highlightKey: string;
+  title: string;
+  clientName: string;
+  projectName: string;
+  color: string;
+  completed?: boolean;
+  startIndex: number;
+  endIndex: number;
+  labelIndex: number;
+  originalStartDate: string;
+  startsAtRangeStart: boolean;
+  onSelect: () => void;
+};
+
+type CalendarRangeCardWithLane = CalendarRangeCard & {
+  lane: number;
+};
+
 type CalendarViewOptions = {
   selectedProjectIds: Set<string>;
   calendarRangePreferences: CalendarRangePreferences;
   onSelectedProjectIdsChange: (selectedProjectIds: Set<string>) => void;
   onCalendarRangePreferencesChange: (preferences: CalendarRangePreferences) => void;
   onTaskSelect: (task: CalendarTask) => void;
-  onTaskDueDateChange: (task: CalendarTask, dueDate: string) => void;
+  onEventSelect: (eventId: string) => void;
+  onAddEvent: () => void;
+  onAddTask: () => void;
 };
 
 const RANGE_CALENDAR_YEAR = 2026;
@@ -68,107 +97,289 @@ function getDueTasksByDate(state: AppState, selectedProjectIds: Set<string>): Ma
   return dueTasksByDate;
 }
 
+function getCalendarEvents(state: AppState, selectedProjectIds: Set<string>): CalendarEvent[] {
+  const projectById = new Map(state.projects.map((project) => [project.id, project]));
+
+  return state.events.flatMap((event) => {
+    const project = projectById.get(event.projectId);
+    if (!project || !selectedProjectIds.has(project.id)) {
+      return [];
+    }
+
+    return [{
+      ...event,
+      clientName: project.clientName,
+      projectName: project.name,
+      color: project.color,
+    }];
+  });
+}
+
+function clampDateKey(dateKey: string, minKey: string, maxKey: string): string {
+  if (dateKey < minKey) {
+    return minKey;
+  }
+
+  if (dateKey > maxKey) {
+    return maxKey;
+  }
+
+  return dateKey;
+}
+
+function createCalendarCardMeta(clientName: string, projectName: string): HTMLElement {
+  const meta = document.createElement("div");
+  meta.className = "calendar-item-meta";
+  const client = document.createElement("span");
+  client.className = "calendar-client-chip";
+  client.textContent = clientName || "No client";
+  const project = document.createElement("span");
+  project.className = "calendar-project-name";
+  project.textContent = projectName;
+  meta.append(client, project);
+  return meta;
+}
+
+function createCalendarRangeCard(card: CalendarRangeCard, hasLabel: boolean): HTMLButtonElement {
+  const element = document.createElement("button");
+  element.type = "button";
+  element.className = "calendar-range-card";
+  element.dataset.calendarCardKey = card.highlightKey;
+  element.classList.toggle("completed", Boolean(card.completed));
+  element.classList.toggle("starts-at-range-start", card.startsAtRangeStart);
+  element.style.setProperty("--project-color", card.color);
+  element.setAttribute("aria-label", `${card.title} ${card.clientName} ${card.projectName}`.trim());
+
+  if (hasLabel) {
+    const content = document.createElement("div");
+    content.className = "calendar-range-card-content";
+    const title = document.createElement("strong");
+    title.textContent = card.title;
+    content.append(title, createCalendarCardMeta(card.clientName, card.projectName));
+    element.append(content);
+  }
+
+  element.addEventListener("click", (clickEvent) => {
+    clickEvent.stopPropagation();
+    card.onSelect();
+  });
+  element.addEventListener("pointerenter", () => {
+    setCalendarCardHighlighted(card.highlightKey, true);
+  });
+  element.addEventListener("pointerleave", () => {
+    setCalendarCardHighlighted(card.highlightKey, false);
+  });
+  element.addEventListener("focus", () => {
+    setCalendarCardHighlighted(card.highlightKey, true);
+  });
+  element.addEventListener("blur", () => {
+    setCalendarCardHighlighted(card.highlightKey, false);
+  });
+
+  return element;
+}
+
+function setCalendarCardHighlighted(highlightKey: string, isHighlighted: boolean): void {
+  document.querySelectorAll<HTMLElement>(".calendar-range-card").forEach((card) => {
+    if (card.dataset.calendarCardKey === highlightKey) {
+      card.classList.toggle("highlighted", isHighlighted);
+    }
+  });
+}
+
+function doCardsOverlap(left: CalendarRangeCard, right: CalendarRangeCard): boolean {
+  return left.startIndex <= right.endIndex && right.startIndex <= left.endIndex;
+}
+
+function assignCalendarCardLanes(cards: CalendarRangeCard[]): CalendarRangeCardWithLane[] {
+  const laneCards: CalendarRangeCard[][] = [];
+
+  return cards.map((card) => {
+    let lane = laneCards.findIndex((items) => items.every((item) => !doCardsOverlap(item, card)));
+    if (lane < 0) {
+      lane = laneCards.length;
+      laneCards.push([]);
+    }
+
+    laneCards[lane].push(card);
+    return { ...card, lane };
+  });
+}
+
+function appendRangeCardsToWeekRow({
+  week,
+  gridDates,
+  dueTasksByDate,
+  events,
+  weekRow,
+  onTaskSelect,
+  onEventSelect,
+}: {
+  week: number;
+  gridDates: Date[];
+  dueTasksByDate: Map<string, CalendarTask[]>;
+  events: CalendarEvent[];
+  weekRow: HTMLElement;
+  onTaskSelect: (task: CalendarTask) => void;
+  onEventSelect: (eventId: string) => void;
+}): number {
+  const firstKey = toDateKey(gridDates[0]);
+  const lastKey = toDateKey(gridDates[gridDates.length - 1]);
+  const weekStartIndex = week * 7;
+  const weekEndIndex = weekStartIndex + 6;
+  const cards: CalendarRangeCard[] = [];
+
+  events
+    .filter((event) => event.startDate <= lastKey && (event.endDate ?? event.startDate) >= firstKey)
+    .forEach((event) => {
+      const startKey = clampDateKey(event.startDate, firstKey, lastKey);
+      const endKey = clampDateKey(event.endDate ?? event.startDate, firstKey, lastKey);
+      const startIndex = gridDates.findIndex((date) => toDateKey(date) === startKey);
+      const endIndex = gridDates.findIndex((date) => toDateKey(date) === endKey);
+      if (startIndex < 0 || endIndex < 0) {
+        return;
+      }
+
+      const labelIndex = Math.floor((startIndex + endIndex) / 2);
+      if (endIndex < weekStartIndex || startIndex > weekEndIndex) {
+        return;
+      }
+
+      const segmentStartIndex = Math.max(startIndex, weekStartIndex);
+      const segmentEndIndex = Math.min(endIndex, weekEndIndex);
+      cards.push({
+        id: event.id,
+        highlightKey: `event:${event.id}`,
+        title: event.title,
+        clientName: event.clientName,
+        projectName: event.projectName,
+        color: event.color,
+        startIndex: segmentStartIndex,
+        endIndex: segmentEndIndex,
+        labelIndex,
+        originalStartDate: event.startDate,
+        startsAtRangeStart: toDateKey(gridDates[segmentStartIndex]) === event.startDate,
+        onSelect: () => onEventSelect(event.id),
+      });
+    });
+
+  for (let index = weekStartIndex; index <= weekEndIndex; index += 1) {
+    const dateKey = toDateKey(gridDates[index]);
+    const tasks = dueTasksByDate.get(dateKey) ?? [];
+    tasks.forEach((task) => {
+      cards.push({
+        id: task.taskId,
+        highlightKey: `task:${task.taskId}`,
+        title: task.title,
+        clientName: task.clientName,
+        projectName: task.projectName,
+        color: task.color,
+        completed: task.completed,
+        startIndex: index,
+        endIndex: index,
+        labelIndex: index,
+        originalStartDate: task.dueDate,
+        startsAtRangeStart: true,
+        onSelect: () => onTaskSelect(task),
+      });
+    });
+  }
+
+  const sortedCards = cards
+    .sort((left, right) => {
+      const startDiff = left.startIndex - right.startIndex;
+      if (startDiff !== 0) {
+        return startDiff;
+      }
+
+      const originalStartDiff = left.originalStartDate.localeCompare(right.originalStartDate);
+      if (originalStartDiff !== 0) {
+        return originalStartDiff;
+      }
+
+      const leftDuration = left.endIndex - left.startIndex;
+      const rightDuration = right.endIndex - right.startIndex;
+      if (leftDuration !== rightDuration) {
+        return rightDuration - leftDuration;
+      }
+
+      return left.title.localeCompare(right.title);
+    });
+  const cardsWithLane = assignCalendarCardLanes(sortedCards);
+  const laneCount = cardsWithLane.reduce((maxLane, card) => Math.max(maxLane, card.lane + 1), 0);
+
+  cardsWithLane
+    .forEach((card) => {
+      const element = createCalendarRangeCard(
+        card,
+        card.labelIndex >= card.startIndex && card.labelIndex <= card.endIndex,
+      );
+      element.style.gridColumn = `${(card.startIndex % 7) + 1} / ${(card.endIndex % 7) + 2}`;
+      element.style.gridRow = "1";
+      element.style.setProperty("--calendar-card-lane", String(card.lane));
+      element.style.setProperty("--calendar-card-days", String(card.endIndex - card.startIndex + 1));
+      element.style.setProperty("--calendar-card-label-column", String(card.labelIndex - card.startIndex + 1));
+      weekRow.append(element);
+    });
+
+  weekRow.style.setProperty("--calendar-card-lanes", String(laneCount));
+  return cards.length;
+}
+
 function appendMonthGrid({
   monthDate,
   dueTasksByDate,
-  tasksById,
+  events,
   container,
   onTaskSelect,
-  onTaskDueDateChange,
+  onEventSelect,
 }: {
   monthDate: Date;
   dueTasksByDate: Map<string, CalendarTask[]>;
-  tasksById: Map<string, CalendarTask>;
+  events: CalendarEvent[];
   container: HTMLElement;
   onTaskSelect: (task: CalendarTask) => void;
-  onTaskDueDateChange: (task: CalendarTask, dueDate: string) => void;
+  onEventSelect: (eventId: string) => void;
 }): number {
   let itemCount = 0;
   const todayKey = toDateKey(new Date());
+  const gridDates = getMonthGridDates(monthDate);
 
-  getMonthGridDates(monthDate).forEach((date) => {
-    const dateKey = toDateKey(date);
-    const isOutsideMonth = date.getMonth() !== monthDate.getMonth();
-    const cell = document.createElement("section");
-    cell.className = "calendar-cell";
-    cell.classList.toggle("outside-month", isOutsideMonth);
-    cell.classList.toggle("today", dateKey === todayKey && !isOutsideMonth);
-    cell.addEventListener("dragover", (event) => {
-      if (!event.dataTransfer?.types.includes("application/x-hius-calendar-task")) {
-        return;
-      }
-
-      event.preventDefault();
-      event.dataTransfer.dropEffect = "move";
-      cell.classList.add("drag-over");
-    });
-    cell.addEventListener("dragleave", () => {
-      cell.classList.remove("drag-over");
-    });
-    cell.addEventListener("drop", (event) => {
-      const taskPayload = event.dataTransfer?.getData("application/x-hius-calendar-task");
-      if (!taskPayload) {
-        return;
-      }
-
-      event.preventDefault();
-      cell.classList.remove("drag-over");
-
-      const task = tasksById.get(taskPayload);
-      if (!task || task.dueDate === dateKey) {
-        return;
-      }
-
-      onTaskDueDateChange(task, dateKey);
+  for (let week = 0; week < 6; week += 1) {
+    const weekRow = document.createElement("div");
+    weekRow.className = "calendar-week-row";
+    itemCount += appendRangeCardsToWeekRow({
+      week,
+      gridDates,
+      dueTasksByDate,
+      events,
+      weekRow,
+      onTaskSelect,
+      onEventSelect,
     });
 
-    const dateLabel = document.createElement("p");
-    dateLabel.className = "calendar-date";
-    dateLabel.textContent = String(date.getDate());
-    cell.append(dateLabel);
+    for (let day = 0; day < 7; day += 1) {
+      const index = week * 7 + day;
+      const date = gridDates[index];
+      const dateKey = toDateKey(date);
+      const isOutsideMonth = date.getMonth() !== monthDate.getMonth();
+      const cell = document.createElement("section");
+      cell.className = "calendar-cell";
+      cell.style.gridColumn = String(day + 1);
+      cell.style.gridRow = "1";
+      cell.classList.toggle("outside-month", isOutsideMonth);
+      cell.classList.toggle("today", dateKey === todayKey && !isOutsideMonth);
 
-    const tasks = dueTasksByDate.get(dateKey) ?? [];
-    tasks.forEach((task) => {
-      const item = document.createElement("div");
-      item.className = "calendar-item";
-      item.draggable = true;
-      item.classList.toggle("completed", task.completed);
-      item.style.setProperty("--project-color", task.color);
-      const title = document.createElement("strong");
-      title.textContent = task.title;
+      const dateLabel = document.createElement("p");
+      dateLabel.className = "calendar-date";
+      dateLabel.textContent = String(date.getDate());
+      cell.append(dateLabel);
 
-      const meta = document.createElement("div");
-      meta.className = "calendar-item-meta";
-      const client = document.createElement("span");
-      client.className = "calendar-client-chip";
-      client.textContent = task.clientName || "No client";
-      const projectName = document.createElement("span");
-      projectName.className = "calendar-project-name";
-      projectName.textContent = task.projectName;
-      meta.append(client, projectName);
+      weekRow.append(cell);
+    }
 
-      item.append(title, meta);
-      item.addEventListener("dragstart", (event) => {
-        event.dataTransfer?.setData("application/x-hius-calendar-task", task.taskId);
-        event.dataTransfer?.setData("text/plain", task.title);
-        if (event.dataTransfer) {
-          event.dataTransfer.effectAllowed = "move";
-        }
-        item.classList.add("dragging");
-      });
-      item.addEventListener("dragend", () => {
-        item.classList.remove("dragging");
-      });
-      item.addEventListener("click", () => {
-        onTaskSelect(task);
-      });
-      cell.append(item);
-      itemCount += 1;
-    });
-
-    container.append(cell);
-  });
-
+    container.append(weekRow);
+  }
   return itemCount;
 }
 
@@ -190,12 +401,11 @@ function appendWeekdays(container: HTMLElement): void {
 
 function renderRangeCalendar(
   dueTasksByDate: Map<string, CalendarTask[]>,
-  tasksById: Map<string, CalendarTask>,
+  events: CalendarEvent[],
   preferences: CalendarRangePreferences,
   onTaskSelect: (task: CalendarTask) => void,
-  onTaskDueDateChange: (task: CalendarTask, dueDate: string) => void,
+  onEventSelect: (eventId: string) => void,
 ): number {
-  calendarMonthLabel.textContent = `${RANGE_CALENDAR_YEAR}`;
   calendarGrid.className = "calendar-range-grid";
   calendarGrid.style.setProperty("--calendar-range-columns", String(preferences.columns));
   let itemCount = 0;
@@ -204,9 +414,14 @@ function renderRangeCalendar(
     const monthSection = document.createElement("section");
     monthSection.className = "calendar-month-panel";
 
+    const monthHeader = document.createElement("div");
+    monthHeader.className = "calendar-month-header";
+
     const monthTitle = document.createElement("h3");
     monthTitle.textContent = `${RANGE_CALENDAR_YEAR}.${String(month).padStart(2, "0")}`;
-    monthSection.append(monthTitle);
+
+    monthHeader.append(monthTitle);
+    monthSection.append(monthHeader);
     appendWeekdays(monthSection);
 
     const monthGrid = document.createElement("div");
@@ -214,10 +429,10 @@ function renderRangeCalendar(
     itemCount += appendMonthGrid({
       monthDate: new Date(RANGE_CALENDAR_YEAR, month - 1, 1),
       dueTasksByDate,
-      tasksById,
+      events,
       container: monthGrid,
       onTaskSelect,
-      onTaskDueDateChange,
+      onEventSelect,
     });
     monthSection.append(monthGrid);
 
@@ -300,21 +515,21 @@ export function renderCalendarView(state: AppState, options: CalendarViewOptions
   options.onCalendarRangePreferencesChange(preferences);
   renderRangeControls(preferences);
   renderCalendarFilters(state, options.selectedProjectIds, options.onSelectedProjectIdsChange);
+  calendarAddEventButton.disabled = state.projects.length === 0;
+  calendarAddTaskButton.disabled = state.projects.length === 0;
+  calendarAddEventButton.onclick = options.onAddEvent;
+  calendarAddTaskButton.onclick = options.onAddTask;
 
   const dueTasksByDate = getDueTasksByDate(state, options.selectedProjectIds);
-  const tasksById = new Map(
-    Array.from(dueTasksByDate.values())
-      .flat()
-      .map((task) => [task.taskId, task]),
-  );
+  const events = getCalendarEvents(state, options.selectedProjectIds);
   calendarGrid.innerHTML = "";
   calendarRangeControls.hidden = false;
   const itemCount = renderRangeCalendar(
     dueTasksByDate,
-    tasksById,
+    events,
     preferences,
     options.onTaskSelect,
-    options.onTaskDueDateChange,
+    options.onEventSelect,
   );
 
   calendarEmptyState.hidden = itemCount > 0;

@@ -6,6 +6,8 @@ export type WorkLogType = "계획" | "수행";
 
 export type ProjectPeriodStatus = "대기" | "연도월";
 
+export type AppSchemaVersion = 1 | 2;
+
 export type Task = {
   id: string;
   title: string;
@@ -48,8 +50,20 @@ export type WorkLog = {
   content: string;
 };
 
+export type ProjectEvent = {
+  id: string;
+  projectId: string;
+  title: string;
+  startDate: string;
+  endDate?: string | null;
+  content: string;
+  taskId?: string;
+};
+
 export type AppState = {
+  schemaVersion: AppSchemaVersion;
   projects: Project[];
   activeProjectId: string | null;
   workLogs: WorkLog[];
+  events: ProjectEvent[];
 };
