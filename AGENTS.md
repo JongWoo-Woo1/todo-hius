@@ -23,6 +23,7 @@ Respect `.gitignore`. Do not inspect or edit generated/dependency/build/runtime-
 Use this map before broad searching:
 
 - App entry / DOM event wiring: `src/main.ts`
+- Renderer AI bridge actions and live-state DTOs: `src/app/aiActions.ts`
 - Temporary renderer UI state (selected task, modal state, current view, visible week): `src/app/uiState.ts`
 - App data state and mutations + migration: `src/state/store.ts`
 - AppState-derived lookups/selectors: `src/state/selectors.ts`
@@ -53,8 +54,12 @@ Use this map before broad searching:
 - Confirm dialog UI: `src/ui/confirmDialog.ts`
 - Toast UI: `src/ui/toast.ts`
 - Excel export: `src/excel/`
+- MCP stdio server and file/live tools: `src/mcp/server.ts`
+- MCP bridge smoke test: `src/mcp/bridgeSmokeTest.ts`
+- MCP file workspace reader/query helpers: `src/mcp/core/`
 - Date/week/task/project helpers: `src/utils/`
 - Electron app shell / menu / dirty state / display-scale zoom + window min/initial sizing: `electron/main.ts`
+- Electron local AI bridge: `electron/aiBridge.ts`
 - Renderer bridge: `electron/preload.ts`
 - Workspace open/save: `electron/todoWorkspace.ts`
 - Sample/default data: `src/data/sampleProjects.ts`
@@ -81,6 +86,9 @@ For a specific button, menu, form, or event:
 - View files must not mutate AppState arbitrarily — pass intent up through callbacks into the `render.ts`/`store` flow.
 - View files must not call Electron IPC directly — use `src/platform/todoFileClient.ts` and the existing `src/main.ts` wiring.
 - Persist with `.todo` workspace files, not localStorage.
+- File-based MCP tools read saved `.todo` files through `src/mcp/core/`; live MCP tools call the running app through `electron/aiBridge.ts` and `src/app/aiActions.ts`.
+- Live-state MCP responses should stay token-efficient: compact by default, paginated lists, no full `AppState`, and detail only when `detailLevel: "detail"` is requested.
+- Do not add delete tools to the MCP/AI bridge unless explicitly requested.
 
 ## Future Refactor Direction
 
@@ -104,6 +112,7 @@ Task completion fields must stay synchronized:
 ## Validation
 
 - Small TypeScript changes: `npm.cmd run typecheck`
+- MCP/AI bridge changes: `npm.cmd run typecheck`; run `npm.cmd run mcp:bridge-test` only when a test workspace is open and creating test Task/Event records is acceptable.
 - Electron workspace/file I/O, Excel export, or build-affecting changes: `npm.cmd run build`
 - Documentation-only changes: no build/typecheck required
 

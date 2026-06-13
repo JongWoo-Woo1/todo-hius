@@ -2,9 +2,8 @@
 //
 // Usage: npm.cmd run mcp:bridge-test  (with the app running via `npm.cmd run dev:electron`)
 //
-// Verifies the bridge connection, then drives the running app: navigate to Calendar, open a
-// Feed window, create one test task and one test event. The task/event target the active
-// project, so make sure a workspace with at least one project is open in the app.
+// Verifies live-state reads, then drives the running app. The create actions target the
+// active project, so make sure a test workspace with at least one project is open in the app.
 
 import { callBridgeAction, getBridgeInfo } from "./core/bridgeClient";
 
@@ -17,12 +16,17 @@ function today(): string {
 }
 
 function show(label: string, value: unknown): void {
-  console.log(`\n# ${label}`);
-  console.log(JSON.stringify(value, null, 2));
+  console.log(`${label}: ${JSON.stringify(value)}`);
 }
 
 async function main(): Promise<void> {
   show("bridge info", await getBridgeInfo());
+
+  show("get_app_info", await callBridgeAction("get_app_info", {}));
+
+  show("list_projects", await callBridgeAction("list_projects", { limit: 20 }));
+
+  show("search_tasks", await callBridgeAction("search_tasks", { query: "", limit: 5 }));
 
   show("navigate_to_view calendar", await callBridgeAction("navigate_to_view", { view: "calendar" }));
 
@@ -47,7 +51,7 @@ async function main(): Promise<void> {
     }),
   );
 
-  console.log("\nDone.");
+  console.log("Done.");
 }
 
 main().catch((error: unknown) => {

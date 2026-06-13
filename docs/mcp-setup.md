@@ -76,6 +76,31 @@ Invoke-RestMethod "http://127.0.0.1:$($bridge.port)/info"
 If a bridge tool reports that the port file cannot be found, start `npm.cmd run dev:electron`
 and make sure the Electron window is open.
 
+## Live-State Tools
+
+The MCP server exposes two read paths:
+
+- File-based tools read a saved `.todo` file from disk. Use these when you need a specific
+  workspace file and can provide `workspacePath`.
+- Live tools read the currently running Electron app memory through the local bridge. Use these
+  for prompts such as "show my todo-hius project list" when the app is already open.
+
+Live tools:
+
+```txt
+get_live_app_info
+list_live_projects
+search_live_projects
+get_live_project_summary
+search_live_tasks
+get_live_task_summary
+get_live_today_schedule
+get_live_week_schedule
+```
+
+Live responses are compact by default and use `limit`/`offset` for lists. Request
+`detailLevel: "detail"` only after selecting a specific project or task id.
+
 ## Claude Code Connection
 
 From the project root:

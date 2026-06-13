@@ -107,6 +107,7 @@ Manual release checks:
 |  |- vite-env.d.ts                # Vite and Electron bridge declarations
 |  |
 |  |- app/
+|  |  |- aiActions.ts              # renderer AI bridge actions and live-state DTOs
 |  |  `- uiState.ts                # temporary renderer UI state
 |  |
 |  |- platform/
@@ -190,6 +191,7 @@ Manual release checks:
 - `src/state/store.ts` owns application data, migration, and mutations.
 - `src/state/selectors.ts` owns AppState-derived lookup helpers.
 - `src/app/uiState.ts` owns temporary renderer-only UI state.
+- `src/app/aiActions.ts` owns renderer-side AI bridge actions, including compact live-state reads and create/navigation actions.
 - `src/ui/dom.ts` owns DOM references.
 - `src/ui/render.ts` is the rendering-orchestration / UI-flow file: it calls each view module, wires their callbacks to store mutations and `uiState` transitions, and re-renders. It does little DOM drawing itself — feature-specific rendering lives in the `*View.ts` modules.
 - `src/ui/*View.ts` files own feature-specific DOM rendering for the project list, project header/info/detail, task list and task cards, Calendar, Ledger, Weekly, WorkLog surfaces, and modals.
@@ -204,6 +206,13 @@ Renderer code should not access Node filesystem APIs directly. Electron filesyst
 ## MCP Setup
 
 See `docs/mcp-setup.md` for Claude Code/Codex MCP connection commands, `.todo` workspace path handling, bridge checks, safe test-data guidance, and the final smoke scenario.
+
+MCP exposes two read paths:
+
+- File-based tools read a saved `.todo` workspace from disk and can accept `workspacePath`.
+- Live tools (`get_live_*`, `list_live_*`, `search_live_*`) read the currently running Electron app through the local AI bridge, returning compact paginated DTOs by default and detail only when `detailLevel: "detail"` is requested.
+
+The MCP/AI bridge intentionally does not expose delete tools.
 
 ## Electron Workspace Files
 
