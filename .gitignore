@@ -2,7 +2,9 @@ node_modules/
 package-lock.json
 dist/
 dist-electron/
-build/
+build/*
+# build/ holds electron-builder buildResources; keep the custom installer source
+!build/installer.nsh
 log/
 
 # electron-builder packaged output

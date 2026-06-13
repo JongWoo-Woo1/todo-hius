@@ -58,6 +58,7 @@ Use this map before broad searching:
 - Renderer bridge: `electron/preload.ts`
 - Workspace open/save: `electron/todoWorkspace.ts`
 - Sample/default data: `src/data/sampleProjects.ts`
+- Installer shortcut-options page / custom NSIS hooks: `build/installer.nsh`
 
 ## Button and Event Search Strategy
 

@@ -37,7 +37,7 @@ HIUS Todo is distributed as a Windows installer by default. The app release vers
 npm.cmd run dist:installer
 ```
 
-The installer uses NSIS, installs per user by default, allows changing the install directory, and creates Start Menu and Desktop shortcuts.
+The installer uses NSIS, installs per user by default, and allows changing the install directory. A shortcut-options page lets the user choose whether to create a Desktop shortcut and a Start Menu shortcut (both checked by default); silent installs create both. The custom installer behavior lives in `build/installer.nsh`.
 
 The installer registers `.todo` files as `HIUS Todo Workspace` files. Double-clicking a `.todo` file launches HIUS Todo and opens that workspace.
 
