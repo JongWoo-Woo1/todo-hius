@@ -65,7 +65,8 @@ export function renderTaskTrashView(params: TaskTrashViewParams): void {
   }
 
   taskTrashCard.hidden = false;
-  toggleTaskTrashButton.textContent = expanded ? "접기" : `삭제된 Task 보기 (${deletedTasks.length})`;
+  toggleTaskTrashButton.textContent = `Disabled Task(${deletedTasks.length})`;
+  toggleTaskTrashButton.setAttribute("aria-expanded", String(expanded));
   toggleTaskTrashButton.onclick = params.onToggleExpanded;
   taskTrashList.hidden = !expanded;
   taskTrashEmpty.hidden = true;

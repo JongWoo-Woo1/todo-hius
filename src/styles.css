@@ -310,7 +310,7 @@ button {
 
 .project-info-card,
 .project-work-log-card,
-.task-trash-card {
+.todo-panel {
   margin-bottom: 18px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -372,6 +372,11 @@ button {
   color: #166534;
 }
 
+.project-memo-badge.task {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .project-memo-date,
 .project-memo-meta {
   color: var(--muted);
@@ -395,6 +400,11 @@ button {
   overflow-wrap: anywhere;
   color: var(--text);
   line-height: 1.45;
+}
+
+.project-memo-task-card.completed .project-memo-title {
+  color: var(--muted);
+  text-decoration: line-through;
 }
 
 .work-log-entry {
@@ -467,6 +477,10 @@ button {
   padding: 6px 0;
 }
 
+.work-log-more-button.project-memo-more-button {
+  justify-self: center;
+}
+
 .section-header {
   display: flex;
   align-items: center;
@@ -521,7 +535,7 @@ button {
 }
 
 .todo-panel {
-  margin-top: 24px;
+  margin-top: 0;
 }
 
 .content-grid {
@@ -541,6 +555,13 @@ button {
   color: var(--muted);
 }
 
+.todo-panel-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 .todo-list {
   display: grid;
   gap: 10px;
@@ -549,23 +570,42 @@ button {
   list-style: none;
 }
 
-.task-trash-card {
-  margin-top: 18px;
-}
-
 .task-trash-list {
   display: grid;
   gap: 10px;
 }
 
+.task-trash-card {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.task-trash-summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+}
+
+.task-trash-summary h4 {
+  display: none;
+}
+
+.task-trash-summary #toggle-task-trash-button {
+  padding: 8px 0;
+}
+
 .task-trash-item {
+  min-height: 58px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f8fafc;
-  padding: 12px;
+  padding: 14px;
 }
 
 .task-trash-item-body {
@@ -1077,9 +1117,9 @@ button {
 .calendar-week-row {
   position: relative;
   min-width: 0;
-  --calendar-card-top: 40px;
-  --calendar-card-step: 52px;
-  min-height: max(130px, calc(48px + (var(--calendar-card-lanes, 0) * var(--calendar-card-step))));
+  --calendar-card-top: 32px;
+  --calendar-card-step: 46px;
+  min-height: max(130px, calc(8px + (var(--calendar-card-lanes, 0) * var(--calendar-card-step))));
 }
 
 .calendar-range-grid {
@@ -1149,12 +1189,16 @@ button {
 
 .compact-calendar-grid .calendar-cell {
   min-height: 130px;
-  padding: 10px;
+  padding: 8px 8px 3px;
 }
 
 .compact-calendar-grid .calendar-range-card {
   padding: 5px 6px;
   font-size: 12px;
+}
+
+.compact-calendar-grid .calendar-range-more-card {
+  padding: 3px 7px;
 }
 
 .calendar-cell {
@@ -1163,10 +1207,10 @@ button {
   min-height: 130px;
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: 4px;
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-  padding: 10px;
+  padding: 8px 8px 3px;
 }
 
 .calendar-cell.outside-month {
@@ -1191,22 +1235,37 @@ button {
   gap: 2px;
   box-sizing: border-box;
   min-width: 0;
-  height: 48px;
-  min-height: 48px;
+  height: 46px;
+  min-height: 46px;
   align-content: start;
   overflow: hidden;
   border: 0;
   border-left: 3px solid var(--project-color);
   border-radius: 0;
   background: color-mix(in srgb, var(--project-color) 12%, white);
-  padding: 7px 8px;
+  padding: 6px 8px;
   color: var(--text);
   text-align: left;
   font-size: 13px;
-  line-height: 1.35;
+  line-height: 1.28;
   cursor: pointer;
   align-self: start;
-  margin: calc(var(--calendar-card-top) + (var(--calendar-card-lane) * var(--calendar-card-step))) 4px 0;
+  margin: calc(var(--calendar-card-top) + (var(--calendar-card-lane) * var(--calendar-card-step))) 2px 0;
+}
+
+.calendar-range-more-card {
+  display: flex;
+  align-items: center;
+  border-left-color: #cbd5e1;
+  background: #f8fafc;
+  color: var(--muted);
+  height: 24px;
+  min-height: 24px;
+  padding: 3px 7px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.1;
+  pointer-events: none;
 }
 
 .calendar-range-card-content {
@@ -1219,6 +1278,10 @@ button {
 
 .calendar-range-card:not(.starts-at-range-start) {
   border-left-color: transparent;
+}
+
+.calendar-range-more-card:not(.starts-at-range-start) {
+  border-left-color: #cbd5e1;
 }
 
 .calendar-range-card:hover,

@@ -79,44 +79,33 @@
 
         <section id="project-work-log-card" class="project-work-log-card">
           <div class="section-header">
-            <h3>Memo</h3>
+            <h3>Feed</h3>
             <button id="add-project-event-button" class="quiet-button" type="button">+ Event</button>
           </div>
           <div id="project-work-log-list" class="project-work-log-list project-memo-feed"></div>
-          <p id="project-work-log-empty" class="empty-state">No memo cards for this project yet.</p>
+          <p id="project-work-log-empty" class="empty-state">No feed items for this project yet.</p>
         </section>
-
-        <form id="todo-form" class="todo-form">
-          <label>
-            Task
-            <input id="todo-title" name="todoTitle" type="text" placeholder="Enter a task" required />
-          </label>
-
-          <label>
-            Due date
-            <input id="todo-due-date" name="todoDueDate" type="date" />
-          </label>
-
-          <button type="submit">Add task</button>
-        </form>
 
         <div class="content-grid">
           <section class="todo-panel">
             <div class="todo-panel-header">
-              <h3>Task List</h3>
-              <span id="todo-count">0 items</span>
+              <h3>Task</h3>
+              <div class="todo-panel-actions">
+                <span id="todo-count" hidden>0 items</span>
+                <button id="project-add-task-button" class="quiet-button" type="button">+ Task</button>
+              </div>
             </div>
             <ul id="todo-list" class="todo-list"></ul>
             <p id="empty-state" class="empty-state">No tasks yet.</p>
-          </section>
 
-          <section id="task-trash-card" class="task-trash-card" hidden>
-            <div class="todo-panel-header">
-              <h3>삭제된 Task</h3>
-              <button id="toggle-task-trash-button" class="quiet-button" type="button">삭제된 Task 보기</button>
-            </div>
-            <div id="task-trash-list" class="task-trash-list" hidden></div>
-            <p id="task-trash-empty" class="empty-state" hidden>삭제된 Task가 없습니다.</p>
+            <section id="task-trash-card" class="task-trash-card" hidden>
+              <div class="task-trash-summary">
+                <h4>삭제된 Task</h4>
+                <button id="toggle-task-trash-button" class="quiet-button" type="button">삭제된 Task 보기</button>
+              </div>
+              <div id="task-trash-list" class="task-trash-list" hidden></div>
+              <p id="task-trash-empty" class="empty-state" hidden>삭제된 Task가 없습니다.</p>
+            </section>
           </section>
         </div>
       </section>

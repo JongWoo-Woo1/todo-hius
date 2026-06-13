@@ -5,8 +5,8 @@ import {
   getProjectWorkLogs,
   getTaskByProject,
 } from "../state/selectors";
-import type { AppState, Project, ProjectEvent, WorkLog } from "../types";
-import { formatDisplayDate } from "../utils/calendar";
+import type { AppState, Project, ProjectEvent, Task, WorkLog } from "../types";
+import { formatDisplayDate, toDateKey } from "../utils/calendar";
 import {
   addProjectEventButton,
   projectWorkLogCard,
@@ -19,12 +19,51 @@ type ProjectMemoViewParams = {
   activeProject: Project | null;
   onSelectWorkLog: (workLogId: string) => void;
   onSelectEvent: (eventId: string) => void;
+  onSelectTask: (taskId: string) => void;
   onAddEvent: () => void;
+  showFutureItems: boolean;
+  showPastItems: boolean;
+  onToggleFutureItems: (showFutureItems: boolean) => void;
+  onTogglePastItems: (showPastItems: boolean) => void;
 };
 
 type MemoFeedItem =
-  | { kind: "workLog"; dateKey: string; workLog: WorkLog }
-  | { kind: "event"; dateKey: string; event: ProjectEvent };
+  | { kind: "workLog"; sortDateKey: string; workLog: WorkLog }
+  | { kind: "event"; sortDateKey: string; event: ProjectEvent }
+  | { kind: "task"; sortDateKey: string | null; task: Task };
+
+const RECENT_MEMO_BUSINESS_DAYS = 5;
+const UPCOMING_MEMO_BUSINESS_DAYS = 5;
+const DEFAULT_VISIBLE_MEMO_COUNT = 4;
+
+function isBusinessDay(date: Date): boolean {
+  const day = date.getDay();
+  return day !== 0 && day !== 6;
+}
+
+function getBusinessDateKey(offsetDays: number): string {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+
+  let remainingDays = Math.abs(offsetDays);
+  const direction = offsetDays < 0 ? -1 : 1;
+  while (remainingDays > 0) {
+    date.setDate(date.getDate() + direction);
+    if (isBusinessDay(date)) {
+      remainingDays -= 1;
+    }
+  }
+
+  return toDateKey(date);
+}
+
+function getRecentMemoCutoffKey(): string {
+  return getBusinessDateKey(-RECENT_MEMO_BUSINESS_DAYS);
+}
+
+function getUpcomingMemoCutoffKey(): string {
+  return getBusinessDateKey(UPCOMING_MEMO_BUSINESS_DAYS);
+}
 
 function getContentPreview(content: string): string {
   const normalized = content.replace(/\s+/g, " ").trim();
@@ -64,10 +103,6 @@ function createMemoWorkLogCard(activeProject: Project, workLog: WorkLog, onSelec
   }
   meta.textContent = metaParts.join(" / ");
 
-  const content = document.createElement("p");
-  content.className = "project-memo-content";
-  content.textContent = getContentPreview(workLog.content) || "내용 없음";
-
   card.addEventListener("click", onSelect);
   card.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -76,7 +111,62 @@ function createMemoWorkLogCard(activeProject: Project, workLog: WorkLog, onSelec
     }
   });
 
-  card.append(header, meta, content);
+  card.append(header, meta);
+
+  const contentPreview = getContentPreview(workLog.content);
+  if (contentPreview) {
+    const content = document.createElement("p");
+    content.className = "project-memo-content";
+    content.textContent = contentPreview;
+    card.append(content);
+  }
+
+  return card;
+}
+
+function createMemoTaskCard(activeProject: Project, task: Task, onSelect: () => void): HTMLElement {
+  const card = document.createElement("article");
+  card.className = "project-memo-card project-memo-task-card clickable";
+  card.classList.toggle("completed", task.completed);
+  card.style.setProperty("--project-color", activeProject.color);
+  card.setAttribute("role", "button");
+  card.tabIndex = 0;
+
+  const header = document.createElement("div");
+  header.className = "project-memo-card-header";
+
+  const badge = document.createElement("span");
+  badge.className = "project-memo-badge task";
+  badge.textContent = "Task";
+
+  const date = document.createElement("span");
+  date.className = "project-memo-date";
+  date.textContent = formatDisplayDate(task.dueDate) || "날짜 없음";
+
+  header.append(badge, date);
+
+  const title = document.createElement("h4");
+  title.className = "project-memo-title";
+  title.textContent = task.title;
+
+  const meta = document.createElement("p");
+  meta.className = "project-memo-meta";
+  meta.textContent = [task.status, task.priority].filter(Boolean).join(" / ");
+
+  const content = document.createElement("p");
+  content.className = "project-memo-content";
+  content.textContent =
+    getContentPreview(task.memo || task.workerComment || task.managerComment || task.issueRisk || "") || "메모 없음";
+
+  card.addEventListener("click", onSelect);
+  card.addEventListener("keydown", (keyboardEvent) => {
+    if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") {
+      keyboardEvent.preventDefault();
+      onSelect();
+    }
+  });
+
+  card.append(header, title, meta, content);
   return card;
 }
 
@@ -129,11 +219,9 @@ function createMemoEventCard(activeProject: Project, event: ProjectEvent, onSele
   const meta = document.createElement("p");
   meta.className = "project-memo-meta";
   const linkedTaskLabel = getEventLinkedTaskLabel(activeProject, event);
-  meta.textContent = linkedTaskLabel ?? "Event";
-
-  const content = document.createElement("p");
-  content.className = "project-memo-content";
-  content.textContent = getContentPreview(event.content) || "내용 없음";
+  if (linkedTaskLabel) {
+    meta.textContent = linkedTaskLabel;
+  }
 
   card.addEventListener("click", onSelect);
   card.addEventListener("keydown", (keyboardEvent) => {
@@ -143,26 +231,199 @@ function createMemoEventCard(activeProject: Project, event: ProjectEvent, onSele
     }
   });
 
-  card.append(header, title, meta, content);
+  card.append(header, title);
+  if (linkedTaskLabel) {
+    card.append(meta);
+  }
+
+  const contentPreview = getContentPreview(event.content);
+  if (contentPreview) {
+    const content = document.createElement("p");
+    content.className = "project-memo-content";
+    content.textContent = contentPreview;
+    card.append(content);
+  }
+
   return card;
+}
+
+function getMemoItemSortDateKey(item: MemoFeedItem): string | null {
+  return item.sortDateKey;
+}
+
+function getMemoItemKey(item: MemoFeedItem): string {
+  if (item.kind === "workLog") {
+    return `workLog:${item.workLog.id}`;
+  }
+
+  if (item.kind === "event") {
+    return `event:${item.event.id}`;
+  }
+
+  return `task:${item.task.id}`;
+}
+
+function getMemoItemLabel(item: MemoFeedItem): string {
+  if (item.kind === "workLog") {
+    return item.workLog.content;
+  }
+
+  if (item.kind === "event") {
+    return item.event.title;
+  }
+
+  return item.task.title;
+}
+
+function compareMemoItems(left: MemoFeedItem, right: MemoFeedItem): number {
+  const leftDateKey = getMemoItemSortDateKey(left);
+  const rightDateKey = getMemoItemSortDateKey(right);
+
+  if (!leftDateKey && !rightDateKey) {
+    return getMemoItemLabel(left).localeCompare(getMemoItemLabel(right));
+  }
+
+  if (!leftDateKey) {
+    return 1;
+  }
+
+  if (!rightDateKey) {
+    return -1;
+  }
+
+  const dateDiff = rightDateKey.localeCompare(leftDateKey);
+  if (dateDiff !== 0) {
+    return dateDiff;
+  }
+
+  return getMemoItemLabel(left).localeCompare(getMemoItemLabel(right));
 }
 
 function getMemoFeedItems(state: AppState, activeProject: Project): MemoFeedItem[] {
   const workLogItems: MemoFeedItem[] = getProjectWorkLogs(state, activeProject.id).map((workLog) => ({
     kind: "workLog",
-    dateKey: workLog.date,
+    sortDateKey: workLog.date,
     workLog,
   }));
   const eventItems: MemoFeedItem[] = getProjectEvents(state, activeProject.id).map((event) => ({
     kind: "event",
-    dateKey: event.endDate ?? event.startDate,
+    sortDateKey: event.endDate ?? event.startDate,
     event,
   }));
+  const taskItems: MemoFeedItem[] = activeProject.tasks.map((task) => ({
+    kind: "task",
+    sortDateKey: task.dueDate,
+    task,
+  }));
 
-  return [...workLogItems, ...eventItems].sort((left, right) => right.dateKey.localeCompare(left.dateKey));
+  return [...workLogItems, ...eventItems, ...taskItems].sort(compareMemoItems);
 }
 
-export function renderProjectMemoView({ state, activeProject, onSelectWorkLog, onSelectEvent, onAddEvent }: ProjectMemoViewParams): void {
+function getMemoFeedVisibility(memoItems: MemoFeedItem[], showFutureItems: boolean, showPastItems: boolean): {
+  visibleItems: MemoFeedItem[];
+  futureHiddenCount: number;
+  pastHiddenCount: number;
+} {
+  const cutoffKey = getRecentMemoCutoffKey();
+  const upcomingCutoffKey = getUpcomingMemoCutoffKey();
+
+  const futureItems = memoItems.filter((item) => {
+    const dateKey = getMemoItemSortDateKey(item);
+    return Boolean(dateKey && dateKey > upcomingCutoffKey);
+  });
+  const defaultItems = memoItems
+    .filter((item) => {
+      const dateKey = getMemoItemSortDateKey(item);
+      return Boolean(dateKey && dateKey >= cutoffKey && dateKey <= upcomingCutoffKey);
+    })
+    .slice(0, DEFAULT_VISIBLE_MEMO_COUNT);
+
+  const futureItemKeys = new Set(futureItems.map(getMemoItemKey));
+  const defaultItemKeys = new Set(defaultItems.map(getMemoItemKey));
+  const pastItems = memoItems.filter((item) => {
+    const key = getMemoItemKey(item);
+    return !futureItemKeys.has(key) && !defaultItemKeys.has(key);
+  });
+  const pastItemKeys = new Set(pastItems.map(getMemoItemKey));
+
+  return {
+    visibleItems: memoItems.filter((item) => {
+      const key = getMemoItemKey(item);
+      return (
+        defaultItemKeys.has(key) ||
+        (showFutureItems && futureItemKeys.has(key)) ||
+        (showPastItems && pastItemKeys.has(key))
+      );
+    }),
+    futureHiddenCount: showFutureItems ? 0 : futureItems.length,
+    pastHiddenCount: showPastItems ? 0 : pastItems.length,
+  };
+}
+
+function createMemoMoreButton({
+  visibleCount,
+  totalCount,
+  expanded,
+  label,
+  collapseLabel,
+  onToggle,
+}: {
+  visibleCount: number;
+  totalCount: number;
+  expanded: boolean;
+  label: string;
+  collapseLabel?: string;
+  onToggle: () => void;
+}): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "quiet-button work-log-more-button project-memo-more-button";
+  button.textContent = expanded
+    ? `${collapseLabel ?? `${label} 접기`} (${visibleCount} / ${totalCount})`
+    : `${label} (${visibleCount} / ${totalCount})`;
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    onToggle();
+  });
+  return button;
+}
+
+function shouldShowMemoMoreButton(visibleCount: number, totalCount: number, showAll: boolean): boolean {
+  return visibleCount !== totalCount || (showAll && totalCount > 0);
+}
+
+function appendMemoMoreButton(
+  visibleCount: number,
+  totalCount: number,
+  expanded: boolean,
+  label: string,
+  onToggle: () => void,
+  collapseLabel?: string,
+): void {
+  projectWorkLogList.append(
+    createMemoMoreButton({
+      visibleCount,
+      totalCount,
+      expanded,
+      label,
+      collapseLabel,
+      onToggle,
+    }),
+  );
+}
+
+export function renderProjectMemoView({
+  state,
+  activeProject,
+  onSelectWorkLog,
+  onSelectEvent,
+  onSelectTask,
+  onAddEvent,
+  showFutureItems,
+  showPastItems,
+  onToggleFutureItems,
+  onTogglePastItems,
+}: ProjectMemoViewParams): void {
   projectWorkLogList.innerHTML = "";
 
   if (!activeProject) {
@@ -173,16 +434,44 @@ export function renderProjectMemoView({ state, activeProject, onSelectWorkLog, o
   }
 
   const memoItems = getMemoFeedItems(state, activeProject);
+  const { visibleItems, futureHiddenCount, pastHiddenCount } = getMemoFeedVisibility(
+    memoItems,
+    showFutureItems,
+    showPastItems,
+  );
   projectWorkLogCard.hidden = false;
   projectWorkLogEmpty.hidden = memoItems.length > 0;
   addProjectEventButton.disabled = false;
   addProjectEventButton.onclick = onAddEvent;
 
-  memoItems.forEach((item) => {
+  const visibleCount = visibleItems.length;
+  if (shouldShowMemoMoreButton(visibleCount, visibleCount + futureHiddenCount, showFutureItems)) {
+    appendMemoMoreButton(
+      visibleCount,
+      visibleCount + futureHiddenCount,
+      showFutureItems,
+      "최신 피드 더보기",
+      () => {
+        onToggleFutureItems(!showFutureItems);
+      },
+      "최신 피드 접기",
+    );
+  }
+
+  visibleItems.forEach((item) => {
     if (item.kind === "workLog") {
       projectWorkLogList.append(
         createMemoWorkLogCard(activeProject, item.workLog, () => {
           onSelectWorkLog(item.workLog.id);
+        }),
+      );
+      return;
+    }
+
+    if (item.kind === "task") {
+      projectWorkLogList.append(
+        createMemoTaskCard(activeProject, item.task, () => {
+          onSelectTask(item.task.id);
         }),
       );
       return;
@@ -194,4 +483,10 @@ export function renderProjectMemoView({ state, activeProject, onSelectWorkLog, o
       }),
     );
   });
+
+  if (shouldShowMemoMoreButton(visibleCount, visibleCount + pastHiddenCount, showPastItems)) {
+    appendMemoMoreButton(visibleCount, visibleCount + pastHiddenCount, showPastItems, "과거 피드 더보기", () => {
+      onTogglePastItems(!showPastItems);
+    });
+  }
 }

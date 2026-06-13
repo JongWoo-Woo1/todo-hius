@@ -95,9 +95,11 @@ function renderLedger(): void {
 // WorkLog
 
 function renderProjectMemo(): void {
+  const activeProject = getActiveProject() ?? null;
+
   renderProjectMemoView({
     state: getState(),
-    activeProject: getActiveProject() ?? null,
+    activeProject,
     onSelectWorkLog: (workLogId) => {
       openWorkLogDetail(workLogId);
       render();
@@ -106,8 +108,25 @@ function renderProjectMemo(): void {
       openEventDetail(eventId);
       render();
     },
+    onSelectTask: (taskId) => {
+      uiState.selectedTaskId = taskId;
+      uiState.editingTaskId = null;
+      closeWorkLogDetail();
+      closeEventDetail();
+      render();
+    },
     onAddEvent: () => {
       openEventCreate();
+      render();
+    },
+    showFutureItems: Boolean(activeProject && uiState.expandedProjectFutureFeedId === activeProject.id),
+    showPastItems: Boolean(activeProject && uiState.expandedProjectPastFeedId === activeProject.id),
+    onToggleFutureItems: (showFutureItems) => {
+      uiState.expandedProjectFutureFeedId = showFutureItems && activeProject ? activeProject.id : null;
+      render();
+    },
+    onTogglePastItems: (showPastItems) => {
+      uiState.expandedProjectPastFeedId = showPastItems && activeProject ? activeProject.id : null;
       render();
     },
   });
@@ -467,7 +486,7 @@ function closeCalendarTaskAddModal(): void {
 
 function renderCalendarTaskAddModal(): void {
   renderCalendarTaskAddModalView({
-    isOpen: uiState.currentView === "calendar" && uiState.isCalendarTaskCreating,
+    isOpen: (uiState.currentView === "calendar" || uiState.currentView === "projects") && uiState.isCalendarTaskCreating,
     projects: getState().projects,
     activeProjectId: getState().activeProjectId,
     onClose: () => {
@@ -579,7 +598,13 @@ function renderTasks(): void {
   renderProjectInfo(activeProject);
   showProjectInfoEditMode(uiState.isProjectInfoEditing);
   renderProjectMemo();
-  renderProjectDetailShell(sortedTasks.length);
+  renderProjectDetailShell(sortedTasks.length, () => {
+    uiState.isCalendarTaskCreating = true;
+    closeCalendarDetailModal();
+    closeWorkLogDetail();
+    closeEventDetail();
+    render();
+  });
 
   renderTaskList({
     tasks: sortedTasks,
@@ -642,6 +667,14 @@ export function resetCalendarSelection(): void {
   closeCalendarDetailModal();
 }
 
+export function includeCalendarProject(projectId: string): void {
+  if (!uiState.selectedCalendarProjectIds) {
+    return;
+  }
+
+  uiState.selectedCalendarProjectIds.add(projectId);
+}
+
 export function selectTask(taskId: string): void {
   uiState.selectedTaskId = taskId;
   uiState.editingTaskId = null;
@@ -664,6 +697,11 @@ export function showWeeklyView(): void {
 }
 
 export function activateCalendarButton(): void {
+  const activeProjectId = getState().activeProjectId;
+  if (activeProjectId) {
+    includeCalendarProject(activeProjectId);
+  }
+
   uiState.currentView = "calendar";
 }
 

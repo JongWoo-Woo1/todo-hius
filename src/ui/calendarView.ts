@@ -65,6 +65,8 @@ type CalendarViewOptions = {
 
 const RANGE_CALENDAR_YEAR = 2026;
 const MONTH_LABELS = Array.from({ length: 12 }, (_, index) => `${index + 1}`);
+const MAX_VISIBLE_CALENDAR_CARDS = 3;
+const MORE_CARD_LANE = MAX_VISIBLE_CALENDAR_CARDS;
 
 function getDueTasksByDate(state: AppState, selectedProjectIds: Set<string>): Map<string, CalendarTask[]> {
   const dueTasksByDate = new Map<string, CalendarTask[]>();
@@ -179,6 +181,14 @@ function createCalendarRangeCard(card: CalendarRangeCard, hasLabel: boolean): HT
   return element;
 }
 
+function createCalendarMoreCard(hiddenCount: number): HTMLElement {
+  const element = document.createElement("div");
+  element.className = "calendar-range-card calendar-range-more-card";
+  element.textContent = `+${hiddenCount} more`;
+  element.setAttribute("aria-label", `${hiddenCount} more calendar items`);
+  return element;
+}
+
 function setCalendarCardHighlighted(highlightKey: string, isHighlighted: boolean): void {
   document.querySelectorAll<HTMLElement>(".calendar-range-card").forEach((card) => {
     if (card.dataset.calendarCardKey === highlightKey) {
@@ -204,6 +214,20 @@ function assignCalendarCardLanes(cards: CalendarRangeCard[]): CalendarRangeCardW
     laneCards[lane].push(card);
     return { ...card, lane };
   });
+}
+
+function countHiddenCardsByDay(cards: CalendarRangeCardWithLane[]): Map<number, number> {
+  const hiddenCounts = new Map<number, number>();
+
+  cards
+    .filter((card) => card.lane >= MAX_VISIBLE_CALENDAR_CARDS)
+    .forEach((card) => {
+      for (let index = card.startIndex; index <= card.endIndex; index += 1) {
+        hiddenCounts.set(index, (hiddenCounts.get(index) ?? 0) + 1);
+      }
+    });
+
+  return hiddenCounts;
 }
 
 function appendRangeCardsToWeekRow({
@@ -306,9 +330,14 @@ function appendRangeCardsToWeekRow({
       return left.title.localeCompare(right.title);
     });
   const cardsWithLane = assignCalendarCardLanes(sortedCards);
-  const laneCount = cardsWithLane.reduce((maxLane, card) => Math.max(maxLane, card.lane + 1), 0);
+  const laneCount = Math.min(
+    cardsWithLane.reduce((maxLane, card) => Math.max(maxLane, card.lane + 1), 0),
+    MORE_CARD_LANE + 1,
+  );
+  const hiddenCounts = countHiddenCardsByDay(cardsWithLane);
 
   cardsWithLane
+    .filter((card) => card.lane < MAX_VISIBLE_CALENDAR_CARDS)
     .forEach((card) => {
       const element = createCalendarRangeCard(
         card,
@@ -321,6 +350,16 @@ function appendRangeCardsToWeekRow({
       element.style.setProperty("--calendar-card-label-column", String(card.labelIndex - card.startIndex + 1));
       weekRow.append(element);
     });
+
+  hiddenCounts.forEach((hiddenCount, dayIndex) => {
+    const element = createCalendarMoreCard(hiddenCount);
+    element.style.gridColumn = `${(dayIndex % 7) + 1} / ${(dayIndex % 7) + 2}`;
+    element.style.gridRow = "1";
+    element.style.setProperty("--calendar-card-lane", String(MORE_CARD_LANE));
+    element.style.setProperty("--calendar-card-days", "1");
+    element.style.setProperty("--calendar-card-label-column", "1");
+    weekRow.append(element);
+  });
 
   weekRow.style.setProperty("--calendar-card-lanes", String(laneCount));
   return cards.length;

@@ -14,7 +14,6 @@ import {
 } from "./platform/todoFileClient";
 import {
   addProject,
-  addTask,
   deleteActiveProject,
   getActiveProject,
   getState,
@@ -23,7 +22,7 @@ import {
   updateActiveProject,
   updateActiveProjectColor,
 } from "./state/store";
-import type { Project, Task } from "./types";
+import type { Project } from "./types";
 import { toDateKey } from "./utils/calendar";
 import { createId } from "./utils/id";
 import { getProjectColor } from "./utils/projectColor";
@@ -53,9 +52,6 @@ import {
   projectPeriodEndMonthInput,
   projectPeriodStartMonthInput,
   projectPeriodStatusSelect,
-  taskDueDateInput,
-  taskForm,
-  taskTitleInput,
   toggleAllProjectsButton,
   nextWeekButton,
   previousWeekButton,
@@ -68,6 +64,7 @@ import {
   goToNextWeek,
   goToPreviousWeek,
   getVisibleWeekDate,
+  includeCalendarProject,
   render,
   resetCalendarSelection,
   showLedgerView,
@@ -281,6 +278,7 @@ addProjectButton.addEventListener("click", () => {
   };
 
   addProject(project);
+  includeCalendarProject(project.id);
   showProjectView();
   render();
 });
@@ -326,33 +324,6 @@ projectInfoForm.addEventListener("submit", (event) => {
     periodEndMonth: projectPeriodStatusSelect.value === "연도월" ? projectPeriodEndMonthInput.value || null : null,
   });
   showProjectInfoEditMode(false);
-  render();
-});
-
-taskForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const activeProject = getActiveProject();
-  const title = taskTitleInput.value.trim();
-  if (!activeProject || !title) {
-    return;
-  }
-
-  const task: Task = {
-    id: createId(),
-    title,
-    dueDate: taskDueDateInput.value || null,
-    estimate: "",
-    status: "대기",
-    progress: 0,
-    workerComment: "",
-    managerComment: "",
-    priority: "보통",
-    memo: "",
-    completed: false,
-  };
-
-  addTask(task);
-  taskForm.reset();
   render();
 });
 

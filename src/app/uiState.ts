@@ -17,7 +17,8 @@ export type UiState = {
   selectedModalProjectId: string | null;
   draggedProjectId: string | null;
   calendarRangePreferences: CalendarRangePreferences;
-  expandedProjectWorkLogId: string | null;
+  expandedProjectFutureFeedId: string | null;
+  expandedProjectPastFeedId: string | null;
   expandedTaskWorkLogIds: Set<string>;
   expandedTaskTrashProjectId: string | null;
   selectedWorkLogId: string | null;
@@ -45,7 +46,8 @@ export const uiState: UiState = {
   selectedModalProjectId: null,
   draggedProjectId: null,
   calendarRangePreferences: getDefaultCalendarRangePreferences(),
-  expandedProjectWorkLogId: null,
+  expandedProjectFutureFeedId: null,
+  expandedProjectPastFeedId: null,
   expandedTaskWorkLogIds: new Set<string>(),
   expandedTaskTrashProjectId: null,
   selectedWorkLogId: null,

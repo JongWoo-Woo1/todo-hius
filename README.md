@@ -65,10 +65,10 @@ npm.cmd run build
 |  |  |- projectDetailView.ts      # Project detail shell / empty-state rendering
 |  |  |- taskListView.ts           # Task list rendering within a project
 |  |  |- taskView.ts               # Task detail card and Task edit form
-|  |  |- taskTrashView.ts          # deleted Task restore/permanent-delete UI
+|  |  |- taskTrashView.ts          # Disabled Task restore/permanent-delete UI
 |  |  |- calendarView.ts           # Calendar filters, range controls, and Task/Event range-card grid
-|  |  |- calendarAddView.ts        # Calendar +Task modal rendering
-|  |  |- projectMemoView.ts        # Project Memo feed rendering
+|  |  |- calendarAddView.ts        # shared +Task modal rendering for Calendar and Project
+|  |  |- projectMemoView.ts        # Project Feed rendering for Event, Weekly Log, and Task cards
 |  |  |- eventDetailView.ts        # Event detail/create/edit modal rendering
 |  |  |- ledgerView.ts             # Ledger filters and table rendering
 |  |  |- weeklyView.ts             # Weekly report view rendering
@@ -147,6 +147,9 @@ hius-dt-jw-todo/
 - AppState uses an explicit `schemaVersion`. Missing versions are treated as v1 and migrated to the current schema.
 - Project Events are stored in AppState and persisted per project JSON, following the same workspace style as WorkLogs.
 - Calendar renders Tasks as one-day cards and Events as date-range cards.
+- Calendar limits crowded day cells with a `+N more` card after the visible card lanes.
+- Project Feed combines Events, Weekly Logs, and Tasks, sorts by feed date, and uses business-day windows with separate latest/past more controls.
+- Project Task uses the shared +Task modal and keeps disabled Tasks in a lightweight restore/permanent-delete section.
 
 ## Design Notes
 

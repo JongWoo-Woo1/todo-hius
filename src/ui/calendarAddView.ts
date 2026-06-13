@@ -46,7 +46,7 @@ export function renderCalendarTaskAddModalView(options: CalendarTaskAddModalOpti
   const title = document.createElement("div");
   const eyebrow = document.createElement("p");
   eyebrow.className = "eyebrow";
-  eyebrow.textContent = "Calendar";
+  eyebrow.textContent = "Task";
   const heading = document.createElement("h3");
   heading.id = "calendar-add-title";
   heading.textContent = "Task 추가";
