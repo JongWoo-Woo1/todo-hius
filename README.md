@@ -90,9 +90,8 @@ Manual release checks:
 |- tsconfig.electron.json          # Electron main-process TypeScript config
 |- vite.config.ts                  # Vite config
 |- AGENTS.md                       # coding-agent working rules
+|- MCP.md                          # MCP / AI bridge setup and operating notes
 |- README.md                       # project map and usage
-|- docs/
-|  `- mcp-setup.md                 # MCP setup and smoke-test guide
 |
 |- electron/
 |  |- main.ts                      # Electron window, menu, dirty state, close prompt
@@ -203,16 +202,11 @@ Manual release checks:
 
 Renderer code should not access Node filesystem APIs directly. Electron filesystem work should go through the preload bridge and `electron/todoWorkspace.ts`.
 
-## MCP Setup
+## MCP / AI Bridge
 
-See `docs/mcp-setup.md` for Claude Code/Codex MCP connection commands, `.todo` workspace path handling, bridge checks, safe test-data guidance, and the final smoke scenario.
+Claude Code / Codex can use the stdio MCP server to read saved `.todo` files, read the running app's live state, and drive selected app actions through the local AI bridge.
 
-MCP exposes two read paths:
-
-- File-based tools read a saved `.todo` workspace from disk and can accept `workspacePath`.
-- Live tools (`get_live_*`, `list_live_*`, `search_live_*`) read the currently running Electron app through the local AI bridge, returning compact paginated DTOs by default and detail only when `detailLevel: "detail"` is requested.
-
-The MCP/AI bridge intentionally does not expose delete tools.
+See `MCP.md` for process roles, tool groups, safe testing, and setup commands.
 
 ## Electron Workspace Files
 

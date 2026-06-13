@@ -1,8 +1,9 @@
-// HIUS Todo MCP server (phase 1, read-only).
+// HIUS Todo stdio MCP server.
 //
-// A standard MCP stdio server that exposes read-only queries over a `.todo` workspace, plus
-// a schedule-summary tool. It does NOT control the running Electron app. Each tool reads the
-// workspace fresh from disk, so changes saved by the app are picked up on the next call.
+// Tool groups:
+// - File-based tools read saved `.todo` workspaces from disk.
+// - Live-state tools read the running Electron app memory through the local AI bridge.
+// - App-control tools drive navigation and create actions through the local AI bridge.
 //
 // IMPORTANT: stdout is reserved for the MCP protocol. Never console.log to stdout here; use
 // console.error (stderr) for any diagnostics.

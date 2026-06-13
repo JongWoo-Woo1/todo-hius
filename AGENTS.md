@@ -8,6 +8,8 @@ Do not migrate the app to React unless the user explicitly asks. Do not reintrod
 
 ## Efficient Context Rules
 
+Read `MCP.md` before MCP / AI bridge work. Keep MCP operating documentation consolidated in root `MCP.md`; do not create parallel MCP setup docs.
+
 Read `AGENTS.md` first. `README.md` is human-facing documentation — read it only when the task needs project structure, scripts, or user-facing behavior, not at the start of every task.
 
 Prefer focused search over broad reading. Inspect the smallest relevant file set first; do not scan the whole repo by default.
@@ -88,6 +90,7 @@ For a specific button, menu, form, or event:
 - Persist with `.todo` workspace files, not localStorage.
 - File-based MCP tools read saved `.todo` files through `src/mcp/core/`; live MCP tools call the running app through `electron/aiBridge.ts` and `src/app/aiActions.ts`.
 - Live-state MCP responses should stay token-efficient: compact by default, paginated lists, no full `AppState`, and detail only when `detailLevel: "detail"` is requested.
+- Detailed MCP tool schema and descriptions belong in `src/mcp/server.ts` `registerTool` metadata, which is the source of truth.
 - Do not add delete tools to the MCP/AI bridge unless explicitly requested.
 
 ## Future Refactor Direction
