@@ -1,25 +1,30 @@
-import type { AppState, Project, Task } from "../types";
+import type { AppState, Project, Task, TaskStatus } from "../types";
 import { formatDisplayDate } from "../utils/calendar";
 import { getLedgerRows } from "../utils/ledger";
-import { formatProgressPercent, isTaskOverdue } from "../utils/task";
+import { formatProgressPercent } from "../utils/task";
 import {
-  ledgerClientFilter,
   ledgerEmptyState,
-  ledgerHideCompletedInput,
-  ledgerOverdueOnlyInput,
+  ledgerProjectFilterList,
   ledgerSettingsBackdrop,
   ledgerSettingsButton,
   ledgerSettingsCloseButton,
   ledgerSettingsPanel,
-  ledgerStatusFilter,
+  ledgerStatusFilterList,
   ledgerTableBody,
+  ledgerToggleAllProjectsButton,
 } from "./dom";
+
+const LEDGER_STATUSES: TaskStatus[] = ["대기", "진행중", "검토대기", "완료"];
 
 type LedgerViewOptions = {
   onProjectSelect: (project: Project) => void;
   onTaskSelect: (task: Task) => void;
   isSettingsOpen: boolean;
   onToggleSettings: (open: boolean) => void;
+  selectedStatuses: Set<TaskStatus>;
+  onSelectedStatusesChange: (statuses: Set<TaskStatus>) => void;
+  onProjectVisibilityChange: (projectId: string, visible: boolean) => void;
+  onToggleAllProjects: () => void;
 };
 
 function createLedgerCell(className: string, text: string): HTMLTableCellElement {
@@ -95,17 +100,64 @@ function createPriorityCell(priority: Task["priority"]): HTMLTableCellElement {
   return cell;
 }
 
-function renderLedgerClientOptions(state: AppState): void {
-  const currentValue = ledgerClientFilter.value || "전체";
-  const clients = Array.from(new Set(state.projects.map((project) => project.clientName).filter(Boolean))).sort();
-  ledgerClientFilter.innerHTML = "";
-  ledgerClientFilter.append(new Option("전체", "전체"));
+function renderLedgerStatusFilters(
+  selectedStatuses: Set<TaskStatus>,
+  onSelectedStatusesChange: (statuses: Set<TaskStatus>) => void,
+): void {
+  ledgerStatusFilterList.innerHTML = "";
 
-  clients.forEach((clientName) => {
-    ledgerClientFilter.append(new Option(clientName, clientName));
+  LEDGER_STATUSES.forEach((status) => {
+    const label = document.createElement("label");
+    label.className = "calendar-filter-item";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = selectedStatuses.has(status);
+    checkbox.addEventListener("change", () => {
+      const nextStatuses = new Set(selectedStatuses);
+      if (checkbox.checked) {
+        nextStatuses.add(status);
+      } else {
+        nextStatuses.delete(status);
+      }
+      onSelectedStatusesChange(nextStatuses);
+    });
+
+    const name = document.createElement("span");
+    name.textContent = status;
+
+    label.append(checkbox, name);
+    ledgerStatusFilterList.append(label);
   });
+}
 
-  ledgerClientFilter.value = clients.includes(currentValue) ? currentValue : "전체";
+function renderLedgerProjectFilters(
+  state: AppState,
+  onProjectVisibilityChange: (projectId: string, visible: boolean) => void,
+): void {
+  ledgerProjectFilterList.innerHTML = "";
+
+  state.projects.forEach((project) => {
+    const label = document.createElement("label");
+    label.className = "calendar-filter-item";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = !project.hideFromLedger;
+    checkbox.addEventListener("change", () => {
+      onProjectVisibilityChange(project.id, checkbox.checked);
+    });
+
+    const swatch = document.createElement("span");
+    swatch.className = "project-swatch";
+    swatch.style.setProperty("--project-color", project.color);
+
+    const name = document.createElement("span");
+    name.textContent = project.name;
+
+    label.append(checkbox, swatch, name);
+    ledgerProjectFilterList.append(label);
+  });
 }
 
 function renderLedgerSettingsPanel(isOpen: boolean, onToggleSettings: (open: boolean) => void): void {
@@ -122,41 +174,33 @@ function renderLedgerSettingsPanel(isOpen: boolean, onToggleSettings: (open: boo
 
 export function renderLedgerView(
   state: AppState,
-  { onProjectSelect, onTaskSelect, isSettingsOpen, onToggleSettings }: LedgerViewOptions,
+  {
+    onProjectSelect,
+    onTaskSelect,
+    isSettingsOpen,
+    onToggleSettings,
+    selectedStatuses,
+    onSelectedStatusesChange,
+    onProjectVisibilityChange,
+    onToggleAllProjects,
+  }: LedgerViewOptions,
 ): void {
-  renderLedgerClientOptions(state);
+  renderLedgerStatusFilters(selectedStatuses, onSelectedStatusesChange);
+  renderLedgerProjectFilters(state, onProjectVisibilityChange);
   renderLedgerSettingsPanel(isSettingsOpen, onToggleSettings);
+  const visibleProjectCount = state.projects.filter((project) => !project.hideFromLedger).length;
+  const allProjectsVisible = state.projects.length > 0 && visibleProjectCount === state.projects.length;
+  ledgerToggleAllProjectsButton.textContent = allProjectsVisible ? "Clear all" : "Select all";
+  ledgerToggleAllProjectsButton.onclick = onToggleAllProjects;
   ledgerTableBody.innerHTML = "";
 
-  const statusFilter = ledgerStatusFilter.value || "전체";
-  const clientFilter = ledgerClientFilter.value || "전체";
-  const overdueOnly = ledgerOverdueOnlyInput.checked;
-
   const rows = getLedgerRows(state).filter((ledgerRow) => {
-    const { project } = ledgerRow;
-    if (clientFilter !== "전체" && project.clientName !== clientFilter) {
-      return false;
-    }
-
     if (ledgerRow.kind === "project-empty") {
-      return statusFilter === "전체" && !overdueOnly;
+      return true;
     }
 
     const { task } = ledgerRow;
-    if (statusFilter !== "전체" && task.status !== statusFilter) {
-      return false;
-    }
-
-    if (ledgerHideCompletedInput.checked && task.completed) {
-      return false;
-    }
-
-    const overdue = isTaskOverdue(task);
-    if (overdueOnly && !overdue) {
-      return false;
-    }
-
-    return true;
+    return selectedStatuses.has(task.status);
   });
 
   rows.forEach((ledgerRow, index) => {

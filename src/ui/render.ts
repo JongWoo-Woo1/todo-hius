@@ -20,6 +20,7 @@ import {
   selectProject,
   selectProjectForView,
   toggleTask,
+  updateProject,
   updateTask,
   updateEvent,
   updateWorkLog,
@@ -245,6 +246,23 @@ function renderLedger(): void {
       uiState.isLedgerSettingsOpen = open;
       render();
     },
+    selectedStatuses: uiState.selectedLedgerStatuses,
+    onSelectedStatusesChange: (statuses) => {
+      uiState.selectedLedgerStatuses = statuses;
+      render();
+    },
+    onProjectVisibilityChange: (projectId, visible) => {
+      updateProject(projectId, { hideFromLedger: !visible });
+      render();
+    },
+    onToggleAllProjects: () => {
+      const state = getState();
+      const allVisible = state.projects.length > 0 && state.projects.every((project) => !project.hideFromLedger);
+      state.projects.forEach((project) => {
+        updateProject(project.id, { hideFromLedger: allVisible });
+      });
+      render();
+    },
   });
 }
 
@@ -461,6 +479,24 @@ function getWorkLogFeedSuggestions(state: ReturnType<typeof getState>): WorkLogF
   const suggestions: WorkLogFeedSuggestion[] = [];
 
   state.projects.forEach((project) => {
+    const projectWorkLogs = state.workLogs.filter((workLog) => workLog.projectId === project.id);
+    projectWorkLogs.forEach((workLog) => {
+      suggestions.push({
+        id: workLog.id,
+        kind: "weekly",
+        projectId: project.id,
+        projectName: project.name,
+        clientName: project.clientName,
+        projectColor: project.color,
+        title: workLog.type,
+        dateStart: workLog.date,
+        dateEnd: workLog.endDate ?? workLog.date,
+        meta: workLog.type,
+        preview: getContentPreview(workLog.content),
+        content: workLog.content,
+      });
+    });
+
     const projectEvents = state.events.filter((event) => event.projectId === project.id);
     projectEvents.forEach((event) => {
       const content = makeFeedSuggestionContent(event.title, event.content);
@@ -481,7 +517,7 @@ function getWorkLogFeedSuggestions(state: ReturnType<typeof getState>): WorkLogF
     });
 
     project.tasks.forEach((task) => {
-      if (!task.dueDate) {
+      if (task.completed) {
         return;
       }
 
@@ -500,14 +536,23 @@ function getWorkLogFeedSuggestions(state: ReturnType<typeof getState>): WorkLogF
         meta: [task.status, task.priority].filter(Boolean).join(" / "),
         preview: getContentPreview(detail),
         content,
+        taskId: task.id,
       });
     });
   });
 
   return suggestions.sort((left, right) => {
-    const dateDiff = left.dateStart.localeCompare(right.dateStart);
-    if (dateDiff !== 0) {
+    if (left.dateStart && right.dateStart && left.dateStart !== right.dateStart) {
+      const dateDiff = left.dateStart.localeCompare(right.dateStart);
       return dateDiff;
+    }
+
+    if (left.dateStart && !right.dateStart) {
+      return -1;
+    }
+
+    if (!left.dateStart && right.dateStart) {
+      return 1;
     }
 
     const kindDiff = left.kind.localeCompare(right.kind);

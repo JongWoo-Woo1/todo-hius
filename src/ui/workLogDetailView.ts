@@ -8,17 +8,18 @@ type WorkLogFormMode = "create" | "edit";
 
 export type WorkLogFeedSuggestion = {
   id: string;
-  kind: "event" | "task";
+  kind: "event" | "weekly" | "task";
   projectId: string;
   projectName: string;
   clientName: string;
   projectColor: string;
   title: string;
-  dateStart: string;
-  dateEnd: string;
+  dateStart: string | null;
+  dateEnd: string | null;
   meta: string;
   preview: string;
   content: string;
+  taskId?: string;
 };
 
 function getWorkLogTypeLabel(type: WorkLogType): string {
@@ -36,10 +37,18 @@ function getWorkLogFormHeading(type: WorkLogType, mode: WorkLogFormMode): string
 }
 
 function isSuggestionOnDate(suggestion: WorkLogFeedSuggestion, date: string): boolean {
+  if (!suggestion.dateStart || !suggestion.dateEnd) {
+    return false;
+  }
+
   return suggestion.dateStart <= date && date <= suggestion.dateEnd;
 }
 
 function getSuggestionDateLabel(suggestion: WorkLogFeedSuggestion): string {
+  if (!suggestion.dateStart || !suggestion.dateEnd) {
+    return "날짜 없음";
+  }
+
   if (suggestion.dateStart !== suggestion.dateEnd) {
     return `${formatDisplayDate(suggestion.dateStart)} ~ ${formatDisplayDate(suggestion.dateEnd)}`;
   }
@@ -47,12 +56,12 @@ function getSuggestionDateLabel(suggestion: WorkLogFeedSuggestion): string {
   return formatDisplayDate(suggestion.dateStart);
 }
 
-function createSuggestionCard(suggestion: WorkLogFeedSuggestion, onApply: (content: string) => void): HTMLElement {
+function createSuggestionCard(suggestion: WorkLogFeedSuggestion, onApply: (suggestion: WorkLogFeedSuggestion) => void): HTMLElement {
   const card = document.createElement("button");
   card.type = "button";
   card.className = "work-log-feed-card";
   card.style.setProperty("--project-color", suggestion.projectColor);
-  card.addEventListener("click", () => onApply(suggestion.content));
+  card.addEventListener("click", () => onApply(suggestion));
 
   const project = document.createElement("p");
   project.className = "feed-card-project";
@@ -72,8 +81,13 @@ function createSuggestionCard(suggestion: WorkLogFeedSuggestion, onApply: (conte
   header.className = "project-memo-card-header";
 
   const badge = document.createElement("span");
-  badge.className = suggestion.kind === "event" ? "project-memo-badge event" : "project-memo-badge task";
-  badge.textContent = suggestion.kind === "event" ? "Event" : "Task";
+  badge.className =
+    suggestion.kind === "event"
+      ? "project-memo-badge event"
+      : suggestion.kind === "task"
+        ? "project-memo-badge task"
+        : "project-memo-badge";
+  badge.textContent = suggestion.kind === "event" ? "Event" : suggestion.kind === "task" ? "Task" : "Weekly";
 
   const date = document.createElement("span");
   date.className = "project-memo-date";
@@ -173,18 +187,58 @@ function setTaskOptions(
 }
 
 function renderFeedSuggestions(
-  list: HTMLElement,
-  empty: HTMLElement,
+  feedSection: HTMLElement,
+  feedList: HTMLElement,
+  taskSection: HTMLElement,
+  taskList: HTMLElement,
   suggestions: WorkLogFeedSuggestion[],
+  projectId: string,
   date: string,
-  onApply: (content: string) => void,
+  onApply: (suggestion: WorkLogFeedSuggestion) => void,
 ): void {
-  list.innerHTML = "";
-  const visibleSuggestions = suggestions.filter((suggestion) => isSuggestionOnDate(suggestion, date));
-  empty.hidden = visibleSuggestions.length > 0;
-  visibleSuggestions.forEach((suggestion) => {
-    list.append(createSuggestionCard(suggestion, onApply));
+  feedList.innerHTML = "";
+  taskList.innerHTML = "";
+
+  const projectSuggestions = suggestions.filter((suggestion) => suggestion.projectId === projectId);
+  const feedSuggestions = projectSuggestions.filter(
+    (suggestion) => suggestion.kind !== "task" && isSuggestionOnDate(suggestion, date),
+  );
+  const taskSuggestions = projectSuggestions
+    .filter((suggestion) => suggestion.kind === "task")
+    .sort((left, right) => compareTaskReferenceSuggestions(left, right, date));
+
+  feedSection.hidden = feedSuggestions.length === 0;
+  taskSection.hidden = taskSuggestions.length === 0;
+
+  feedSuggestions.forEach((suggestion) => {
+    feedList.append(createSuggestionCard(suggestion, onApply));
   });
+  taskSuggestions.forEach((suggestion) => {
+    taskList.append(createSuggestionCard(suggestion, onApply));
+  });
+}
+
+function compareTaskReferenceSuggestions(left: WorkLogFeedSuggestion, right: WorkLogFeedSuggestion, date: string): number {
+  const leftUpcoming = Boolean(left.dateStart && left.dateStart >= date);
+  const rightUpcoming = Boolean(right.dateStart && right.dateStart >= date);
+
+  if (leftUpcoming !== rightUpcoming) {
+    return leftUpcoming ? -1 : 1;
+  }
+
+  if (left.dateStart && right.dateStart && left.dateStart !== right.dateStart) {
+    return left.dateStart.localeCompare(right.dateStart);
+  }
+
+  if (left.dateStart && !right.dateStart) {
+    return -1;
+  }
+
+  if (!left.dateStart && right.dateStart) {
+    return 1;
+  }
+
+  return left.title.localeCompare(right.title);
 }
 
 function createModalHeader(project: Project | undefined, heading: string, onClose: () => void): HTMLElement {
@@ -222,11 +276,10 @@ function renderWorkLogDetail(workLog: WorkLog, options: WorkLogDetailModalOption
 
   const list = document.createElement("dl");
   list.className = "todo-detail-list calendar-detail-list";
-  list.append(
-    createDetailRow("날짜", getDetailValue(dateText)),
-    createDetailRow("구분", workLog.type),
-    createDetailRow("연결 업무", options.linkedTaskLabel),
-  );
+  list.append(createDetailRow("날짜", getDetailValue(dateText)), createDetailRow("구분", workLog.type));
+  if (options.linkedTaskLabel !== "Linked Task 없음") {
+    list.append(createDetailRow("연결 업무", options.linkedTaskLabel));
+  }
   wrapper.append(list);
 
   const contentLabel = document.createElement("h4");
@@ -394,11 +447,16 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
       </label>
     </section>
     <aside class="work-log-feed-panel" data-feed-panel>
-      <div class="work-log-panel-heading">
-        <h4>Feed</h4>
+      <div class="work-log-reference-scroll">
+      <section class="work-log-reference-section" data-feed-section>
+        <h5>Feed</h5>
+        <div class="work-log-feed-list" data-feed-list></div>
+      </section>
+      <section class="work-log-reference-section" data-task-section>
+        <h5>Task</h5>
+        <div class="work-log-feed-list" data-task-list></div>
+      </section>
       </div>
-      <div class="work-log-feed-list" data-feed-list></div>
-      <p class="empty-state" data-feed-empty>해당 날짜의 Event 또는 Task가 없습니다.</p>
     </aside>
     <div class="modal-actions full-field">
       <button class="quiet-button" type="button" data-action="cancel">취소</button>
@@ -415,8 +473,10 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
   const contentInput = form.querySelector<HTMLTextAreaElement>('[name="content"]')!;
   const heading = form.querySelector<HTMLHeadingElement>("#work-log-detail-title")!;
   const feedPanel = form.querySelector<HTMLElement>("[data-feed-panel]")!;
+  const feedSection = form.querySelector<HTMLElement>("[data-feed-section]")!;
   const feedList = form.querySelector<HTMLElement>("[data-feed-list]")!;
-  const feedEmpty = form.querySelector<HTMLElement>("[data-feed-empty]")!;
+  const taskSection = form.querySelector<HTMLElement>("[data-task-section]")!;
+  const taskList = form.querySelector<HTMLElement>("[data-task-list]")!;
 
   dateInput.value = options.defaultDate;
   typeSelect.value = options.defaultType;
@@ -431,8 +491,18 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
     form.closest(".work-log-detail-card")?.classList.toggle("has-feed-panel", isPlan);
     endDateInput.min = dateInput.value;
     heading.textContent = getWorkLogFormHeading(typeSelect.value as WorkLogType, "create");
-    renderFeedSuggestions(feedList, feedEmpty, options.feedSuggestions, dateInput.value, (content) => {
-      contentInput.value = content;
+    if (!isPlan) {
+      return;
+    }
+
+    renderFeedSuggestions(feedSection, feedList, taskSection, taskList, options.feedSuggestions, projectSelect.value, dateInput.value, (suggestion) => {
+      if (suggestion.kind === "task" && suggestion.taskId) {
+        taskSelect.value = suggestion.taskId;
+        taskSelect.focus();
+        return;
+      }
+
+      contentInput.value = suggestion.content;
       contentInput.focus();
     });
   };
@@ -445,7 +515,10 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
     setTaskOptions(taskSelect, project?.tasks ?? []);
   };
   syncTaskOptions();
-  projectSelect.addEventListener("change", syncTaskOptions);
+  projectSelect.addEventListener("change", () => {
+    syncTaskOptions();
+    syncEndDateVisibility();
+  });
 
   form.querySelector<HTMLButtonElement>('[data-action="close"]')!.addEventListener("click", options.onClose);
   form.querySelector<HTMLButtonElement>('[data-action="cancel"]')!.addEventListener("click", options.onClose);
@@ -468,7 +541,9 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
 
 export function renderWorkLogDetailModalView(options: WorkLogDetailModalOptions): void {
   workLogDetailContent.innerHTML = "";
-  workLogDetailContent.closest(".work-log-detail-card")?.classList.toggle("has-feed-panel", options.isCreating);
+  workLogDetailContent
+    .closest(".work-log-detail-card")
+    ?.classList.toggle("has-feed-panel", options.isCreating && options.defaultType === "계획");
   workLogDetailModal.onclick = (event) => {
     if (event.target === workLogDetailModal && !options.isCreating && !options.isEditing) {
       options.onClose();

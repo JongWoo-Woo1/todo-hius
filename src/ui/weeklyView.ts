@@ -1,5 +1,5 @@
 import { getLinkedTaskDisplay, getProjectById } from "../state/selectors";
-import type { AppState, WorkLogType } from "../types";
+import type { AppState, WorkLog, WorkLogType } from "../types";
 import { formatDisplayDate, toDateKey } from "../utils/calendar";
 import { getWeekRangeLabel, getWeekdays } from "../utils/week";
 import { weeklyEmptyState, weeklyGrid, weeklyRangeLabel } from "./dom";
@@ -36,6 +36,25 @@ function createWeeklyBuckets(visibleWeekDate: Date): Map<string, Record<(typeof 
   });
 
   return buckets;
+}
+
+function getWorkLogBucketKeys(
+  workLog: WorkLog,
+  buckets: Map<string, Record<(typeof WEEKLY_SECTIONS)[number]["key"], WeeklyItem[]>>,
+): string[] {
+  if (workLog.type !== "계획" || !workLog.endDate) {
+    return buckets.has(workLog.date) ? [workLog.date] : [];
+  }
+
+  return Array.from(buckets.keys()).filter((dateKey) => workLog.date <= dateKey && dateKey <= workLog.endDate!);
+}
+
+function getLinkedTaskTitle(workLog: WorkLog, linkedTaskDisplay: ReturnType<typeof getLinkedTaskDisplay>): string | undefined {
+  if (linkedTaskDisplay.activeTask || linkedTaskDisplay.deletedTask || workLog.linkedTaskTitleSnapshot) {
+    return linkedTaskDisplay.label;
+  }
+
+  return undefined;
 }
 
 function makeActivatable(element: HTMLElement, activate: () => void): void {
@@ -126,8 +145,8 @@ export function renderWeeklyView(state: AppState, visibleWeekDate: Date, options
   const buckets = createWeeklyBuckets(visibleWeekDate);
 
   state.workLogs.forEach((workLog) => {
-    const bucket = buckets.get(workLog.date);
-    if (!bucket) {
+    const bucketKeys = getWorkLogBucketKeys(workLog, buckets);
+    if (bucketKeys.length === 0) {
       return;
     }
 
@@ -142,18 +161,19 @@ export function renderWeeklyView(state: AppState, visibleWeekDate: Date, options
       taskId: workLog.taskId,
       clientName,
       projectName,
-      taskTitle: linkedTaskDisplay.label,
+      taskTitle: getLinkedTaskTitle(workLog, linkedTaskDisplay),
       content: workLog.content,
       color,
     };
 
-    if (workLog.type === "계획") {
-      bucket.plan.push(item);
-    } else if (workLog.type === "수행") {
-      bucket.done.push(item);
-    } else {
-      return;
-    }
+    bucketKeys.forEach((bucketKey) => {
+      const bucket = buckets.get(bucketKey)!;
+      if (workLog.type === "계획") {
+        bucket.plan.push(item);
+      } else if (workLog.type === "수행") {
+        bucket.done.push(item);
+      }
+    });
   });
 
   const weekdays = getWeekdays(visibleWeekDate);

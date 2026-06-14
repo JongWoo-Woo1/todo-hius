@@ -279,6 +279,7 @@ function normalizeProject(project: LegacyProject, index: number): Project {
     periodStatus: period.periodStatus,
     periodStartMonth: period.periodStartMonth,
     periodEndMonth: period.periodEndMonth,
+    hideFromLedger: project.hideFromLedger === true,
     color: project.color ?? getProjectColor(index),
     tasks: (project.tasks ?? project.todos ?? []).map(normalizeTask),
     deletedTasks: (project.deletedTasks ?? []).map(normalizeTask),
@@ -461,6 +462,24 @@ export function updateActiveProject(updates: Partial<Project>): void {
 
 export function updateActiveProjectColor(color: string): void {
   updateActiveProject({ color });
+}
+
+export function updateProject(projectId: string, updates: Partial<Project>): void {
+  const project = state.projects.find((item) => item.id === projectId);
+  if (!project) {
+    return;
+  }
+
+  if ("name" in updates) {
+    updates.name = normalizeProjectName(updates.name);
+  }
+
+  if ("clientName" in updates) {
+    updates.clientName = normalizeClientName(updates.clientName);
+  }
+
+  Object.assign(project, updates);
+  saveState();
 }
 
 export function selectProject(projectId: string): void {

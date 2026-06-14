@@ -1,5 +1,5 @@
 import { getDefaultCalendarRangePreferences, type CalendarRangePreferences } from "../state/calendarPreferences";
-import type { WorkLogType } from "../types";
+import type { TaskStatus, WorkLogType } from "../types";
 import { getDefaultVisibleWeekDate } from "../utils/week";
 
 export type AppView = "projects" | "ledger" | "weekly" | "calendar" | "feed";
@@ -37,6 +37,7 @@ export type UiState = {
   isFeedPastExpanded: boolean;
   isFeedSettingsOpen: boolean;
   isLedgerSettingsOpen: boolean;
+  selectedLedgerStatuses: Set<TaskStatus>;
   openedWorkspaceWindowKeys: Set<string>;
   workspaceWindowKey: string | null;
 };
@@ -74,6 +75,7 @@ export const uiState: UiState = {
   isFeedPastExpanded: false,
   isFeedSettingsOpen: false,
   isLedgerSettingsOpen: false,
+  selectedLedgerStatuses: new Set<TaskStatus>(["대기", "진행중", "검토대기", "완료"]),
   openedWorkspaceWindowKeys: new Set<string>(),
   workspaceWindowKey: null,
 };

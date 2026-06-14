@@ -47,6 +47,7 @@ function compareTasksForLedger(left: Task, right: Task): number {
 
 export function getLedgerRows(state: AppState): LedgerRow[] {
   return state.projects
+    .filter((project) => !project.hideFromLedger)
     .flatMap((project): LedgerRow[] => {
       const baseRow = {
         project,

@@ -59,11 +59,7 @@ import {
   cancelProjectNameButton,
   deleteProjectButton,
   editProjectInfoButton,
-  ledgerClientFilter,
   ledgerExportButton,
-  ledgerHideCompletedInput,
-  ledgerOverdueOnlyInput,
-  ledgerStatusFilter,
   ledgerViewButton,
   ledgerWindowButton,
   projectClientNameInput,
@@ -464,22 +460,6 @@ feedViewButton.addEventListener("click", () => {
 
 feedWindowButton.addEventListener("click", () => {
   void openWorkspaceWindowKey("view:feed");
-});
-
-ledgerStatusFilter.addEventListener("change", () => {
-  render();
-});
-
-ledgerClientFilter.addEventListener("change", () => {
-  render();
-});
-
-ledgerHideCompletedInput.addEventListener("change", () => {
-  render();
-});
-
-ledgerOverdueOnlyInput.addEventListener("change", () => {
-  render();
 });
 
 ledgerExportButton.addEventListener("click", async () => {

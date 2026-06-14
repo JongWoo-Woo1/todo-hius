@@ -1,5 +1,5 @@
 import ExcelJS from "exceljs";
-import type { AppState } from "../types";
+import type { AppState, WorkLog } from "../types";
 import { formatDisplayDate, toDateKey } from "../utils/calendar";
 import { getWeekdays } from "../utils/week";
 
@@ -163,27 +163,20 @@ function getMonthlyWeekMondays(date: Date): Date[] {
   return mondays;
 }
 
+function getWorkLogBucketKeys(workLog: WorkLog, buckets: Map<string, Record<WeeklySectionKey, WeeklyItem[]>>): string[] {
+  if (workLog.type !== "계획" || !workLog.endDate) {
+    return buckets.has(workLog.date) ? [workLog.date] : [];
+  }
+
+  return Array.from(buckets.keys()).filter((dateKey) => workLog.date <= dateKey && dateKey <= workLog.endDate!);
+}
+
 function fillWeeklyBuckets(state: AppState, date: Date): Map<string, Record<WeeklySectionKey, WeeklyItem[]>> {
   const buckets = createWeeklyBuckets(date);
 
-  state.projects.forEach((project) => {
-    project.tasks.forEach((task) => {
-      if (!task.dueDate || !buckets.has(task.dueDate)) {
-        return;
-      }
-
-      buckets.get(task.dueDate)!.plan.push({
-        clientName: project.clientName,
-        projectName: project.name,
-        taskTitle: task.title,
-        content: "",
-      });
-    });
-  });
-
   state.workLogs.forEach((workLog) => {
-    const bucket = buckets.get(workLog.date);
-    if (!bucket) {
+    const bucketKeys = getWorkLogBucketKeys(workLog, buckets);
+    if (bucketKeys.length === 0) {
       return;
     }
 
@@ -196,13 +189,16 @@ function fillWeeklyBuckets(state: AppState, date: Date): Map<string, Record<Week
       content: workLog.content,
     };
 
-    if (workLog.type === "계획") {
-      bucket.plan.push(item);
-    }
+    bucketKeys.forEach((dateKey) => {
+      const bucket = buckets.get(dateKey)!;
+      if (workLog.type === "계획") {
+        bucket.plan.push(item);
+      }
 
-    if (workLog.type === "수행") {
-      bucket.done.push(item);
-    }
+      if (workLog.type === "수행") {
+        bucket.done.push(item);
+      }
+    });
   });
 
   return buckets;

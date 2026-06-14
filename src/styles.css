@@ -957,9 +957,9 @@ button {
 
 .ledger-filter-card {
   display: grid;
-  grid-template-columns: 180px 220px auto auto;
+  grid-template-columns: 1fr;
   gap: 12px;
-  align-items: end;
+  align-items: stretch;
   margin-bottom: 18px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -967,11 +967,9 @@ button {
   padding: 14px;
 }
 
-.ledger-filter-card label {
-  display: grid;
-  gap: 8px;
-  color: var(--muted);
-  font-size: 14px;
+.ledger-filter-card h3 {
+  margin: 0;
+  font-size: 16px;
 }
 
 .calendar-settings-body .ledger-filter-card {
@@ -1552,6 +1550,13 @@ button {
 
 .work-log-detail-card.has-feed-panel {
   width: min(1320px, calc(100vw - 32px));
+  height: min(86vh, 820px);
+  overflow: hidden;
+}
+
+.work-log-detail-card.has-feed-panel #work-log-detail-content {
+  height: 100%;
+  min-height: 0;
 }
 
 .modal-header {
@@ -1620,9 +1625,12 @@ button {
 }
 
 .work-log-feed-form {
-  grid-template-columns: minmax(620px, 1.45fr) minmax(360px, 0.85fr);
-  align-items: start;
+  grid-template-columns: minmax(620px, 620px) minmax(560px, 620px);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-items: stretch;
   gap: 22px;
+  height: 100%;
+  min-height: 0;
 }
 
 .work-log-feed-form .modal-header,
@@ -1641,8 +1649,10 @@ button {
 .work-log-weekly-panel {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-row: 2;
   gap: 12px;
   min-width: 0;
+  min-height: 0;
 }
 
 .work-log-weekly-panel .full-field,
@@ -1669,10 +1679,8 @@ button {
 }
 
 .work-log-feed-panel {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 12px;
-  min-height: 100%;
+  grid-row: 2;
+  min-height: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f8fafc;
@@ -1684,13 +1692,36 @@ button {
   display: none;
 }
 
+.work-log-reference-scroll {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.work-log-reference-section {
+  display: grid;
+  gap: 10px;
+}
+
+.work-log-reference-section[hidden] {
+  display: none;
+}
+
+.work-log-reference-section h5 {
+  margin: 0;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
 .work-log-feed-list {
   display: grid;
   align-content: start;
   gap: 12px;
-  max-height: 610px;
-  overflow-y: auto;
-  padding-right: 2px;
 }
 
 .work-log-feed-card {
@@ -2010,7 +2041,7 @@ button {
   padding: 4px 0;
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1200px) {
   .work-log-feed-form {
     grid-template-columns: 1fr;
   }
@@ -2020,6 +2051,7 @@ button {
   .work-log-weekly-panel,
   .work-log-feed-panel {
     grid-column: 1;
+    grid-row: auto;
   }
 
   .work-log-feed-panel {

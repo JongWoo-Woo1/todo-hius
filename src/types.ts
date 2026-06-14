@@ -34,6 +34,7 @@ export type Project = {
   periodStatus?: ProjectPeriodStatus;
   periodStartMonth?: string | null;
   periodEndMonth?: string | null;
+  hideFromLedger?: boolean;
   color: string;
   tasks: Task[];
   deletedTasks: Task[];
