@@ -34,6 +34,10 @@ let isProjectDirty = false;
 let saveRequestCount = 0;
 let mainWindowRef: BrowserWindow | null = null;
 let latestAppState: unknown = null;
+// Dev-only buffer of the main window's top-level screen so a Vite renderer reload (which
+// reloads the renderer but not this main process) can restore it. Only used when the dev
+// server is running; in packaged builds devServerUrl is undefined and this stays null.
+let devReloadSnapshot: unknown = null;
 let startupWorkspacePath: string | null = findTodoWorkspacePath(process.argv);
 const workspaceWindows = new Map<string, BrowserWindow>();
 
@@ -498,6 +502,18 @@ ipcMain.handle("todo-workspace:get-startup-path", () => {
   const workspacePath = startupWorkspacePath;
   startupWorkspacePath = null;
   return workspacePath;
+});
+
+ipcMain.on("todo-dev-reload:publish", (_event, snapshot: unknown) => {
+  if (!devServerUrl) {
+    return;
+  }
+
+  devReloadSnapshot = snapshot;
+});
+
+ipcMain.handle("todo-dev-reload:get", () => {
+  return devServerUrl ? devReloadSnapshot : null;
 });
 
 ipcMain.handle("todo-workspace-window:open", async (_event, windowKey: string) => {

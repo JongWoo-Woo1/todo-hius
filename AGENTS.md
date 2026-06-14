@@ -25,6 +25,7 @@ Respect `.gitignore`. Do not inspect or edit generated/dependency/build/runtime-
 Use this map before broad searching:
 
 - App entry / DOM event wiring: `src/main.ts`
+- Dev-only renderer-reload restore (snapshot build/publish/restore in `src/main.ts`; buffer IPC in `electron/main.ts`)
 - Renderer AI bridge actions and live-state DTOs: `src/app/aiActions.ts`
 - Temporary renderer UI state (selected task, modal state, current view, visible week): `src/app/uiState.ts`
 - App data state and mutations + migration: `src/state/store.ts`
@@ -53,6 +54,9 @@ Use this map before broad searching:
 - WorkLog section/summary UI (project & task linked logs): `src/ui/workLogSectionView.ts`
 - WorkLog create/detail/edit modal: `src/ui/workLogDetailView.ts`
 - Shared detail-row helpers: `src/ui/detailView.ts`
+- Shared settings-panel open/close rendering (Calendar/Feed/Ledger): `src/ui/shared/settingsPanel.ts`
+- Shared project checkbox filter list (Calendar/Feed): `src/ui/shared/projectFilter.ts`
+- Shared feed/reference card pieces (project label, badge+date header, content preview): `src/ui/shared/feedCard.ts`
 - Confirm dialog UI: `src/ui/confirmDialog.ts`
 - Toast UI: `src/ui/toast.ts`
 - Excel export: `src/excel/`

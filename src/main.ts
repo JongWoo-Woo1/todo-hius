@@ -20,6 +20,9 @@ import {
   saveTodoWorkspace,
   saveTodoWorkspaceAs,
   setTodoFileDirty,
+  getDevReloadSnapshot,
+  publishDevReloadSnapshot,
+  type DevReloadSnapshot,
 } from "./platform/todoFileClient";
 import { uiState } from "./app/uiState";
 import {
@@ -37,10 +40,12 @@ import {
   getState,
   replaceState,
   replaceStateFromSync,
+  selectProjectForView,
   setStateChangeListener,
   updateActiveProject,
   updateActiveProjectColor,
 } from "./state/store";
+import { getProjectById } from "./state/selectors";
 import type { Project } from "./types";
 import { toDateKey } from "./utils/calendar";
 import { createId } from "./utils/id";
@@ -89,6 +94,7 @@ import {
   render,
   resetCalendarSelection,
   resetFeedSelection,
+  setAfterRenderHook,
   setOpenedWorkspaceWindowKeys,
   showLedgerView,
   showProjectInfoEditMode,
@@ -554,25 +560,145 @@ async function initializeWorkspaceWindow(): Promise<void> {
   render();
 }
 
+// --- Dev-only renderer-reload restore (main window) -------------------------------------
+// During `npm.cmd run dev:electron`, a Vite renderer reload reloads only the renderer, not
+// the Electron main process. We buffer the main window's top-level screen in the main
+// process so the reload restores the previously opened workspace and route instead of
+// dropping back to the startup chooser. Intentionally not a session restore: no modals,
+// forms, drafts, scroll, filters, or selected detail state.
+
+let lastPublishedDevReloadSnapshot: string | null = null;
+// Buffering starts only after the startup decision is made. A reloaded renderer's initial
+// pre-startup render would otherwise publish a workspace-less snapshot and overwrite the
+// good snapshot in the main process before restoreDevReloadSnapshot() can read it.
+let isMainWindowStartupComplete = false;
+
+function buildDevReloadSnapshot(): DevReloadSnapshot {
+  return {
+    workspacePath: currentTodoWorkspacePath ?? null,
+    currentView: uiState.currentView,
+    activeProjectId: getState().activeProjectId,
+    visibleWeekDate: uiState.currentView === "weekly" ? toDateKey(uiState.visibleWeekDate) : null,
+  };
+}
+
+function publishDevReloadSnapshotIfDev(): void {
+  if (!import.meta.env.DEV || workspaceWindowKey || !isMainWindowStartupComplete) {
+    return;
+  }
+
+  const snapshot = buildDevReloadSnapshot();
+  const serialized = JSON.stringify(snapshot);
+  if (serialized === lastPublishedDevReloadSnapshot) {
+    return;
+  }
+
+  lastPublishedDevReloadSnapshot = serialized;
+  publishDevReloadSnapshot(snapshot);
+}
+
+function parseDateKey(dateKey: string): Date | null {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day);
+}
+
+function applyDevReloadRoute(snapshot: DevReloadSnapshot): void {
+  if (snapshot.currentView === "calendar") {
+    activateCalendarButton();
+    return;
+  }
+
+  if (snapshot.currentView === "ledger") {
+    showLedgerView();
+    return;
+  }
+
+  if (snapshot.currentView === "feed") {
+    showFeedView();
+    return;
+  }
+
+  if (snapshot.currentView === "weekly") {
+    const restoredWeekDate = snapshot.visibleWeekDate ? parseDateKey(snapshot.visibleWeekDate) : null;
+    if (restoredWeekDate) {
+      uiState.visibleWeekDate = restoredWeekDate;
+    }
+    showWeeklyView();
+    return;
+  }
+
+  // "projects": restore the active project only if it still exists.
+  if (snapshot.activeProjectId && getProjectById(getState(), snapshot.activeProjectId)) {
+    selectProjectForView(snapshot.activeProjectId);
+  }
+  showProjectView();
+}
+
+async function restoreDevReloadSnapshot(): Promise<boolean> {
+  if (!import.meta.env.DEV || !isTodoFileClientAvailable()) {
+    return false;
+  }
+
+  try {
+    const snapshot = await getDevReloadSnapshot();
+    // Only restore when a .todo workspace was actually open. Without a workspacePath the
+    // prior screen was the startup chooser (or an unsaved new project, whose in-memory data
+    // a reload can't recover anyway), so fall through to the normal startup chooser instead
+    // of silently restoring an empty view.
+    if (!snapshot || !snapshot.workspacePath) {
+      return false;
+    }
+
+    const opened = await openProjectByPath(snapshot.workspacePath);
+    if (!opened) {
+      return false;
+    }
+
+    applyDevReloadRoute(snapshot);
+    render();
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
 async function initializeMainWindow(): Promise<void> {
   render();
   setStateChangeListener(markDirty);
 
-  if (isTodoFileClientAvailable()) {
-    try {
-      const startupWorkspacePath = await getStartupTodoWorkspacePath();
-      if (startupWorkspacePath) {
-        const opened = await openProjectByPath(startupWorkspacePath);
-        if (opened) {
-          return;
+  try {
+    if (isTodoFileClientAvailable()) {
+      try {
+        const startupWorkspacePath = await getStartupTodoWorkspacePath();
+        if (startupWorkspacePath) {
+          const opened = await openProjectByPath(startupWorkspacePath);
+          if (opened) {
+            return;
+          }
         }
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      console.error(error);
     }
-  }
 
-  void showStartupChooser();
+    // No startup path: in dev + Electron, restore the buffered screen from the last
+    // renderer reload before falling back to the normal startup chooser.
+    if (await restoreDevReloadSnapshot()) {
+      return;
+    }
+
+    void showStartupChooser();
+  } finally {
+    // Enable buffering only now that the startup screen is decided, then publish the
+    // resolved screen once so a later reload restores it.
+    isMainWindowStartupComplete = true;
+    publishDevReloadSnapshotIfDev();
+  }
 }
 
 setNavigationRenderer(render);
@@ -621,5 +747,7 @@ if (workspaceWindowKey) {
 } else {
   // The AI control bridge forwards actions to the main window only.
   registerAiActionHandler();
+  // Buffer the main window's top-level screen so a dev Vite reload can restore it.
+  setAfterRenderHook(publishDevReloadSnapshotIfDev);
   void initializeMainWindow();
 }

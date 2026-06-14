@@ -71,6 +71,15 @@ import { showToast } from "./toast";
 
 // Shared helpers
 
+// Optional dev-only hook invoked after each render so the main window can buffer its
+// top-level route in the Electron main process and survive a Vite renderer reload.
+// Wiring only; the snapshot is built and published by src/main.ts.
+let afterRenderHook: (() => void) | null = null;
+
+export function setAfterRenderHook(hook: (() => void) | null): void {
+  afterRenderHook = hook;
+}
+
 export function setOpenedWorkspaceWindowKeys(windowKeys: string[]): void {
   uiState.openedWorkspaceWindowKeys = new Set(windowKeys);
   render();
@@ -1068,4 +1077,6 @@ export function render(): void {
   // appends when the navigation context actually changed, so plain re-renders, state
   // sync, dirty changes and input edits do not create history entries.
   recordNavigation();
+
+  afterRenderHook?.();
 }

@@ -17,6 +17,8 @@ import {
   calendarStartMonthSelect,
   toggleAllProjectsButton,
 } from "./dom";
+import { renderSettingsPanel } from "./shared/settingsPanel";
+import { renderProjectCheckboxFilter } from "./shared/projectFilter";
 
 type CalendarTask = {
   projectId: string;
@@ -489,43 +491,6 @@ function renderRangeCalendar(
   return itemCount;
 }
 
-function renderCalendarFilters(
-  state: AppState,
-  selectedProjectIds: Set<string>,
-  onSelectedProjectIdsChange: (selectedProjectIds: Set<string>) => void,
-): void {
-  calendarFilterList.innerHTML = "";
-
-  state.projects.forEach((project) => {
-    const label = document.createElement("label");
-    label.className = "calendar-filter-item";
-
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = selectedProjectIds.has(project.id);
-    checkbox.addEventListener("change", () => {
-      if (checkbox.checked) {
-        selectedProjectIds.add(project.id);
-      } else {
-        selectedProjectIds.delete(project.id);
-      }
-      onSelectedProjectIdsChange(selectedProjectIds);
-    });
-
-    const swatch = document.createElement("span");
-    swatch.className = "project-swatch";
-    swatch.style.setProperty("--project-color", project.color);
-
-    const name = document.createElement("span");
-    name.textContent = project.name;
-    label.append(checkbox, swatch, name);
-    calendarFilterList.append(label);
-  });
-
-  const allSelected = state.projects.length > 0 && selectedProjectIds.size === state.projects.length;
-  toggleAllProjectsButton.textContent = allSelected ? "Clear all" : "Select all";
-}
-
 function renderMonthOptions(preferences: CalendarRangePreferences): void {
   calendarStartMonthSelect.innerHTML = "";
   calendarEndMonthSelect.innerHTML = "";
@@ -557,26 +522,28 @@ function renderRangeControls(preferences: CalendarRangePreferences): void {
   renderColumnOptions(preferences);
 }
 
-function renderSettingsPanel(isOpen: boolean, onToggleSettings: (open: boolean) => void): void {
-  calendarSettingsPanel.hidden = !isOpen;
-  calendarSettingsPanel.setAttribute("aria-hidden", String(!isOpen));
-  calendarSettingsPanel.classList.toggle("is-open", isOpen);
-  calendarSettingsBackdrop.hidden = !isOpen;
-  calendarSettingsButton.setAttribute("aria-expanded", String(isOpen));
-
-  calendarSettingsButton.onclick = () => onToggleSettings(!isOpen);
-  calendarSettingsCloseButton.onclick = () => onToggleSettings(false);
-  calendarSettingsBackdrop.onclick = () => onToggleSettings(false);
-}
-
 export function renderCalendarView(state: AppState, options: CalendarViewOptions): void {
   const preferences = normalizeCalendarRangePreferences(options.calendarRangePreferences);
   options.onCalendarRangePreferencesChange(preferences);
   renderRangeControls(preferences);
-  renderCalendarFilters(state, options.selectedProjectIds, options.onSelectedProjectIdsChange);
+  renderProjectCheckboxFilter(
+    { container: calendarFilterList, toggleAllButton: toggleAllProjectsButton },
+    state.projects,
+    options.selectedProjectIds,
+    options.onSelectedProjectIdsChange,
+  );
   calendarAddEventButton.disabled = state.projects.length === 0;
   calendarAddEventButton.onclick = options.onAddEvent;
-  renderSettingsPanel(options.isSettingsOpen, options.onToggleSettings);
+  renderSettingsPanel(
+    {
+      panel: calendarSettingsPanel,
+      backdrop: calendarSettingsBackdrop,
+      toggleButton: calendarSettingsButton,
+      closeButton: calendarSettingsCloseButton,
+    },
+    options.isSettingsOpen,
+    options.onToggleSettings,
+  );
 
   const dueTasksByDate = getDueTasksByDate(state, options.selectedProjectIds);
   const events = getCalendarEvents(state, options.selectedProjectIds);

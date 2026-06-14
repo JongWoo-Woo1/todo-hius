@@ -72,6 +72,8 @@ contextBridge.exposeInMainWorld("hiusTodoFile", {
       ipcRenderer.removeListener("todo-workspace:save-request", listener);
     };
   },
+  publishDevReloadSnapshot: (snapshot: unknown) => ipcRenderer.send("todo-dev-reload:publish", snapshot),
+  getDevReloadSnapshot: () => ipcRenderer.invoke("todo-dev-reload:get"),
 });
 
 // AI control bridge: receive action requests forwarded from the local HTTP bridge and send

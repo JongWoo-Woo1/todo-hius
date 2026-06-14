@@ -13,6 +13,7 @@ import {
   ledgerTableBody,
   ledgerToggleAllProjectsButton,
 } from "./dom";
+import { renderSettingsPanel } from "./shared/settingsPanel";
 
 const LEDGER_STATUSES: TaskStatus[] = ["대기", "진행중", "검토대기", "완료"];
 
@@ -160,18 +161,6 @@ function renderLedgerProjectFilters(
   });
 }
 
-function renderLedgerSettingsPanel(isOpen: boolean, onToggleSettings: (open: boolean) => void): void {
-  ledgerSettingsPanel.hidden = !isOpen;
-  ledgerSettingsPanel.setAttribute("aria-hidden", String(!isOpen));
-  ledgerSettingsPanel.classList.toggle("is-open", isOpen);
-  ledgerSettingsBackdrop.hidden = !isOpen;
-  ledgerSettingsButton.setAttribute("aria-expanded", String(isOpen));
-
-  ledgerSettingsButton.onclick = () => onToggleSettings(!isOpen);
-  ledgerSettingsCloseButton.onclick = () => onToggleSettings(false);
-  ledgerSettingsBackdrop.onclick = () => onToggleSettings(false);
-}
-
 export function renderLedgerView(
   state: AppState,
   {
@@ -187,7 +176,16 @@ export function renderLedgerView(
 ): void {
   renderLedgerStatusFilters(selectedStatuses, onSelectedStatusesChange);
   renderLedgerProjectFilters(state, onProjectVisibilityChange);
-  renderLedgerSettingsPanel(isSettingsOpen, onToggleSettings);
+  renderSettingsPanel(
+    {
+      panel: ledgerSettingsPanel,
+      backdrop: ledgerSettingsBackdrop,
+      toggleButton: ledgerSettingsButton,
+      closeButton: ledgerSettingsCloseButton,
+    },
+    isSettingsOpen,
+    onToggleSettings,
+  );
   const visibleProjectCount = state.projects.filter((project) => !project.hideFromLedger).length;
   const allProjectsVisible = state.projects.length > 0 && visibleProjectCount === state.projects.length;
   ledgerToggleAllProjectsButton.textContent = allProjectsVisible ? "Clear all" : "Select all";

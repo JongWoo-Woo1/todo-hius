@@ -24,6 +24,9 @@ import {
   feedSettingsPanel,
   feedToggleAllButton,
 } from "./dom";
+import { renderSettingsPanel } from "./shared/settingsPanel";
+import { renderProjectCheckboxFilter } from "./shared/projectFilter";
+import { createFeedCardHeader, createFeedContentParagraph, createFeedProjectLabel } from "./shared/feedCard";
 
 type FeedViewParams = {
   state: AppState;
@@ -111,19 +114,11 @@ function getFeedItems(state: AppState, selectedProjectIds: Set<string>): FeedIte
 }
 
 function createProjectLabel(project: Project): HTMLElement {
-  const label = document.createElement("p");
-  label.className = "feed-card-project";
-
-  const swatch = document.createElement("span");
-  swatch.className = "project-swatch";
-  swatch.style.setProperty("--project-color", project.color);
-
-  const name = document.createElement("span");
-  name.className = "feed-card-project-name";
-  name.textContent = project.clientName ? `${project.name} · ${project.clientName}` : project.name;
-
-  label.append(swatch, name);
-  return label;
+  return createFeedProjectLabel({
+    projectColor: project.color,
+    projectName: project.name,
+    clientName: project.clientName,
+  });
 }
 
 function makeClickable(card: HTMLElement, onSelect: () => void): void {
@@ -143,18 +138,7 @@ function createFeedWorkLogCard(project: Project, workLog: WorkLog, onSelect: () 
   card.className = "project-memo-card clickable feed-card";
   card.style.setProperty("--project-color", project.color);
 
-  const header = document.createElement("div");
-  header.className = "project-memo-card-header";
-
-  const badge = document.createElement("span");
-  badge.className = "project-memo-badge";
-  badge.textContent = "Weekly";
-
-  const date = document.createElement("span");
-  date.className = "project-memo-date";
-  date.textContent = formatDisplayDate(workLog.date);
-
-  header.append(badge, date);
+  const header = createFeedCardHeader("weekly", formatDisplayDate(workLog.date));
 
   const meta = document.createElement("p");
   meta.className = "project-memo-meta";
@@ -169,10 +153,7 @@ function createFeedWorkLogCard(project: Project, workLog: WorkLog, onSelect: () 
 
   const contentPreview = getContentPreview(workLog.content);
   if (contentPreview) {
-    const content = document.createElement("p");
-    content.className = "project-memo-content";
-    content.textContent = contentPreview;
-    card.append(content);
+    card.append(createFeedContentParagraph(contentPreview));
   }
 
   makeClickable(card, onSelect);
@@ -185,18 +166,7 @@ function createFeedTaskCard(project: Project, task: Task, onSelect: () => void):
   card.classList.toggle("completed", task.completed);
   card.style.setProperty("--project-color", project.color);
 
-  const header = document.createElement("div");
-  header.className = "project-memo-card-header";
-
-  const badge = document.createElement("span");
-  badge.className = "project-memo-badge task";
-  badge.textContent = "Task";
-
-  const date = document.createElement("span");
-  date.className = "project-memo-date";
-  date.textContent = formatDisplayDate(task.dueDate) || "날짜 없음";
-
-  header.append(badge, date);
+  const header = createFeedCardHeader("task", formatDisplayDate(task.dueDate) || "날짜 없음");
 
   const title = document.createElement("h4");
   title.className = "project-memo-title";
@@ -206,10 +176,9 @@ function createFeedTaskCard(project: Project, task: Task, onSelect: () => void):
   meta.className = "project-memo-meta";
   meta.textContent = [task.status, task.priority].filter(Boolean).join(" / ");
 
-  const content = document.createElement("p");
-  content.className = "project-memo-content";
-  content.textContent =
-    getContentPreview(task.memo || task.workerComment || task.managerComment || task.issueRisk || "") || "메모 없음";
+  const content = createFeedContentParagraph(
+    getContentPreview(task.memo || task.workerComment || task.managerComment || task.issueRisk || "") || "메모 없음",
+  );
 
   card.append(createProjectLabel(project), header, title, meta, content);
   makeClickable(card, onSelect);
@@ -243,18 +212,7 @@ function createFeedEventCard(project: Project, event: ProjectEvent, onSelect: ()
   card.className = "project-memo-card project-memo-event-card clickable feed-card";
   card.style.setProperty("--project-color", project.color);
 
-  const header = document.createElement("div");
-  header.className = "project-memo-card-header";
-
-  const badge = document.createElement("span");
-  badge.className = "project-memo-badge event";
-  badge.textContent = "Event";
-
-  const date = document.createElement("span");
-  date.className = "project-memo-date";
-  date.textContent = getEventDateLabel(event);
-
-  header.append(badge, date);
+  const header = createFeedCardHeader("event", getEventDateLabel(event));
 
   const title = document.createElement("h4");
   title.className = "project-memo-title";
@@ -272,10 +230,7 @@ function createFeedEventCard(project: Project, event: ProjectEvent, onSelect: ()
 
   const contentPreview = getContentPreview(event.content);
   if (contentPreview) {
-    const content = document.createElement("p");
-    content.className = "project-memo-content";
-    content.textContent = contentPreview;
-    card.append(content);
+    card.append(createFeedContentParagraph(contentPreview));
   }
 
   makeClickable(card, onSelect);
@@ -307,61 +262,26 @@ function shouldShowMoreButton(visibleCount: number, totalCount: number, showAll:
   return visibleCount !== totalCount || (showAll && totalCount > 0);
 }
 
-function renderFeedFilters(
-  state: AppState,
-  selectedProjectIds: Set<string>,
-  onSelectedProjectIdsChange: (selectedProjectIds: Set<string>) => void,
-): void {
-  feedFilterList.innerHTML = "";
-
-  state.projects.forEach((project) => {
-    const label = document.createElement("label");
-    label.className = "calendar-filter-item";
-
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = selectedProjectIds.has(project.id);
-    checkbox.addEventListener("change", () => {
-      if (checkbox.checked) {
-        selectedProjectIds.add(project.id);
-      } else {
-        selectedProjectIds.delete(project.id);
-      }
-      onSelectedProjectIdsChange(selectedProjectIds);
-    });
-
-    const swatch = document.createElement("span");
-    swatch.className = "project-swatch";
-    swatch.style.setProperty("--project-color", project.color);
-
-    const name = document.createElement("span");
-    name.textContent = project.name;
-    label.append(checkbox, swatch, name);
-    feedFilterList.append(label);
-  });
-
-  const allSelected = state.projects.length > 0 && selectedProjectIds.size === state.projects.length;
-  feedToggleAllButton.textContent = allSelected ? "Clear all" : "Select all";
-}
-
-function renderFeedSettingsPanel(isOpen: boolean, onToggleSettings: (open: boolean) => void): void {
-  feedSettingsPanel.hidden = !isOpen;
-  feedSettingsPanel.setAttribute("aria-hidden", String(!isOpen));
-  feedSettingsPanel.classList.toggle("is-open", isOpen);
-  feedSettingsBackdrop.hidden = !isOpen;
-  feedSettingsButton.setAttribute("aria-expanded", String(isOpen));
-
-  feedSettingsButton.onclick = () => onToggleSettings(!isOpen);
-  feedSettingsCloseButton.onclick = () => onToggleSettings(false);
-  feedSettingsBackdrop.onclick = () => onToggleSettings(false);
-}
-
 export function renderFeedView(params: FeedViewParams): void {
   const { state, selectedProjectIds, showFutureItems, showPastItems } = params;
 
-  renderFeedFilters(state, selectedProjectIds, params.onSelectedProjectIdsChange);
+  renderProjectCheckboxFilter(
+    { container: feedFilterList, toggleAllButton: feedToggleAllButton },
+    state.projects,
+    selectedProjectIds,
+    params.onSelectedProjectIdsChange,
+  );
   feedToggleAllButton.onclick = params.onToggleAllProjects;
-  renderFeedSettingsPanel(params.isSettingsOpen, params.onToggleSettings);
+  renderSettingsPanel(
+    {
+      panel: feedSettingsPanel,
+      backdrop: feedSettingsBackdrop,
+      toggleButton: feedSettingsButton,
+      closeButton: feedSettingsCloseButton,
+    },
+    params.isSettingsOpen,
+    params.onToggleSettings,
+  );
 
   feedList.innerHTML = "";
 

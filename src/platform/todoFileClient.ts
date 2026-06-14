@@ -1,4 +1,14 @@
 import type { AppState } from "../types";
+import type { AppView } from "../app/uiState";
+
+// Dev-only buffer of the main window's top-level screen, used to restore it across a
+// Vite renderer reload. Intentionally minimal: no modals, forms, drafts, or filters.
+export type DevReloadSnapshot = {
+  workspacePath: string | null;
+  currentView: AppView;
+  activeProjectId: string | null;
+  visibleWeekDate: string | null;
+};
 
 type TodoFileApi = NonNullable<Window["hiusTodoFile"]>;
 
@@ -106,4 +116,17 @@ export function onOpenTodoWorkspacePathRequest(
 
 export function onTodoFileSaveRequest(callback: Parameters<TodoFileApi["onSaveRequest"]>[0]): (() => void) | undefined {
   return getTodoFileApi()?.onSaveRequest(callback);
+}
+
+export function publishDevReloadSnapshot(snapshot: DevReloadSnapshot): void {
+  getTodoFileApi()?.publishDevReloadSnapshot(snapshot);
+}
+
+export function getDevReloadSnapshot(): Promise<DevReloadSnapshot | null> {
+  const api = getTodoFileApi();
+  if (!api) {
+    return Promise.resolve(null);
+  }
+
+  return api.getDevReloadSnapshot();
 }

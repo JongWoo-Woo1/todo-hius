@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 import type { AppState } from "./types";
+import type { DevReloadSnapshot } from "./platform/todoFileClient";
 
 type OpenTodoWorkspaceResult =
   | {
@@ -62,6 +63,8 @@ declare global {
       onMenuCommand: (callback: (command: TodoFileMenuCommand) => void) => () => void;
       onOpenWorkspacePathRequest: (callback: (workspacePath: string) => void) => () => void;
       onSaveRequest: (callback: (requestId: string, saveAs: boolean) => Promise<boolean>) => () => void;
+      publishDevReloadSnapshot: (snapshot: DevReloadSnapshot) => void;
+      getDevReloadSnapshot: () => Promise<DevReloadSnapshot | null>;
     };
     hiusTodoAi?: {
       onAiActionRequest: (

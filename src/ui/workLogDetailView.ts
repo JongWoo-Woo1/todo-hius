@@ -2,6 +2,7 @@ import type { Project, Task, WorkLog, WorkLogType } from "../types";
 import { formatDisplayDate } from "../utils/calendar";
 import { workLogDetailContent, workLogDetailModal } from "./dom";
 import { createDetailRow, getDetailValue } from "./detailView";
+import { createFeedCardHeader, createFeedContentParagraph, createFeedProjectLabel } from "./shared/feedCard";
 
 type WorkLogUpdates = Partial<WorkLog>;
 type WorkLogFormMode = "create" | "edit";
@@ -63,36 +64,13 @@ function createSuggestionCard(suggestion: WorkLogFeedSuggestion, onApply: (sugge
   card.style.setProperty("--project-color", suggestion.projectColor);
   card.addEventListener("click", () => onApply(suggestion));
 
-  const project = document.createElement("p");
-  project.className = "feed-card-project";
+  const project = createFeedProjectLabel({
+    projectColor: suggestion.projectColor,
+    projectName: suggestion.projectName,
+    clientName: suggestion.clientName,
+  });
 
-  const swatch = document.createElement("span");
-  swatch.className = "project-swatch";
-  swatch.style.setProperty("--project-color", suggestion.projectColor);
-
-  const projectName = document.createElement("span");
-  projectName.className = "feed-card-project-name";
-  projectName.textContent = suggestion.clientName
-    ? `${suggestion.projectName} · ${suggestion.clientName}`
-    : suggestion.projectName;
-  project.append(swatch, projectName);
-
-  const header = document.createElement("div");
-  header.className = "project-memo-card-header";
-
-  const badge = document.createElement("span");
-  badge.className =
-    suggestion.kind === "event"
-      ? "project-memo-badge event"
-      : suggestion.kind === "task"
-        ? "project-memo-badge task"
-        : "project-memo-badge";
-  badge.textContent = suggestion.kind === "event" ? "Event" : suggestion.kind === "task" ? "Task" : "Weekly";
-
-  const date = document.createElement("span");
-  date.className = "project-memo-date";
-  date.textContent = getSuggestionDateLabel(suggestion);
-  header.append(badge, date);
+  const header = createFeedCardHeader(suggestion.kind, getSuggestionDateLabel(suggestion));
 
   const title = document.createElement("strong");
   title.className = "project-memo-title";
@@ -108,10 +86,7 @@ function createSuggestionCard(suggestion: WorkLogFeedSuggestion, onApply: (sugge
   }
 
   if (suggestion.preview) {
-    const preview = document.createElement("p");
-    preview.className = "project-memo-content";
-    preview.textContent = suggestion.preview;
-    card.append(preview);
+    card.append(createFeedContentParagraph(suggestion.preview));
   }
 
   return card;

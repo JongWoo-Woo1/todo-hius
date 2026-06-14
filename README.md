@@ -140,7 +140,11 @@ Manual release checks:
 |  |  |- detailView.ts             # shared detail-row (dl/dt/dd) helpers
 |  |  |- confirmDialog.ts          # async confirm dialog
 |  |  |- startupDialog.ts          # startup workspace chooser dialog
-|  |  `- toast.ts                  # transient toast notifications
+|  |  |- toast.ts                  # transient toast notifications
+|  |  `- shared/                   # small cross-view UI helpers
+|  |     |- settingsPanel.ts       # Calendar/Feed/Ledger settings panel open/close rendering
+|  |     |- projectFilter.ts       # Calendar/Feed project checkbox filter list
+|  |     `- feedCard.ts            # feed/reference card pieces (project label, badge+date header, content preview)
 |  |
 |  |- excel/
 |  |  |- projectLedgerReport.ts    # Ledger workbook creation
@@ -192,6 +196,8 @@ Manual release checks:
 - `src/ui/dom.ts` owns DOM references.
 - `src/ui/render.ts` is the rendering-orchestration / UI-flow file: it calls each view module, wires their callbacks to store mutations and `uiState` transitions, and re-renders. It does little DOM drawing itself — feature-specific rendering lives in the `*View.ts` modules.
 - `src/ui/*View.ts` files own feature-specific DOM rendering for the project list, project header/info/detail, task list and task cards, Calendar, Ledger, Weekly, WorkLog surfaces, and modals.
+- `src/ui/shared/` owns small cross-view UI helpers (settings-panel open/close, project checkbox filter list, feed/reference card pieces) so duplicated rendering stays in one place.
+- In `npm run dev:electron`, a Vite renderer reload restores the previously opened workspace and top-level screen instead of returning to the startup chooser. The renderer buffers that screen in the Electron main process and restores it on the next load; it is dev-only (no effect in packaged builds) and is not a full session restore (no modals, drafts, filters, or selected detail state).
 - `src/platform/todoFileClient.ts` wraps `window.hiusTodoFile` for renderer-side file API access.
 - `src/excel/` owns Excel workbook generation and download helpers.
 - `src/mcp/` owns the stdio MCP server, read-only workspace queries, and app-control bridge tools.
