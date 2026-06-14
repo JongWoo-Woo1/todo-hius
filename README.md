@@ -15,7 +15,7 @@ npm.cmd run dist:installer
 
 ## Scripts
 
-- `npm run dev:electron`: Vite + Electron development mode
+- `npm run dev:electron`: Vite + Electron development mode; renderer changes use Vite HMR, while Electron main/preload rebuilds restart the app
 - `npm run dev:electron:bridge`: Vite + Electron bridge-test mode with a temp template workspace
 - `npm run build`: build Vite web assets and Electron main process
 - `npm run typecheck`: TypeScript check without emit
@@ -87,6 +87,8 @@ Manual release checks:
 |- README.md                       # project map and usage
 |- docs/
 |  `- MCP.md                       # MCP / AI bridge setup and operating notes
+|- scripts/
+|  `- devElectronWatch.mjs         # dev Electron watcher limited to dist/electron restarts
 |
 |- electron/
 |  |- main.ts                      # Electron window, menu, dirty state, close prompt

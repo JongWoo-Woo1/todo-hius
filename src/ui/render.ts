@@ -62,9 +62,10 @@ import { renderEmptyProjectDetail, renderProjectDetailShell } from "./projectDet
 import { clearTaskList, renderTaskList } from "./taskListView";
 import { clearTaskTrashView, renderTaskTrashView } from "./taskTrashView";
 import { renderViewVisibility } from "./navView";
-import { renderWorkLogDetailModalView } from "./workLogDetailView";
+import { renderWorkLogDetailModalView, type WorkLogFeedSuggestion } from "./workLogDetailView";
 import { renderEventDetailModalView, type EventInput } from "./eventDetailView";
 import { renderCalendarTaskAddModalView } from "./calendarAddView";
+import { getContentPreview } from "./feedShared";
 import { showToast } from "./toast";
 
 // Shared helpers
@@ -438,6 +439,86 @@ function openWorkLogCreate(date: string, type: WorkLogType): void {
   closeEventDetail();
 }
 
+function getEventTaskLabel(project: Project, event: ProjectEvent): string {
+  const activeTask = getTaskByProject(project, event.taskId);
+  if (activeTask) {
+    return activeTask.title;
+  }
+
+  const deletedTask = getDeletedTaskByProject(project, event.taskId);
+  if (deletedTask) {
+    return `${deletedTask.title} (삭제됨)`;
+  }
+
+  return "";
+}
+
+function makeFeedSuggestionContent(title: string, content: string): string {
+  return [title, content.trim()].filter(Boolean).join("\n\n");
+}
+
+function getWorkLogFeedSuggestions(state: ReturnType<typeof getState>): WorkLogFeedSuggestion[] {
+  const suggestions: WorkLogFeedSuggestion[] = [];
+
+  state.projects.forEach((project) => {
+    const projectEvents = state.events.filter((event) => event.projectId === project.id);
+    projectEvents.forEach((event) => {
+      const content = makeFeedSuggestionContent(event.title, event.content);
+      suggestions.push({
+        id: event.id,
+        kind: "event",
+        projectId: project.id,
+        projectName: project.name,
+        clientName: project.clientName,
+        projectColor: project.color,
+        title: event.title,
+        dateStart: event.startDate,
+        dateEnd: event.endDate ?? event.startDate,
+        meta: getEventTaskLabel(project, event),
+        preview: getContentPreview(event.content),
+        content,
+      });
+    });
+
+    project.tasks.forEach((task) => {
+      if (!task.dueDate) {
+        return;
+      }
+
+      const detail = task.memo || task.workerComment || task.managerComment || task.issueRisk || "";
+      const content = makeFeedSuggestionContent(task.title, detail);
+      suggestions.push({
+        id: task.id,
+        kind: "task",
+        projectId: project.id,
+        projectName: project.name,
+        clientName: project.clientName,
+        projectColor: project.color,
+        title: task.title,
+        dateStart: task.dueDate,
+        dateEnd: task.dueDate,
+        meta: [task.status, task.priority].filter(Boolean).join(" / "),
+        preview: getContentPreview(detail),
+        content,
+      });
+    });
+  });
+
+  return suggestions.sort((left, right) => {
+    const dateDiff = left.dateStart.localeCompare(right.dateStart);
+    if (dateDiff !== 0) {
+      return dateDiff;
+    }
+
+    const kindDiff = left.kind.localeCompare(right.kind);
+    if (kindDiff !== 0) {
+      return kindDiff;
+    }
+
+    return left.title.localeCompare(right.title);
+  });
+}
+
 function renderWorkLogDetailModal(): void {
   const state = getState();
   const canShowWorkLogDetail =
@@ -456,6 +537,7 @@ function renderWorkLogDetailModal(): void {
     isEditing: uiState.isWorkLogEditing,
     isCreating,
     projects: state.projects,
+    feedSuggestions: getWorkLogFeedSuggestions(state),
     defaultDate: uiState.workLogCreateDate ?? toDateKey(uiState.visibleWeekDate),
     defaultType: uiState.workLogCreateType ?? "수행",
     onClose: () => {

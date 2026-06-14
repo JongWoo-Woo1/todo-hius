@@ -4,6 +4,104 @@ import { workLogDetailContent, workLogDetailModal } from "./dom";
 import { createDetailRow, getDetailValue } from "./detailView";
 
 type WorkLogUpdates = Partial<WorkLog>;
+type WorkLogFormMode = "create" | "edit";
+
+export type WorkLogFeedSuggestion = {
+  id: string;
+  kind: "event" | "task";
+  projectId: string;
+  projectName: string;
+  clientName: string;
+  projectColor: string;
+  title: string;
+  dateStart: string;
+  dateEnd: string;
+  meta: string;
+  preview: string;
+  content: string;
+};
+
+function getWorkLogTypeLabel(type: WorkLogType): string {
+  switch (type) {
+    case "계획":
+      return "계획";
+    case "수행":
+      return "일지";
+  }
+}
+
+function getWorkLogFormHeading(type: WorkLogType, mode: WorkLogFormMode): string {
+  const action = mode === "create" ? "추가" : "수정";
+  return `${getWorkLogTypeLabel(type)} ${action}`;
+}
+
+function isSuggestionOnDate(suggestion: WorkLogFeedSuggestion, date: string): boolean {
+  return suggestion.dateStart <= date && date <= suggestion.dateEnd;
+}
+
+function getSuggestionDateLabel(suggestion: WorkLogFeedSuggestion): string {
+  if (suggestion.dateStart !== suggestion.dateEnd) {
+    return `${formatDisplayDate(suggestion.dateStart)} ~ ${formatDisplayDate(suggestion.dateEnd)}`;
+  }
+
+  return formatDisplayDate(suggestion.dateStart);
+}
+
+function createSuggestionCard(suggestion: WorkLogFeedSuggestion, onApply: (content: string) => void): HTMLElement {
+  const card = document.createElement("button");
+  card.type = "button";
+  card.className = "work-log-feed-card";
+  card.style.setProperty("--project-color", suggestion.projectColor);
+  card.addEventListener("click", () => onApply(suggestion.content));
+
+  const project = document.createElement("p");
+  project.className = "feed-card-project";
+
+  const swatch = document.createElement("span");
+  swatch.className = "project-swatch";
+  swatch.style.setProperty("--project-color", suggestion.projectColor);
+
+  const projectName = document.createElement("span");
+  projectName.className = "feed-card-project-name";
+  projectName.textContent = suggestion.clientName
+    ? `${suggestion.projectName} · ${suggestion.clientName}`
+    : suggestion.projectName;
+  project.append(swatch, projectName);
+
+  const header = document.createElement("div");
+  header.className = "project-memo-card-header";
+
+  const badge = document.createElement("span");
+  badge.className = suggestion.kind === "event" ? "project-memo-badge event" : "project-memo-badge task";
+  badge.textContent = suggestion.kind === "event" ? "Event" : "Task";
+
+  const date = document.createElement("span");
+  date.className = "project-memo-date";
+  date.textContent = getSuggestionDateLabel(suggestion);
+  header.append(badge, date);
+
+  const title = document.createElement("strong");
+  title.className = "project-memo-title";
+  title.textContent = suggestion.title;
+
+  card.append(project, header, title);
+
+  if (suggestion.meta) {
+    const meta = document.createElement("p");
+    meta.className = "project-memo-meta";
+    meta.textContent = suggestion.meta;
+    card.append(meta);
+  }
+
+  if (suggestion.preview) {
+    const preview = document.createElement("p");
+    preview.className = "project-memo-content";
+    preview.textContent = suggestion.preview;
+    card.append(preview);
+  }
+
+  return card;
+}
 
 function addTabIndent(textarea: HTMLTextAreaElement): void {
   textarea.addEventListener("keydown", (event) => {
@@ -34,6 +132,7 @@ export type WorkLogDetailModalOptions = {
   isEditing: boolean;
   isCreating: boolean;
   projects: Project[];
+  feedSuggestions: WorkLogFeedSuggestion[];
   defaultDate: string;
   defaultType: WorkLogType;
   onClose: () => void;
@@ -73,6 +172,21 @@ function setTaskOptions(
   select.value = selectedTaskId ?? "";
 }
 
+function renderFeedSuggestions(
+  list: HTMLElement,
+  empty: HTMLElement,
+  suggestions: WorkLogFeedSuggestion[],
+  date: string,
+  onApply: (content: string) => void,
+): void {
+  list.innerHTML = "";
+  const visibleSuggestions = suggestions.filter((suggestion) => isSuggestionOnDate(suggestion, date));
+  empty.hidden = visibleSuggestions.length > 0;
+  visibleSuggestions.forEach((suggestion) => {
+    list.append(createSuggestionCard(suggestion, onApply));
+  });
+}
+
 function createModalHeader(project: Project | undefined, heading: string, onClose: () => void): HTMLElement {
   const header = document.createElement("div");
   header.className = "modal-header";
@@ -80,7 +194,7 @@ function createModalHeader(project: Project | undefined, heading: string, onClos
   const title = document.createElement("div");
   const eyebrow = document.createElement("p");
   eyebrow.className = "eyebrow";
-  eyebrow.textContent = project?.name ?? "Weekly log";
+  eyebrow.textContent = project?.name ?? "Weekly";
   const headingEl = document.createElement("h3");
   headingEl.id = "work-log-detail-title";
   headingEl.textContent = heading;
@@ -158,8 +272,8 @@ function renderWorkLogEditForm(workLog: WorkLog, options: WorkLogDetailModalOpti
   form.innerHTML = `
     <div class="modal-header full-field">
       <div>
-        <p class="eyebrow">${options.project?.name ?? "Weekly log"}</p>
-        <h3 id="work-log-detail-title">기록 수정</h3>
+        <p class="eyebrow">${options.project?.name ?? "Weekly"}</p>
+        <h3 id="work-log-detail-title">${getWorkLogFormHeading(workLog.type, "edit")}</h3>
       </div>
       <button class="quiet-button" type="button" data-action="close">닫기</button>
     </div>
@@ -198,6 +312,7 @@ function renderWorkLogEditForm(workLog: WorkLog, options: WorkLogDetailModalOpti
   const typeSelect = form.querySelector<HTMLSelectElement>('[name="type"]')!;
   const taskSelect = form.querySelector<HTMLSelectElement>('[name="taskId"]')!;
   const contentInput = form.querySelector<HTMLTextAreaElement>('[name="content"]')!;
+  const heading = form.querySelector<HTMLHeadingElement>("#work-log-detail-title")!;
 
   dateInput.value = workLog.date;
   endDateInput.value = workLog.endDate ?? "";
@@ -209,6 +324,7 @@ function renderWorkLogEditForm(workLog: WorkLog, options: WorkLogDetailModalOpti
   const syncEndDateVisibility = (): void => {
     endDateField.hidden = typeSelect.value !== "계획";
     endDateInput.min = dateInput.value;
+    heading.textContent = getWorkLogFormHeading(typeSelect.value as WorkLogType, "edit");
   };
   syncEndDateVisibility();
   typeSelect.addEventListener("change", syncEndDateVisibility);
@@ -234,7 +350,7 @@ function renderWorkLogEditForm(workLog: WorkLog, options: WorkLogDetailModalOpti
 
 function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElement {
   const form = document.createElement("form");
-  form.className = "detail-form calendar-detail-form";
+  form.className = "detail-form calendar-detail-form work-log-feed-form";
 
   const projectOptions = options.projects
     .map((project) => `<option value="${project.id}">${project.clientName ? `${project.clientName} / ${project.name}` : project.name}</option>`)
@@ -243,38 +359,47 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
   form.innerHTML = `
     <div class="modal-header full-field">
       <div>
-        <p class="eyebrow">Weekly log</p>
-        <h3 id="work-log-detail-title">기록 추가</h3>
+        <p class="eyebrow">Weekly</p>
+        <h3 id="work-log-detail-title">${getWorkLogFormHeading(options.defaultType, "create")}</h3>
       </div>
       <button class="quiet-button" type="button" data-action="close">닫기</button>
     </div>
-    <label>
-      프로젝트
-      <select name="projectId" required>${projectOptions}</select>
-    </label>
-    <label>
-      날짜
-      <input name="date" type="date" required />
-    </label>
-    <label data-plan-only>
-      종료일
-      <input name="endDate" type="date" />
-    </label>
-    <label>
-      구분
-      <select name="type">
-        <option value="계획">계획</option>
-        <option value="수행">수행</option>
-      </select>
-    </label>
-    <label class="full-field">
-      연결 업무
-      <select name="taskId"></select>
-    </label>
-    <label class="full-field">
-      내용
-      <textarea name="content" rows="14"></textarea>
-    </label>
+    <section class="work-log-weekly-panel">
+      <label>
+        프로젝트
+        <select name="projectId" required>${projectOptions}</select>
+      </label>
+      <label>
+        날짜
+        <input name="date" type="date" required />
+      </label>
+      <label data-plan-only>
+        종료일
+        <input name="endDate" type="date" />
+      </label>
+      <label>
+        구분
+        <select name="type">
+          <option value="계획">계획</option>
+          <option value="수행">수행</option>
+        </select>
+      </label>
+      <label class="full-field">
+        연결 업무
+        <select name="taskId"></select>
+      </label>
+      <label class="full-field">
+        내용
+        <textarea name="content" rows="14"></textarea>
+      </label>
+    </section>
+    <aside class="work-log-feed-panel" data-feed-panel>
+      <div class="work-log-panel-heading">
+        <h4>Feed</h4>
+      </div>
+      <div class="work-log-feed-list" data-feed-list></div>
+      <p class="empty-state" data-feed-empty>해당 날짜의 Event 또는 Task가 없습니다.</p>
+    </aside>
     <div class="modal-actions full-field">
       <button class="quiet-button" type="button" data-action="cancel">취소</button>
       <button type="submit">추가</button>
@@ -288,6 +413,10 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
   const typeSelect = form.querySelector<HTMLSelectElement>('[name="type"]')!;
   const taskSelect = form.querySelector<HTMLSelectElement>('[name="taskId"]')!;
   const contentInput = form.querySelector<HTMLTextAreaElement>('[name="content"]')!;
+  const heading = form.querySelector<HTMLHeadingElement>("#work-log-detail-title")!;
+  const feedPanel = form.querySelector<HTMLElement>("[data-feed-panel]")!;
+  const feedList = form.querySelector<HTMLElement>("[data-feed-list]")!;
+  const feedEmpty = form.querySelector<HTMLElement>("[data-feed-empty]")!;
 
   dateInput.value = options.defaultDate;
   typeSelect.value = options.defaultType;
@@ -295,8 +424,17 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
   addTabIndent(contentInput);
 
   const syncEndDateVisibility = (): void => {
-    endDateField.hidden = typeSelect.value !== "계획";
+    const isPlan = typeSelect.value === "계획";
+    endDateField.hidden = !isPlan;
+    feedPanel.hidden = !isPlan;
+    form.classList.toggle("without-feed-panel", !isPlan);
+    form.closest(".work-log-detail-card")?.classList.toggle("has-feed-panel", isPlan);
     endDateInput.min = dateInput.value;
+    heading.textContent = getWorkLogFormHeading(typeSelect.value as WorkLogType, "create");
+    renderFeedSuggestions(feedList, feedEmpty, options.feedSuggestions, dateInput.value, (content) => {
+      contentInput.value = content;
+      contentInput.focus();
+    });
   };
   syncEndDateVisibility();
   typeSelect.addEventListener("change", syncEndDateVisibility);
@@ -330,6 +468,7 @@ function renderWorkLogCreateForm(options: WorkLogDetailModalOptions): HTMLElemen
 
 export function renderWorkLogDetailModalView(options: WorkLogDetailModalOptions): void {
   workLogDetailContent.innerHTML = "";
+  workLogDetailContent.closest(".work-log-detail-card")?.classList.toggle("has-feed-panel", options.isCreating);
   workLogDetailModal.onclick = (event) => {
     if (event.target === workLogDetailModal && !options.isCreating && !options.isEditing) {
       options.onClose();

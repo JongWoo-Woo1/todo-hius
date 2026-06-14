@@ -5,8 +5,8 @@
   "type": "module",
   "main": "dist/electron/main.js",
   "scripts": {
-    "dev:electron": "npm run prepare:logs && concurrently -k \"vite --host 127.0.0.1 --strictPort\" \"tsc -p tsconfig.electron.json --watch --preserveWatchOutput\" \"wait-on tcp:5173 file:dist/electron/main.js file:dist/electron/preload.js && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electronmon dist/electron/main.js\"",
-    "dev:electron:bridge": "npm run prepare:logs && concurrently -k \"vite --host 127.0.0.1 --strictPort\" \"tsc -p tsconfig.electron.json --watch --preserveWatchOutput\" \"wait-on tcp:5173 file:dist/electron/main.js file:dist/electron/preload.js && cross-env HIUS_BRIDGE_TEST_WORKSPACE=1 VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electronmon dist/electron/main.js\"",
+    "dev:electron": "npm run prepare:logs && concurrently -k \"vite --host 127.0.0.1 --strictPort\" \"tsc -p tsconfig.electron.json --watch --preserveWatchOutput\" \"wait-on tcp:5173 file:dist/electron/main.js file:dist/electron/preload.js && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 node scripts/devElectronWatch.mjs\"",
+    "dev:electron:bridge": "npm run prepare:logs && concurrently -k \"vite --host 127.0.0.1 --strictPort\" \"tsc -p tsconfig.electron.json --watch --preserveWatchOutput\" \"wait-on tcp:5173 file:dist/electron/main.js file:dist/electron/preload.js && cross-env HIUS_BRIDGE_TEST_WORKSPACE=1 VITE_DEV_SERVER_URL=http://127.0.0.1:5173 node scripts/devElectronWatch.mjs\"",
     "build": "vite build && tsc -p tsconfig.electron.json",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit && tsc -p tsconfig.mcp.json",
     "mcp:server": "tsx src/mcp/server.ts",
@@ -23,7 +23,6 @@
     "cross-env": "^10.1.0",
     "electron": "^42.3.3",
     "electron-builder": "^26.15.0",
-    "electronmon": "^2.0.4",
     "tsx": "^4.22.4",
     "typescript": "^5.8.3",
     "vite": "^7.1.0",
@@ -33,14 +32,6 @@
   "dependencies": {
     "exceljs": "^4.4.0",
     "jszip": "^3.10.1"
-  },
-  "electronmon": {
-    "patterns": [
-      "!**/hius-dt-jw-todo/**",
-      "!**/dist/electron/**",
-      "!**/log/**",
-      "!**/*.todo"
-    ]
   },
   "build": {
     "appId": "com.hius.todo",
